@@ -1,9 +1,13 @@
+import React from 'react';
+import { AuthProvider } from './features/auth/context/AuthContext';
+import { AppRoutes } from './routes/AppRoutes';
 
-
-const App = () => {
+const App: React.FC = () => {
   return (
-    <div></div>
-  )
-}
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  );
+};
 
-export default App
+export default App;

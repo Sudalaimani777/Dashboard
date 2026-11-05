@@ -14,9 +14,9 @@ Based on the project estimation and planning schedule (November 4, 2026 – Nove
 | | | Setup | Setup (React.js, Node.js) and PostgreSQL initialization | 1.5 Hours | ✅ Completed |
 | | | Backend | Database schema design and initial user table migrations | 2.0 Hours | ✅ Completed |
 | | | Backend | Signup and Signin endpoints with JWT and password hashing | 3.0 Hours | ✅ Completed |
-| **05/11/2026** | **Day 2** | Backend | Forgot & Reset password endpoints with email integration | 3.0 Hours | ⏳ Scheduled |
-| | | Frontend | Developing the responsive Landing/Home page UI | 2.5 Hours | ⏳ Scheduled |
-| | | Frontend | Developing the responsive Sign-in page UI & state management | 2.5 Hours | ⏳ Scheduled |
+| **05/11/2026** | **Day 2** | Backend | Forgot & Reset password endpoints with email integration | 3.0 Hours | ✅ Completed |
+| | | Frontend | Developing the responsive Landing/Home page UI | 2.5 Hours | ✅ Completed |
+| | | Frontend | Developing the responsive Sign-in page UI & state management | 2.5 Hours | ✅ Completed |
 | **06/11/2026** | **Day 3** | Frontend | Developing Forgot & Reset Password UI and API error handling | 2.5 Hours | ⏳ Scheduled |
 | | | Integration | End-to-end integration of React frontend with Node.js backend | 2.0 Hours | ⏳ Scheduled |
 | | | Integration | Cross-device responsive testing, bug fixing, and final review | 2.0 Hours | ⏳ Scheduled |
