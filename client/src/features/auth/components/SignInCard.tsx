@@ -1,48 +1,76 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
-import { Alert, AlertDescription } from '../../../shared/components/ui/alert';
-import { Button } from '../../../shared/components/ui/button';
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '../../../shared/components/ui/card';
-import { Input } from '../../../shared/components/ui/input';
-import { Label } from '../../../shared/components/ui/label';
+  Input,
+  Label,
+  PasswordInput,
+} from '../../../shared/components/ui';
 import { useAuth } from '../hooks/useAuth';
+import { signInSchema } from '../schemas/auth.schema';
 
 export const SignInCard: React.FC = () => {
   const navigate = useNavigate();
-  const { signin } = useAuth();
+  const { signin, isAuthenticated, isAuthenticating, authError, clearAuthError } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    clearAuthError();
+    setFieldErrors({});
 
-    if (!email.trim() || !password) {
-      setError('Email and password are required.');
+    const validation = signInSchema.safeParse({ email, password });
+    if (!validation.success) {
+      const errors: { email?: string; password?: string } = {};
+      for (const issue of validation.error.issues) {
+        const field = issue.path[0] as 'email' | 'password';
+        if (!errors[field]) {
+          errors[field] = issue.message;
+        }
+      }
+      setFieldErrors(errors);
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      await signin({ email, password });
+      await signin(validation.data);
       navigate('/dashboard');
-    } catch (err) {
-      setError((err as Error).message || 'Invalid email or password.');
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // authError is updated in AuthContext
     }
+  };
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    if (fieldErrors.email) {
+      setFieldErrors((prev) => ({ ...prev, email: undefined }));
+    }
+    if (authError) clearAuthError();
+  };
+
+  const handlePasswordChange = (val: string) => {
+    setPassword(val);
+    if (fieldErrors.password) {
+      setFieldErrors((prev) => ({ ...prev, password: undefined }));
+    }
+    if (authError) clearAuthError();
   };
 
   return (
@@ -62,10 +90,10 @@ export const SignInCard: React.FC = () => {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {authError && (
               <Alert>
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{authError}</AlertDescription>
               </Alert>
             )}
 
@@ -76,43 +104,46 @@ export const SignInCard: React.FC = () => {
                 type="email"
                 placeholder="name@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleEmailChange(e.target.value)}
+                disabled={isAuthenticating}
                 autoComplete="email"
+                error={!!fieldErrors.email}
                 autoFocus
                 required
               />
+              {fieldErrors.email && (
+                <p className="text-xs text-[#9E2A2B] font-medium mt-1">
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  className="pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#756F68] hover:text-[#2B231D] transition-colors cursor-pointer focus:outline-none"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
+              <PasswordInput
+                id="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => handlePasswordChange(e.target.value)}
+                disabled={isAuthenticating}
+                autoComplete="current-password"
+                error={!!fieldErrors.password}
+                required
+              />
+              {fieldErrors.password && (
+                <p className="text-xs text-[#9E2A2B] font-medium mt-1">
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-end">
-              <span className="text-xs text-[#8A582B] hover:text-[#754820] cursor-pointer">
+              <span
+                onClick={() =>
+                  alert('Password recovery is scheduled for Day 3 tomorrow.')
+                }
+                className="text-xs text-[#8A582B] hover:text-[#754820] cursor-pointer transition-colors"
+              >
                 Forgot password?
               </span>
             </div>
@@ -122,7 +153,7 @@ export const SignInCard: React.FC = () => {
               variant="primary"
               size="md"
               className="w-full mt-2"
-              isLoading={isSubmitting}
+              isLoading={isAuthenticating}
             >
               Sign In
             </Button>
