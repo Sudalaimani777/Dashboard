@@ -1,59 +1,93 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
-import { Alert, AlertDescription } from '../../../shared/components/ui/alert';
-import { Button } from '../../../shared/components/ui/button';
 import {
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '../../../shared/components/ui/card';
-import { Input } from '../../../shared/components/ui/input';
-import { Label } from '../../../shared/components/ui/label';
+  Input,
+  Label,
+  PasswordInput,
+} from '../../../shared/components/ui';
 import { useAuth } from '../hooks/useAuth';
+import { signUpSchema } from '../schemas/auth.schema';
 
 export const SignUpCard: React.FC = () => {
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { signup, isAuthenticated, isAuthenticating, authError, clearAuthError } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    clearAuthError();
+    setFieldErrors({});
 
-    if (!name.trim()) {
-      setError('Please provide your name.');
+    const validation = signUpSchema.safeParse({
+      name,
+      email,
+      password,
+      confirmPassword,
+    });
+
+    if (!validation.success) {
+      const errors: {
+        name?: string;
+        email?: string;
+        password?: string;
+        confirmPassword?: string;
+      } = {};
+      for (const issue of validation.error.issues) {
+        const field = issue.path[0] as
+          | 'name'
+          | 'email'
+          | 'password'
+          | 'confirmPassword';
+        if (!errors[field]) {
+          errors[field] = issue.message;
+        }
+      }
+      setFieldErrors(errors);
       return;
     }
 
-    if (!email.trim() || !password) {
-      setError('Email and password are required.');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
-      return;
-    }
-
-    setIsSubmitting(true);
     try {
-      await signup({ name: name.trim(), email: email.trim(), password });
+      await signup({
+        name: validation.data.name,
+        email: validation.data.email,
+        password: validation.data.password,
+      });
       navigate('/dashboard');
-    } catch (err) {
-      setError((err as Error).message || 'Registration failed. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // authError is updated in AuthContext
     }
+  };
+
+  const clearField = (field: 'name' | 'email' | 'password' | 'confirmPassword') => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+    if (authError) clearAuthError();
   };
 
   return (
@@ -73,10 +107,10 @@ export const SignUpCard: React.FC = () => {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {authError && (
               <Alert>
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{authError}</AlertDescription>
               </Alert>
             )}
 
@@ -87,11 +121,21 @@ export const SignUpCard: React.FC = () => {
                 type="text"
                 placeholder="Alex Johnson"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  clearField('name');
+                }}
+                disabled={isAuthenticating}
                 autoComplete="name"
+                error={!!fieldErrors.name}
                 autoFocus
                 required
               />
+              {fieldErrors.name && (
+                <p className="text-xs text-[#9E2A2B] font-medium mt-1">
+                  {fieldErrors.name}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -101,38 +145,64 @@ export const SignUpCard: React.FC = () => {
                 type="email"
                 placeholder="name@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  clearField('email');
+                }}
+                disabled={isAuthenticating}
                 autoComplete="email"
+                error={!!fieldErrors.email}
                 required
               />
+              {fieldErrors.email && (
+                <p className="text-xs text-[#9E2A2B] font-medium mt-1">
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="At least 6 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  className="pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#756F68] hover:text-[#2B231D] transition-colors cursor-pointer focus:outline-none"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
+              <PasswordInput
+                id="password"
+                placeholder="At least 6 characters"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  clearField('password');
+                }}
+                disabled={isAuthenticating}
+                autoComplete="new-password"
+                error={!!fieldErrors.password}
+                required
+              />
+              {fieldErrors.password && (
+                <p className="text-xs text-[#9E2A2B] font-medium mt-1">
+                  {fieldErrors.password}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <PasswordInput
+                id="confirmPassword"
+                placeholder="Repeat your password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  clearField('confirmPassword');
+                }}
+                disabled={isAuthenticating}
+                autoComplete="new-password"
+                error={!!fieldErrors.confirmPassword}
+                required
+              />
+              {fieldErrors.confirmPassword && (
+                <p className="text-xs text-[#9E2A2B] font-medium mt-1">
+                  {fieldErrors.confirmPassword}
+                </p>
+              )}
             </div>
 
             <Button
@@ -140,7 +210,7 @@ export const SignUpCard: React.FC = () => {
               variant="primary"
               size="md"
               className="w-full mt-2"
-              isLoading={isSubmitting}
+              isLoading={isAuthenticating}
             >
               Create Account
             </Button>

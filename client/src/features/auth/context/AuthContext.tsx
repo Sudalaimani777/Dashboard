@@ -6,6 +6,9 @@ export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAuthenticating: boolean;
+  authError: string | null;
+  clearAuthError: () => void;
   signin: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: RegisterCredentials) => Promise<void>;
   signout: () => Promise<void>;
@@ -16,6 +19,8 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Hydrate session on app load via /auth/me
   const checkAuth = useCallback(async () => {
@@ -33,17 +38,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, [checkAuth]);
 
+  const clearAuthError = useCallback(() => {
+    setAuthError(null);
+  }, []);
+
   const signin = async (credentials: LoginCredentials) => {
-    const authenticatedUser = await authApi.signin(credentials);
-    setUser(authenticatedUser);
+    setIsAuthenticating(true);
+    setAuthError(null);
+    try {
+      const authenticatedUser = await authApi.signin(credentials);
+      setUser(authenticatedUser);
+    } catch (err) {
+      const message = (err as Error).message || 'Invalid email or password.';
+      setAuthError(message);
+      throw err;
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
 
   const signup = async (credentials: RegisterCredentials) => {
-    const authenticatedUser = await authApi.signup(credentials);
-    setUser(authenticatedUser);
+    setIsAuthenticating(true);
+    setAuthError(null);
+    try {
+      const authenticatedUser = await authApi.signup(credentials);
+      setUser(authenticatedUser);
+    } catch (err) {
+      const message = (err as Error).message || 'Registration failed. Please try again.';
+      setAuthError(message);
+      throw err;
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
 
   const signout = async () => {
+    setAuthError(null);
     try {
       await authApi.signout();
     } finally {
@@ -57,6 +87,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated: !!user,
         isLoading,
+        isAuthenticating,
+        authError,
+        clearAuthError,
         signin,
         signup,
         signout,
