@@ -1,0 +1,221 @@
+{
+  "info": {
+    "name": "Readventure - Auth API (Full Lifecycle)",
+    "_postman_id": "c1f7b920-802b-42fa-9087-readventure001",
+    "description": "Complete End-to-End Postman Collection for testing Signup, Signin, Signout, Profile, Forgot Password, and Reset Password flows in Readventure.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "testEmail",
+      "value": "alex@readventure.com",
+      "type": "string"
+    },
+    {
+      "key": "originalPassword",
+      "value": "Password123!",
+      "type": "string"
+    },
+    {
+      "key": "newPassword",
+      "value": "NewSecret2026!",
+      "type": "string"
+    },
+    {
+      "key": "resetToken",
+      "value": "paste_reset_token_from_email_here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Verify database and server health"
+      }
+    },
+    {
+      "name": "2. Signup (Create Account)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Alex Johnson\",\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{originalPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/signup",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "signup"]
+        },
+        "description": "Registers a new user and automatically stores the HttpOnly session cookie in Postman"
+      }
+    },
+    {
+      "name": "3. Get Profile (Protected)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "me"]
+        },
+        "description": "Fetches current user profile using the stored cookie from signup or signin"
+      }
+    },
+    {
+      "name": "4. Signout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/signout",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "signout"]
+        },
+        "description": "Clears the authentication cookie"
+      }
+    },
+    {
+      "name": "5. Signin (Original Password)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{originalPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/signin",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "signin"]
+        },
+        "description": "Signs in with original credentials and receives new cookie"
+      }
+    },
+    {
+      "name": "6. Forgot Password (Request Link)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/forgot-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "forgot-password"]
+        },
+        "description": "Requests a password reset link. Look at your server console or the previewUrl in response to view the email!"
+      }
+    },
+    {
+      "name": "7. Reset Password (Submit Token)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/reset-password",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "reset-password"]
+        },
+        "description": "Resets password using the token extracted from the email link"
+      }
+    },
+    {
+      "name": "8. Verify Old Password Fails (Expect 401)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{originalPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/signin",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "signin"]
+        },
+        "description": "Verifies that signing in with the old password fails with 401 Unauthorized"
+      }
+    },
+    {
+      "name": "9. Signin with NEW Password (Expect 200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{newPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/signin",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "signin"]
+        },
+        "description": "Verifies that signing in with the new password succeeds"
+      }
+    },
+    {
+      "name": "10. Verify Profile with New Session",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "me"]
+        },
+        "description": "Fetches profile using newly issued session cookie"
+      }
+    }
+  ]
+}
