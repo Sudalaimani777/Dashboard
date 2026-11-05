@@ -1,3 +1,5 @@
+import axios, { isAxiosError } from 'axios';
+import type { AxiosInstance } from 'axios';
 import type {
   ApiResponse,
   AuthResponseData,
@@ -8,67 +10,67 @@ import type {
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+export const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  // Automatically include and receive HttpOnly cookies
+  withCredentials: true,
+});
+
 class AuthApiService {
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const defaultHeaders: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-
-    const config: RequestInit = {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-      // Include cookies so HttpOnly session cookie is saved & sent automatically
-      credentials: 'include',
-    };
-
-    try {
-      const response = await fetch(url, config);
-      const data: ApiResponse<T> = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'An unexpected authentication error occurred.');
-      }
-
-      return data;
-    } catch (err) {
-      if (err instanceof Error) {
-        throw err;
-      }
-      throw new Error('Network error. Unable to reach authentication server.');
+  private handleError(err: unknown, defaultMessage: string): never {
+    if (isAxiosError(err)) {
+      const responseData = err.response?.data as ApiResponse | undefined;
+      const message = responseData?.message || err.message || defaultMessage;
+      throw new Error(message);
     }
+    if (err instanceof Error) {
+      throw err;
+    }
+    throw new Error(defaultMessage);
   }
 
   async signup(credentials: RegisterCredentials): Promise<User> {
-    const res = await this.request<AuthResponseData>('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    return res.data.user;
+    try {
+      const res = await apiClient.post<ApiResponse<AuthResponseData>>(
+        '/auth/signup',
+        credentials
+      );
+      return res.data.data.user;
+    } catch (err) {
+      this.handleError(err, 'Failed to create account.');
+    }
   }
 
   async signin(credentials: LoginCredentials): Promise<User> {
-    const res = await this.request<AuthResponseData>('/auth/signin', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    return res.data.user;
+    try {
+      const res = await apiClient.post<ApiResponse<AuthResponseData>>(
+        '/auth/signin',
+        credentials
+      );
+      return res.data.data.user;
+    } catch (err) {
+      this.handleError(err, 'Failed to sign in.');
+    }
   }
 
   async getProfile(): Promise<User> {
-    const res = await this.request<{ user: User }>('/auth/me', {
-      method: 'GET',
-    });
-    return res.data.user;
+    try {
+      const res = await apiClient.get<ApiResponse<{ user: User }>>('/auth/me');
+      return res.data.data.user;
+    } catch (err) {
+      this.handleError(err, 'Failed to fetch user profile.');
+    }
   }
 
   async signout(): Promise<void> {
-    await this.request<null>('/auth/signout', {
-      method: 'POST',
-    });
+    try {
+      await apiClient.post<ApiResponse<null>>('/auth/signout');
+    } catch (err) {
+      this.handleError(err, 'Failed to sign out.');
+    }
   }
 }
 
