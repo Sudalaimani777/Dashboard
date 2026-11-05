@@ -8,6 +8,8 @@ const router = Router();
 router.post('/signup', authController.signup);
 router.post('/signin', authController.signin);
 router.post('/signout', authController.signout);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
 // Protected routes
 router.get('/me', requireAuth, authController.me);

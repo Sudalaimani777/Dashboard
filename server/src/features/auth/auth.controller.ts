@@ -21,7 +21,6 @@ export class AuthController {
       const { name, email, password } = req.body;
       const result = await this.service.signup({ name, email, password });
 
-      // Set HttpOnly cookie
       res.cookie(COOKIE_NAME, result.token, getCookieOptions());
 
       return sendSuccess(res, result, 'User registered successfully', 201);
@@ -37,7 +36,6 @@ export class AuthController {
       const { email, password } = req.body;
       const result = await this.service.signin({ email, password });
 
-      // Set HttpOnly cookie
       res.cookie(COOKIE_NAME, result.token, getCookieOptions());
 
       return sendSuccess(res, result, 'Signed in successfully', 200);
@@ -66,6 +64,31 @@ export class AuthController {
       return sendSuccess(res, { user }, 'Profile retrieved successfully', 200);
     } catch (err) {
       return sendError(res, (err as Error).message, 404);
+    }
+  };
+
+  forgotPassword = async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      const result = await this.service.forgotPassword({ email });
+      return sendSuccess(
+        res,
+        result.previewUrl ? { previewUrl: result.previewUrl } : null,
+        result.message,
+        200
+      );
+    } catch (err) {
+      return sendError(res, (err as Error).message, 400);
+    }
+  };
+
+  resetPassword = async (req: Request, res: Response) => {
+    try {
+      const { token, newPassword } = req.body;
+      const result = await this.service.resetPassword({ token, newPassword });
+      return sendSuccess(res, null, result.message, 200);
+    } catch (err) {
+      return sendError(res, (err as Error).message, 400);
     }
   };
 }
