@@ -61,8 +61,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAuthenticating(true);
     setAuthError(null);
     try {
-      const authenticatedUser = await authApi.signup(credentials);
-      setUser(authenticatedUser);
+      await authApi.signup(credentials);
+      // Registration creates the account without establishing an active session.
+      // The user must explicitly sign in on /signin with their credentials.
     } catch (err) {
       const message = (err as Error).message || 'Registration failed. Please try again.';
       setAuthError(message);

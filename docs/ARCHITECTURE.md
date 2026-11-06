@@ -41,6 +41,13 @@ flowchart LR
 
 The system utilizes an **HttpOnly Cookie** architecture for primary session management, with support for Bearer tokens for headless or API integrations.
 
+### Registration & Login Lifecycle
+
+To enforce intentional authentication and prevent unverified auto-logins, Readventure separates account creation (`/signup`) from session establishment (`/signin`):
+1. **Visitor Registration**: Creating an account registers the user record and password hash in PostgreSQL without issuing a session cookie.
+2. **Seamless Navigation Hand-off**: The client redirects the user to `/signin` with route state (`registeredEmail` and a calm confirmation notice), pre-filling their email.
+3. **Explicit Authentication**: The user enters their credentials to authenticate, receiving an `HttpOnly` session cookie before accessing the protected `/dashboard`.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -49,7 +56,17 @@ sequenceDiagram
     participant Server as Express Server (Port 5000)
     participant DB as PostgreSQL (Port 5432)
 
-    User->>Client: Enters credentials & submits /signin
+    Note over User, DB: Phase 1: Account Registration (No Session Issued)
+    User->>Client: Enters name, email, password & submits /signup
+    Client->>Server: POST /api/auth/signup { name, email, password }
+    Server->>Server: Validate schema (Zod) & hash password with bcrypt (10 rounds)
+    Server->>DB: INSERT INTO users (name, email, password_hash)
+    DB-->>Server: User record created
+    Server-->>Client: 201 Created { user } (NO session cookie)
+    Client->>Client: Redirects to /signin (state: pre-fill email + success banner)
+
+    Note over User, DB: Phase 2: Explicit Authentication
+    User->>Client: Enters password on /signin & submits
     Client->>Server: POST /api/auth/signin { email, password }
     Server->>DB: Query user by email (idx_users_email)
     DB-->>Server: Return user row & password_hash
@@ -63,9 +80,10 @@ sequenceDiagram
 ```
 
 ### Key Security Invariants
-1. **XSS Mitigation**: The access JWT is stored in an `HttpOnly` cookie. Malicious scripts running in the browser cannot read or exfiltrate the token.
-2. **CSRF Protection**: Cookies are configured with `SameSite=Lax`. Cross-origin state-changing POST requests do not attach the cookie by default.
-3. **Password Security**: Passwords are salted and hashed using `bcryptjs` with 10 salt rounds before storage. Plaintext passwords never touch logs or databases.
+1. **Separation of Registration & Session**: Account registration does not issue ambient authentication credentials. Users must verify knowledge of credentials at sign-in.
+2. **XSS Mitigation**: The access JWT is stored in an `HttpOnly` cookie. Malicious scripts running in the browser cannot read or exfiltrate the token.
+3. **CSRF Protection**: Cookies are configured with `SameSite=Lax`. Cross-origin state-changing POST requests do not attach the cookie by default.
+4. **Password Security**: Passwords are salted and hashed using `bcryptjs` with 10 salt rounds before storage. Plaintext passwords never touch logs or databases.
 
 ---
 
