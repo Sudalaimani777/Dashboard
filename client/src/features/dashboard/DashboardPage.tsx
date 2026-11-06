@@ -1,78 +1,121 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/hooks/useAuth';
-import { Button } from '../../shared/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/card';
+import type { BookItem } from './types/dashboard.types';
+import {
+  DashboardTopbar,
+  LogPagesModal,
+  MarginaliaQuoteCard,
+  NowReadingCard,
+  OnDeckBookshelf,
+  ReaderCadenceStats,
+} from './components';
 
 export const DashboardPage: React.FC = () => {
   const { user, signout } = useAuth();
   const navigate = useNavigate();
+
+  // Navigation tab state
+  const [activeTab, setActiveTab] = useState<'library' | 'goal' | 'notes'>('library');
+
+  // Active reading state
+  const [currentPage, setCurrentPage] = useState(184);
+  const totalPages = 487;
+  const [totalAnnualPages, setTotalAnnualPages] = useState(4320);
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+
+  // Curated bookshelf collection
+  const bookshelf: BookItem[] = [
+    {
+      id: '1',
+      title: 'Piranesi',
+      author: 'Susanna Clarke',
+      tag: 'Up next',
+      isFinished: false,
+      coverGradient: 'from-[#2F3E46] via-[#354F52] to-[#1A2629]',
+    },
+    {
+      id: '2',
+      title: 'A Gentleman in Moscow',
+      author: 'Amor Towles',
+      tag: 'Finished ★★★★★',
+      isFinished: true,
+      coverGradient: 'from-[#5C241C] via-[#3D140E] to-[#240B07]',
+    },
+    {
+      id: '3',
+      title: 'Klara and the Sun',
+      author: 'Kazuo Ishiguro',
+      tag: 'Finished ★★★★★',
+      isFinished: true,
+      coverGradient: 'from-[#BD4B32] via-[#8C331E] to-[#591C0E]',
+    },
+  ];
 
   const handleSignout = async () => {
     await signout();
     navigate('/signin');
   };
 
-  const formattedDate = user?.created_at
-    ? new Date(user.created_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : 'Recent';
+  const handleSaveLoggedPages = (pages: number) => {
+    setCurrentPage((prev) => Math.min(prev + pages, totalPages));
+    setTotalAnnualPages((prev) => prev + pages);
+  };
 
   return (
-    <div className="min-h-screen bg-[#F7F4EE] flex flex-col">
-      {/* Dashboard Topbar */}
-      <header className="w-full border-b border-[#E8DFD3] bg-[#FFFFFF]">
-        <div className="max-w-6xl mx-auto px-6 h-18 flex items-center justify-between">
-          <div className="text-xl font-bold tracking-tight text-[#2B231D]">
-            Readventure
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-[#756F68] hidden sm:inline">
-              {user?.email}
-            </span>
-            <Button variant="outline" size="sm" onClick={handleSignout}>
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F7F4EE] flex flex-col text-[#2B231D] antialiased">
+      {/* Topbar */}
+      <DashboardTopbar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        userName={user?.name}
+        userEmail={user?.email}
+        onSignout={handleSignout}
+      />
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12 w-full flex-1 space-y-6">
-        <Card className="bg-[#FFFFFF] border-[#E8DFD3] p-6 rounded-2xl shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-2xl text-[#2B231D]">
-              Welcome back, {user?.name || 'Reader'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-[#756F68]">
-              <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E8DFD3]">
-                <div className="text-xs font-semibold uppercase text-[#996735]">
-                  Email Address
-                </div>
-                <div className="text-[#2B231D] font-medium mt-1">{user?.email}</div>
-              </div>
-              <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E8DFD3]">
-                <div className="text-xs font-semibold uppercase text-[#996735]">
-                  Member Since
-                </div>
-                <div className="text-[#2B231D] font-medium mt-1">{formattedDate}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Main Dashboard Layout */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-7 sm:py-9 w-full flex-1 space-y-5">
+        {/* Active Read Card */}
+        <NowReadingCard
+          title="The Shadow of the Wind"
+          author="Carlos Ruiz Zafón"
+          currentPage={currentPage}
+          totalPages={totalPages}
+          estimatedFinishDays={4}
+          dailyPace={32}
+          onOpenLogModal={() => setIsLogModalOpen(true)}
+        />
 
-        <Card className="bg-[#FFFFFF] border-[#E8DFD3] p-6 rounded-2xl shadow-sm">
-          <h4 className="text-base font-bold text-[#2B231D]">Your Personal Library</h4>
-          <p className="text-sm text-[#756F68] mt-1.5 leading-relaxed">
-            Your reading library space is ready. Day 3 will introduce full account registration and password recovery.
-          </p>
-        </Card>
+        {/* Reader Cadence Stats (Clean Editorial Ribbon) */}
+        <ReaderCadenceStats
+          annualGoalRead={14}
+          annualGoalTotal={24}
+          streakDays={19}
+          totalAnnualPages={totalAnnualPages}
+        />
+
+        {/* Bottom Section: Asymmetric 60/40 Split (Bookshelf + Marginalia) */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div className="lg:col-span-7">
+            <OnDeckBookshelf books={bookshelf} />
+          </div>
+          <div className="lg:col-span-5 flex flex-col">
+            <MarginaliaQuoteCard
+              quote="A reader lives a thousand lives before he dies... The man who never reads lives only one."
+              author="George R.R. Martin"
+            />
+          </div>
+        </section>
       </main>
+
+      {/* Log Pages Modal */}
+      <LogPagesModal
+        isOpen={isLogModalOpen}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onClose={() => setIsLogModalOpen(false)}
+        onSave={handleSaveLoggedPages}
+      />
     </div>
   );
 };

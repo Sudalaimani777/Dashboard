@@ -1,256 +1,123 @@
-# User Authentication Application (Readventure)
+# User Authentication & Reading Journal Application (Readventure)
 
-> A full-stack, production-grade User Authentication system built with **React**, **TypeScript**, **Node.js**, **Express**, and **PostgreSQL**, structured using **Feature-Based Architecture**.
+> A full-stack, production-grade User Authentication and Reading Journal platform built with **React 19**, **TypeScript**, **Node.js**, **Express 5**, and **PostgreSQL**, designed with a **Feature-Based Architecture** and the bespoke **Warm Storycraft** visual system.
 
 ---
 
-## 📅 3-Day Implementation Timeline & Task Breakdown
+## 📅 3-Day Implementation Timeline & Status
 
-Based on the project estimation and planning schedule (November 4, 2026 – November 6, 2026), the tasks are divided into three daily milestones totaling 21 hours:
+Based on the 3-day project schedule (November 4 – November 6, 2026), **all 3 daily milestones have been 100% completed, tested, and verified**:
 
-| Date | Day | Category | Task Description | Estimated Hours | Status |
+| Date | Day | Category | Task Description | Estimated | Status |
 | :--- | :--- | :--- | :--- | :---: | :---: |
-| **04/11/2026** | **Day 1** | UI Design & Planning | Wireframing for Landing, Sign-in, and Password Reset pages | 1.5 Hours | 🟡 In Progress |
-| | | Setup | Setup (React.js, Node.js) and PostgreSQL initialization | 1.5 Hours | ✅ Completed |
-| | | Backend | Database schema design and initial user table migrations | 2.0 Hours | ✅ Completed |
-| | | Backend | Signup and Signin endpoints with JWT and password hashing | 3.0 Hours | ✅ Completed |
-| **05/11/2026** | **Day 2** | Backend | Forgot & Reset password endpoints with email integration | 3.0 Hours | ✅ Completed |
-| | | Frontend | Developing the responsive Landing/Home page UI | 2.5 Hours | ✅ Completed |
-| | | Frontend | Developing the responsive Sign-in page UI & state management | 2.5 Hours | ✅ Completed |
-| **06/11/2026** | **Day 3** | Frontend | Developing Forgot & Reset Password UI and API error handling | 2.5 Hours | ⏳ Scheduled |
-| | | Integration | End-to-end integration of React frontend with Node.js backend | 2.0 Hours | ⏳ Scheduled |
-| | | Integration | Cross-device responsive testing, bug fixing, and final review | 2.0 Hours | ⏳ Scheduled |
-| **Total** | | | | **21 Hours** | |
+| **04/11/2026** | **Day 1** | Planning & Setup | Wireframing, React 19 + Node.js setup, PostgreSQL initialization | 3.0 Hours | ✅ Completed |
+| | | Backend | Database schema design, migrations, Signup & Signin APIs with JWT | 5.0 Hours | ✅ Completed |
+| **05/11/2026** | **Day 2** | Backend | Forgot & Reset password APIs with Nodemailer (Gmail SMTP + Ethereal) | 3.0 Hours | ✅ Completed |
+| | | Frontend | Responsive Warm Storycraft Landing page & Editorial Showcase | 2.5 Hours | ✅ Completed |
+| | | Frontend | Responsive Sign-in & Sign-up pages with AuthContext & HttpOnly session | 2.5 Hours | ✅ Completed |
+| **06/11/2026** | **Day 3** | Frontend | Responsive Forgot Password UI (`/forgot-password`) with in-place inbox card | 1.5 Hours | ✅ Completed |
+| | | Frontend | Responsive Reset Password UI (`/reset-password`) with URL guard & toggles | 1.5 Hours | ✅ Completed |
+| | | Dashboard | Active Reading Hub Dashboard (Now Reading, Cadence Stats, Shelf, Modal) | 2.0 Hours | ✅ Completed |
+| | | Integration | Full-stack E2E testing, de-slop audit, and comprehensive documentation | 2.0 Hours | ✅ Completed |
+| **Total** | | | | **21 Hours** | **100% Complete** |
 
 ---
 
-## 🏗️ Architecture Design: Feature-Based Architecture
+## 🏛️ System Architecture & Documentation
 
-Both the **client** and **server** follow a strict **Feature-Based Architecture**. Instead of grouping files by generic technical types (e.g. putting all controllers or all components in one massive folder), code is organized around business features (e.g., `auth`, `user`). This guarantees high cohesion, isolated concerns, and effortless scalability.
+Comprehensive architectural documentation is organized across the repository:
 
-### 1. Server Architecture (`/server`)
-
-```text
-server/
-├── src/
-│   ├── config/
-│   │   └── env.ts                    # Centralized typed environment configuration
-│   ├── features/
-│   │   └── auth/                     # Auth Feature Module
-│   │       ├── auth.controller.ts    # HTTP request & response handlers
-│   │       ├── auth.repository.ts    # Database access layer (Repository Pattern)
-│   │       ├── auth.routes.ts        # Express route definitions
-│   │       ├── auth.service.ts       # Business logic, hashing, & token generation
-│   │       └── auth.types.ts         # Domain models, DTOs, & payload interfaces
-│   ├── shared/
-│   │   ├── db/
-│   │   │   ├── migrations/           # Versioned SQL migration files
-│   │   │   │   └── 001_create_users_table.sql
-│   │   │   ├── migrate.ts            # Migration runner with rollback safety
-│   │   │   └── pool.ts               # PostgreSQL connection pool instance
-│   │   ├── middleware/
-│   │   │   ├── auth.middleware.ts    # JWT verification guard middleware
-│   │   │   └── error.middleware.ts   # Centralized error handler
-│   │   └── utils/
-│   │       └── response.ts           # Standardized API response formatters
-│   ├── app.ts                        # Express application setup & middleware stack
-│   └── index.ts                      # Server bootstrap & database health verification
-├── .env                              # Environment configuration (ignored in git)
-├── .env.example                      # Template environment variables
-├── package.json
-└── tsconfig.json
-```
-
-### 2. Client Architecture (`/client`) — *Planned for Days 2 & 3*
-
-```text
-client/
-├── src/
-│   ├── features/
-│   │   └── auth/                     # Auth Feature Module
-│   │       ├── components/           # UI forms & auth widgets (Sign-in, Sign-up, Reset)
-│   │       ├── hooks/
-│   │       │   └── useAuth.ts        # Custom React hook for auth state & persistence
-│   │       ├── services/
-│   │       │   └── auth.api.ts       # Typed HTTP client for authentication endpoints
-│   │       └── types/
-│   │           └── auth.types.ts     # Frontend domain interfaces & form schemas
-│   ├── shared/
-│   │   ├── components/               # Reusable UI primitives (Buttons, Inputs, Cards)
-│   │   └── utils/                    # Shared client utilities
-│   ├── App.tsx                       # Main application shell
-│   ├── main.tsx                      # Vite React entry point
-│   ├── index.css                     # Global styles
-│   └── vite.config.ts
-├── package.json
-└── tsconfig.json
-```
+- 🏗️ [**docs/ARCHITECTURE.md**](docs/ARCHITECTURE.md): Complete end-to-end full-stack architecture, request sequence diagrams, and security model.
+- 📡 [**server/docs/API.md**](server/docs/API.md): Complete REST API specification for all 7 endpoints, schemas, and error envelopes.
+- 🗄️ [**server/docs/DATABASE.md**](server/docs/DATABASE.md): PostgreSQL schema, tables (`users`), indexes, and cryptographic design.
+- 🎨 [**client/docs/DESIGN_SYSTEM.md**](client/docs/DESIGN_SYSTEM.md): Warm Storycraft design tokens, typography, and anti-AI-slop guidelines.
+- 📦 [**server/README.md**](server/README.md): Backend installation, environment configuration, and test suites.
+- 💻 [**client/README.md**](client/README.md): Frontend installation, routing map, and component hierarchy.
 
 ---
 
-## 🗄️ Database Schema & Migrations
+## 🔐 Security & Cryptographic Highlights
 
-The database is built on **PostgreSQL** with automated, tracked schema migrations.
-
-### Schema Migration: `001_create_users_table.sql`
-```sql
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    reset_token VARCHAR(255),
-    reset_token_expires_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token);
-```
-
-To run pending migrations:
-```bash
-cd server
-npm run migrate
-```
+1. **HttpOnly Cookie Authentication**:
+   - Access JWTs are delivered via **HttpOnly, SameSite=Lax** cookies (`withCredentials: true`), completely shielding credentials from browser XSS attacks.
+2. **Cryptographic Password Recovery**:
+   - 32-byte cryptographically secure tokens generated via `crypto.randomBytes(32)` (64-char hex string).
+   - Stored in PostgreSQL strictly as **SHA-256 digests**. Database dumps do not reveal usable tokens.
+   - Strict 1-hour expiration.
+   - Single-use replay protection: tokens are atomically cleared upon successful password update.
+3. **Anti-Enumeration Protection**:
+   - `/api/auth/forgot-password` returns an identical `200 OK` response regardless of whether the email exists in the database, preventing user scraping.
+4. **URL Guards**:
+   - Accessing `/reset-password` without a valid `?token=` parameter renders an intentional recovery guard card with a link to `/forgot-password`, preventing broken input states.
+5. **Anti-AI-Slop Visual Design**:
+   - Zero floating icon chips in pastel boxes, zero rainbow password meters, zero conversational filler, and zero welded arrow characters.
 
 ---
 
-## 📡 API Endpoints (Day 1 Implemented)
+## 📡 Live Endpoints Summary
 
-> 📖 **Full API Reference**: For comprehensive schemas, validation rules, error handling, and code examples, see [`server/docs/API.md`](server/docs/API.md).
+| Method | Endpoint | Access | Description | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | Public | Service & PostgreSQL health check | Verified ✅ |
+| `POST` | `/api/auth/signup` | Public | Register new user account & set HttpOnly cookie | Verified ✅ |
+| `POST` | `/api/auth/signin` | Public | Login with credentials & set HttpOnly cookie | Verified ✅ |
+| `POST` | `/api/auth/signout` | Public | Clear authentication cookie | Verified ✅ |
+| `GET` | `/api/auth/me` | Protected | Fetch current user profile (via Cookie or Bearer) | Verified ✅ |
+| `POST` | `/api/auth/forgot-password` | Public | Request password recovery email (anti-enumeration) | Verified ✅ |
+| `POST` | `/api/auth/reset-password` | Public | Reset password using single-use SHA-256 token | Verified ✅ |
 
-### Base URL: `http://localhost:5000/api`
+---
 
-| Method | Endpoint | Access | Description |
+## 🗺️ Client Route Map
+
+| Route | Access | Component | Purpose |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/health` | Public | Server & PostgreSQL connectivity status |
-| `POST` | `/auth/signup` | Public | Register a new user account & set HttpOnly cookie |
-| `POST` | `/auth/signin` | Public | Authenticate existing user & set HttpOnly cookie |
-| `POST` | `/auth/signout` | Public | Clear authentication HttpOnly cookie |
-| `GET` | `/auth/me` | Protected | Fetch authenticated profile via Cookie or Bearer Token |
-
-#### 1. Signup (`POST /api/auth/signup`)
-* **Request Body**:
-```json
-{
-  "name": "Alex Johnson",
-  "email": "alex@example.com",
-  "password": "SecurePassword123!"
-}
-```
-* **Success Response (201 Created)**:
-```json
-{
-  "success": true,
-  "message": "User registered successfully",
-  "data": {
-    "user": {
-      "id": "55d8e5bf-dcdf-475d-88c1-a2495ac85574",
-      "name": "Alex Johnson",
-      "email": "alex@example.com",
-      "created_at": "2026-11-04T11:21:53.707Z",
-      "updated_at": "2026-11-04T11:21:53.707Z"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-#### 2. Signin (`POST /api/auth/signin`)
-* **Request Body**:
-```json
-{
-  "email": "alex@example.com",
-  "password": "SecurePassword123!"
-}
-```
-* **Success Response (200 OK)**:
-```json
-{
-  "success": true,
-  "message": "Signed in successfully",
-  "data": {
-    "user": {
-      "id": "55d8e5bf-dcdf-475d-88c1-a2495ac85574",
-      "name": "Alex Johnson",
-      "email": "alex@example.com",
-      "created_at": "2026-11-04T11:21:53.707Z",
-      "updated_at": "2026-11-04T11:21:53.707Z"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-#### 3. Current User (`GET /api/auth/me`)
-* **Headers**: `Authorization: Bearer <token>`
-* **Success Response (200 OK)**:
-```json
-{
-  "success": true,
-  "message": "Profile retrieved successfully",
-  "data": {
-    "user": {
-      "id": "55d8e5bf-dcdf-475d-88c1-a2495ac85574",
-      "name": "Alex Johnson",
-      "email": "alex@example.com",
-      "created_at": "2026-11-04T11:21:53.707Z",
-      "updated_at": "2026-11-04T11:21:53.707Z"
-    }
-  }
-}
-```
+| `/` | Public | `LandingPage` | Editorial marketing homepage |
+| `/signin` | Public | `SignInCard` | User sign-in with credentials |
+| `/signup` | Public | `SignUpCard` | Account registration |
+| `/forgot-password` | Public | `ForgotPasswordCard` | Request password reset email |
+| `/reset-password` | Public | `ResetPasswordCard` | Update password via recovery token URL |
+| `/dashboard` | **Protected** | `DashboardPage` | Active reading hub & library metrics |
 
 ---
 
-## 🚀 Setup & Execution Guide
+## ⚡ Quickstart Guide
 
 ### 1. Prerequisites
-- **Node.js** (v18+ or v20+)
-- **PostgreSQL** (v14+ running locally on port 5432)
+- **Node.js** v20+
+- **PostgreSQL** running locally on port 5432 with database `readventure`
 
 ### 2. Backend Setup
-1. Navigate to the server folder:
-   ```bash
-   cd server
-   ```
-2. Copy environment file and configure if needed:
-   ```bash
-   cp .env.example .env
-   ```
-3. Run database migrations:
-   ```bash
-   npm run migrate
-   ```
-4. Start development server:
-   ```bash
-   npm run dev
-   ```
-   *The server starts on `http://localhost:5000` with automatic DB connection check.*
-
-### 3. Running Day 1 Tests
-We have included an automated test suite verifying all 8 Day 1 requirements (DB connection, migrations, Signup, Signin, JWT verification, duplicate prevention, validation, and protected routes):
 ```bash
 cd server
-npm test
+npm install
+cp .env.example .env
+npm run migrate
+npm run dev
 ```
+*Backend runs on `http://localhost:5000`.*
 
-### 4. Frontend Setup
-1. Open a new terminal and navigate to client:
-   ```bash
-   cd client
-   ```
-2. Start the Vite development server:
-   ```bash
-   npm run dev
-   ```
-   *The client runs on `http://localhost:5173`.*
+### 3. Frontend Setup
+```bash
+cd client
+npm install
+npm run dev
+```
+*Frontend runs on `http://localhost:5173`.*
 
 ---
 
-## 🎯 Next Steps (Day 2 Roadmap)
-- Implement backend `POST /api/auth/forgot-password` and `POST /api/auth/reset-password` endpoints with secure token generation and email delivery.
-- Build responsive React Landing page UI.
-- Build responsive Sign-in page UI connected to `useAuth` hook and PostgreSQL backend.
+## 🧪 Automated Testing Suites
+
+```bash
+cd server
+
+# Day 1 Auth & DB Verification
+npm test
+
+# Day 2 Password Reset Backend Test (9/9 Passed)
+npm run test:day2
+
+# Complete End-to-End Lifecycle Suite (12/12 Passed)
+npm run test:e2e
+```

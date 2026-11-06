@@ -138,14 +138,12 @@ export const SignInCard: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-end">
-              <span
-                onClick={() =>
-                  alert('Password recovery is scheduled for Day 3 tomorrow.')
-                }
+              <Link
+                to="/forgot-password"
                 className="text-xs text-[#8A582B] hover:text-[#754820] cursor-pointer transition-colors"
               >
                 Forgot password?
-              </span>
+              </Link>
             </div>
 
             <Button

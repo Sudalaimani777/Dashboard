@@ -17,6 +17,15 @@ export interface RegisterCredentials {
   password: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
