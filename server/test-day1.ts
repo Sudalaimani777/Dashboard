@@ -53,8 +53,8 @@ async function runTests() {
     return res.status === 200 && json.database === 'connected';
   });
 
-  // Test 2: User Signup with HttpOnly Cookie
-  await assertTest('POST /api/auth/signup -> Register user & sets HttpOnly cookie', async () => {
+  // Test 2: User Signup (Registers user without auto-session)
+  await assertTest('POST /api/auth/signup -> Register user account (no auto-session)', async () => {
     const res = await fetch(`${baseUrl}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -64,22 +64,15 @@ async function runTests() {
         password: testPassword,
       }),
     });
-    const setCookie = res.headers.get('set-cookie') || '';
+    const setCookie = res.headers.get('set-cookie');
     const json = await res.json();
 
-    if (
+    return (
       res.status === 201 &&
-      json.success &&
-      json.data.token &&
+      json.success === true &&
       json.data.user.email === testEmail &&
-      setCookie.includes('token=') &&
-      setCookie.toLowerCase().includes('httponly')
-    ) {
-      authToken = json.data.token;
-      cookieHeader = setCookie.split(';')[0];
-      return true;
-    }
-    return false;
+      !setCookie // Verifies no session cookie was automatically issued
+    );
   });
 
   // Test 3: Duplicate Signup prevention
@@ -122,13 +115,18 @@ async function runTests() {
     });
     const setCookie = res.headers.get('set-cookie') || '';
     const json = await res.json();
-    return (
+    if (
       res.status === 200 &&
       json.success &&
       !!json.data.token &&
       setCookie.includes('token=') &&
       setCookie.toLowerCase().includes('httponly')
-    );
+    ) {
+      authToken = json.data.token;
+      cookieHeader = setCookie.split(';')[0];
+      return true;
+    }
+    return false;
   });
 
   // Test 6: Signin with invalid password

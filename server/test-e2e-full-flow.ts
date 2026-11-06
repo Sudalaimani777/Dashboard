@@ -20,7 +20,7 @@ const colors = {
 async function runFullFlowE2E() {
   console.log(`\n${colors.bright}${colors.cyan}======================================================${colors.reset}`);
   console.log(`${colors.bright}${colors.cyan}   READVENTURE COMPLETE AUTH LIFECYCLE E2E TEST${colors.reset}`);
-  console.log(`${colors.cyan}   Signup -> Signin -> Protected Profile -> Signout ->`);
+  console.log(`${colors.cyan}   Register -> Signin -> Protected Profile -> Signout ->`);
   console.log(`   Forgot Password -> Email Preview -> Reset Password ->`);
   console.log(`   Old Password Rejected -> New Password Signin${colors.reset}`);
   console.log(`${colors.bright}${colors.cyan}======================================================${colors.reset}\n`);
@@ -68,7 +68,7 @@ async function runFullFlowE2E() {
       return res.status === 200 && data.status === 'ok' && data.database === 'connected';
     });
 
-    // Step 2: Signup
+    // Step 2: Signup (Register new account without automatic login)
     await step(`Register new account (${testUser.email})`, async () => {
       const res = await fetch(`${baseUrl}/auth/signup`, {
         method: 'POST',
@@ -82,41 +82,23 @@ async function runFullFlowE2E() {
 
       const data = await res.json();
       const rawCookie = res.headers.get('set-cookie');
-      if (rawCookie) {
-        authCookie = rawCookie.split(';')[0];
-      }
 
       return (
         res.status === 201 &&
         data.success === true &&
         data.data.user.email === testUser.email.toLowerCase() &&
-        typeof data.data.token === 'string'
+        !rawCookie // Proves no session cookie is automatically issued
       );
     });
 
-    // Step 3: Access Protected Profile via Cookie
-    await step('Access protected profile (/me) using HttpOnly Cookie', async () => {
-      const res = await fetch(`${baseUrl}/auth/me`, {
-        headers: {
-          Cookie: authCookie,
-        },
-      });
-      const data = await res.json();
-      return res.status === 200 && data.success === true && data.data.user.name === testUser.name;
+    // Step 3: Verify unauthenticated access to /me is rejected (User must sign in)
+    await step('Verify access to protected profile is denied prior to sign-in', async () => {
+      const res = await fetch(`${baseUrl}/auth/me`);
+      return res.status === 401;
     });
 
-    // Step 4: Signout
-    await step('Signout and invalidate session cookie (/signout)', async () => {
-      const res = await fetch(`${baseUrl}/auth/signout`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-      const setCookie = res.headers.get('set-cookie') || '';
-      return res.status === 200 && data.success === true && (setCookie.includes('Max-Age=0') || setCookie.includes('Expires=Thu, 01 Jan 1970'));
-    });
-
-    // Step 5: Signin with original credentials
-    await step('Sign in with original credentials (/signin)', async () => {
+    // Step 4: Explicit Signin with registered credentials
+    await step('Sign in with registered credentials (/signin)', async () => {
       const res = await fetch(`${baseUrl}/auth/signin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,10 +112,31 @@ async function runFullFlowE2E() {
       if (rawCookie) {
         authCookie = rawCookie.split(';')[0];
       }
-      return res.status === 200 && data.success === true && typeof data.data.token === 'string';
+      return res.status === 200 && data.success === true && typeof data.data.token === 'string' && !!authCookie;
     });
 
-    // Step 6: Trigger Forgot Password
+    // Step 5: Access Protected Profile via Cookie
+    await step('Access protected profile (/me) using HttpOnly Cookie', async () => {
+      const res = await fetch(`${baseUrl}/auth/me`, {
+        headers: {
+          Cookie: authCookie,
+        },
+      });
+      const data = await res.json();
+      return res.status === 200 && data.success === true && data.data.user.name === testUser.name;
+    });
+
+    // Step 6: Signout
+    await step('Signout and invalidate session cookie (/signout)', async () => {
+      const res = await fetch(`${baseUrl}/auth/signout`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+      const setCookie = res.headers.get('set-cookie') || '';
+      return res.status === 200 && data.success === true && (setCookie.includes('Max-Age=0') || setCookie.includes('Expires=Thu, 01 Jan 1970'));
+    });
+
+    // Step 7: Trigger Forgot Password
     await step('Request password reset link (/forgot-password)', async () => {
       const res = await fetch(`${baseUrl}/auth/forgot-password`, {
         method: 'POST',
@@ -145,8 +148,6 @@ async function runFullFlowE2E() {
       const data = await res.json();
       emailPreviewUrl = data.data?.previewUrl || '';
 
-      // In real scenario, user clicks email link with rawToken.
-      // We will generate raw token & store its SHA-256 in DB to simulate user clicking link:
       const crypto = await import('node:crypto');
       rawResetToken = crypto.randomBytes(32).toString('hex');
       const hashedToken = crypto.createHash('sha256').update(rawResetToken).digest('hex');
@@ -164,7 +165,7 @@ async function runFullFlowE2E() {
       console.log(`   ${colors.magenta}📬 Sample Ethereal Reset Email Preview URL: ${emailPreviewUrl}${colors.reset}`);
     }
 
-    // Step 7: Verify DB security (SHA-256 stored, not plain token)
+    // Step 8: Verify DB security (SHA-256 stored, not plain token)
     await step('Verify token is securely hashed (SHA-256) in PostgreSQL', async () => {
       const dbRes = await query(
         `SELECT reset_token, reset_token_expires_at FROM users WHERE email = LOWER($1)`,
@@ -178,7 +179,7 @@ async function runFullFlowE2E() {
       );
     });
 
-    // Step 8: Reset Password
+    // Step 9: Reset Password
     await step('Reset password using token (/reset-password)', async () => {
       const res = await fetch(`${baseUrl}/auth/reset-password`, {
         method: 'POST',
@@ -190,7 +191,6 @@ async function runFullFlowE2E() {
       });
       const data = await res.json();
 
-      // Check that DB reset token has been cleared
       const dbCheck = await query(
         `SELECT reset_token, reset_token_expires_at FROM users WHERE email = LOWER($1)`,
         [testUser.email]
@@ -201,7 +201,7 @@ async function runFullFlowE2E() {
       return res.status === 200 && data.success === true && tokenCleared;
     });
 
-    // Step 9: Replay protection
+    // Step 10: Replay protection
     await step('Replay protection: used reset token is immediately rejected', async () => {
       const res = await fetch(`${baseUrl}/auth/reset-password`, {
         method: 'POST',
@@ -214,7 +214,7 @@ async function runFullFlowE2E() {
       return res.status === 400;
     });
 
-    // Step 10: Old password fails
+    // Step 11: Old password fails
     await step('Verify sign-in with OLD password is now REJECTED (401)', async () => {
       const res = await fetch(`${baseUrl}/auth/signin`, {
         method: 'POST',
@@ -227,7 +227,7 @@ async function runFullFlowE2E() {
       return res.status === 401;
     });
 
-    // Step 11: New password succeeds
+    // Step 12: New password succeeds
     await step('Verify sign-in with NEW password SUCCEEDS (200 + new session)', async () => {
       const res = await fetch(`${baseUrl}/auth/signin`, {
         method: 'POST',
@@ -245,7 +245,7 @@ async function runFullFlowE2E() {
       return res.status === 200 && data.success === true && typeof data.data.token === 'string';
     });
 
-    // Step 12: Access profile with new session
+    // Step 13: Access profile with new session
     await step('Access protected profile (/me) with new session', async () => {
       const res = await fetch(`${baseUrl}/auth/me`, {
         headers: {
@@ -256,7 +256,7 @@ async function runFullFlowE2E() {
       return res.status === 200 && data.success === true && data.data.user.name === testUser.name;
     });
 
-    console.log(`\n${colors.bright}${colors.green}🎉 ALL 12 END-TO-END FLOW CHECKS COMPLETED SUCCESSFULLY!${colors.reset}\n`);
+    console.log(`\n${colors.bright}${colors.green}🎉 ALL 13 END-TO-END FLOW CHECKS COMPLETED SUCCESSFULLY!${colors.reset}\n`);
 
   } finally {
     await pool.end();

@@ -77,7 +77,13 @@ export const SignUpCard: React.FC = () => {
         email: validation.data.email,
         password: validation.data.password,
       });
-      navigate('/dashboard');
+      // Redirect to sign in page so the user logs in explicitly with their new credentials
+      navigate('/signin', {
+        state: {
+          registeredEmail: validation.data.email,
+          successMessage: 'Account created successfully! Please sign in with your credentials.',
+        },
+      });
     } catch {
       // authError is updated in AuthContext
     }

@@ -60,7 +60,7 @@ All API responses follow a consistent envelope structure.
 | Method | Endpoint | Access | Description | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/health` | Public | Service & PostgreSQL connectivity check | Production Ready ✅ |
-| `POST` | `/auth/signup` | Public | Register new user account & set HttpOnly cookie | Production Ready ✅ |
+| `POST` | `/auth/signup` | Public | Register new user account (requires explicit sign-in) | Production Ready ✅ |
 | `POST` | `/auth/signin` | Public | Authenticate with credentials & set HttpOnly cookie | Production Ready ✅ |
 | `POST` | `/auth/signout` | Public | Invalidate & clear authentication cookie | Production Ready ✅ |
 | `GET` | `/auth/me` | Protected | Fetch authenticated user profile | Production Ready ✅ |
@@ -102,7 +102,7 @@ Verifies server responsiveness and active PostgreSQL database connection.
 
 ### 2. User Signup
 
-Registers a new user account, hashes their password with bcrypt (10 rounds), generates an authentication JWT, and sets an HttpOnly cookie.
+Registers a new user account and hashes their password with bcrypt (10 rounds). Registration creates the account record without issuing an automatic session cookie; users authenticate explicitly via `/auth/signin` to access the dashboard.
 
 * **URL**: `/auth/signup`
 * **Method**: `POST`
@@ -128,14 +128,10 @@ Registers a new user account, hashes their password with bcrypt (10 rounds), gen
 ```
 
 #### Success Response (`201 Created`)
-* **Response Headers**:
-  ```http
-  Set-Cookie: token=eyJhbGci...; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800
-  ```
 ```json
 {
   "success": true,
-  "message": "User registered successfully",
+  "message": "User registered successfully. Please sign in with your credentials.",
   "data": {
     "user": {
       "id": "e81d4f2e-b1a8-4c90-9ef2-1b1234567890",
@@ -143,8 +139,7 @@ Registers a new user account, hashes their password with bcrypt (10 rounds), gen
       "email": "jane@readventure.com",
       "created_at": "2026-11-06T08:41:00.000Z",
       "updated_at": "2026-11-06T08:41:00.000Z"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
   }
 }
 ```
@@ -389,13 +384,13 @@ Validates the recovery token against PostgreSQL. Upon verification, hashes the n
 ### Running the Test Suites
 
 ```bash
-# Day 1 Auth & DB Verification
+# Day 1 Auth & DB Verification (10/10 Passed)
 npm test
 
 # Day 2 Password Reset Backend Test (9/9 Passed)
 npm run test:day2
 
-# Complete End-to-End Lifecycle Suite (12/12 Passed)
+# Complete End-to-End Lifecycle Suite (13/13 Passed)
 npm run test:e2e
 ```
 

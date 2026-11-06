@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert,
   AlertDescription,
@@ -19,10 +19,15 @@ import { signInSchema } from '../schemas/auth.schema';
 
 export const SignInCard: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signin, isAuthenticated, isAuthenticating, authError, clearAuthError } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const registeredEmail = (location.state as { registeredEmail?: string } | undefined)?.registeredEmail;
+  const initialSuccessMessage = (location.state as { successMessage?: string } | undefined)?.successMessage;
+
+  const [email, setEmail] = useState(registeredEmail || '');
   const [password, setPassword] = useState('');
+  const [successBanner, setSuccessBanner] = useState<string | null>(initialSuccessMessage || null);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
   React.useEffect(() => {
@@ -63,6 +68,7 @@ export const SignInCard: React.FC = () => {
       setFieldErrors((prev) => ({ ...prev, email: undefined }));
     }
     if (authError) clearAuthError();
+    if (successBanner) setSuccessBanner(null);
   };
 
   const handlePasswordChange = (val: string) => {
@@ -91,6 +97,12 @@ export const SignInCard: React.FC = () => {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {successBanner && (
+              <div className="rounded-xl border border-[#8A582B]/20 bg-[#FAF8F5] p-3.5 text-xs text-[#8A582B] font-medium leading-relaxed">
+                {successBanner}
+              </div>
+            )}
+
             {authError && (
               <Alert>
                 <AlertDescription>{authError}</AlertDescription>
@@ -108,7 +120,7 @@ export const SignInCard: React.FC = () => {
                 disabled={isAuthenticating}
                 autoComplete="email"
                 error={!!fieldErrors.email}
-                autoFocus
+                autoFocus={!registeredEmail}
                 required
               />
               {fieldErrors.email && (
@@ -128,6 +140,7 @@ export const SignInCard: React.FC = () => {
                 disabled={isAuthenticating}
                 autoComplete="current-password"
                 error={!!fieldErrors.password}
+                autoFocus={!!registeredEmail}
                 required
               />
               {fieldErrors.password && (
