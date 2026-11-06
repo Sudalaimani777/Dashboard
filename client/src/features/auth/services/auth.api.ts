@@ -72,6 +72,30 @@ class AuthApiService {
       this.handleError(err, 'Failed to sign out.');
     }
   }
+
+  async forgotPassword(email: string): Promise<string> {
+    try {
+      const res = await apiClient.post<ApiResponse<{ message: string; previewUrl?: string }>>(
+        '/auth/forgot-password',
+        { email }
+      );
+      return res.data.message;
+    } catch (err) {
+      this.handleError(err, 'Failed to request password reset link.');
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<string> {
+    try {
+      const res = await apiClient.post<ApiResponse<{ message: string }>>(
+        '/auth/reset-password',
+        { token, newPassword }
+      );
+      return res.data.message;
+    } catch (err) {
+      this.handleError(err, 'Failed to reset password. The link may have expired.');
+    }
+  }
 }
 
 export const authApi = new AuthApiService();

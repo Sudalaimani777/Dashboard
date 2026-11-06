@@ -13,6 +13,7 @@ client/.env
 dist/
 */dist/
 build/
+.ua
 
 # Logs
 *.log
