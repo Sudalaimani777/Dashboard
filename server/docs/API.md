@@ -1,129 +1,124 @@
-# Readventure Authentication API Documentation
+# TripFlow API Documentation
 
-Comprehensive API documentation for the **Readventure** User Authentication and Reading Journal backend service.
+Comprehensive REST API documentation for the **TripFlow** Corporate Travel & Expense Governance platform, including User Authentication, Two-Tier Travel Authorization, and Expense Reimbursement services.
 
 ---
 
-## 📌 Overview & Base URL
+## 📌 Overview & Base Configuration
 
 * **Base URL**: `http://localhost:5000/api`
 * **Protocol**: HTTP / JSON
-* **Authentication**: **HttpOnly Cookies** (`Cookie: token=...`) with Bearer Token fallback (`Authorization: Bearer <token>`)
+* **Authentication**: **HttpOnly Cookies** (`Cookie: token=...`) with optional Bearer Token fallback (`Authorization: Bearer <token>`)
 * **Default Port**: `5000` (Configurable via `PORT` in `.env`)
-* **Security Model**: 
-  - Passwords hashed with `bcryptjs` (salt rounds: 10)
-  - JWT access tokens signed with HMAC-SHA256 (expiration: 7 days)
-  - Password recovery tokens generated via `crypto.randomBytes(32)` (64-char hex string)
-  - Reset tokens stored in PostgreSQL as **SHA-256 digests** (expiration: 1 hour)
-  - Single-use replay protection (tokens immediately wiped upon consumption)
-  - Anti-enumeration protection on recovery endpoints
+* **Currency Standard**: All monetary calculations and representations are stored in **Indian Rupees (`INR`)** and formatted as `₹` with tabular numbers.
+* **Role Hierarchy**:
+  - `EMPLOYEE`: Can create, draft, submit, and resubmit travel requests & expenses.
+  - `MANAGER`: Tier 1 direct line authority. Audits itineraries and proofs, requests modifications, or approves & forwards to Admin.
+  - `ADMIN`: Tier 2 executive and finance authority. Audits budget impact, grants final clearance (`APPROVED`), settles payouts (`SETTLED`), or requests revisions.
 
 ---
 
-## 🔐 Standard Response Format
+## 🔐 Standard Response Envelopes
 
-All API responses follow a consistent envelope structure.
-
-### Success Response Envelope
+### Success Response
 ```json
 {
   "success": true,
-  "message": "Human-readable description of the action",
+  "message": "Human-readable description of the result",
   "data": {}
 }
 ```
 
-### Error Response Envelope
+### Error Response
 ```json
 {
   "success": false,
-  "message": "Human-readable error explanation",
-  "errors": {} 
+  "message": "Human-readable explanation of why the request failed",
+  "errors": {}
 }
 ```
 
-### HTTP Status Code Reference
-| Status Code | Meaning | When It Occurs |
-| :--- | :--- | :--- |
-| `200 OK` | Success | The request succeeded (sign in, forgot password, reset password, profile fetch). |
-| `201 Created` | Created | User account successfully registered. |
-| `400 Bad Request` | Validation Error | Missing fields, invalid email format, short password (<6 chars), or expired/invalid reset token. |
-| `401 Unauthorized` | Authentication Failed | Invalid credentials, missing authentication cookie/token, or expired JWT. |
-| `404 Not Found` | Not Found | Route does not exist. |
-| `409 Conflict` | Conflict | Attempted registration with an already existing email address. |
-| `500 Internal Server Error` | Server Error | Database failure or unexpected runtime exception. |
-
 ---
 
-## 📑 Endpoints Summary
+## 📑 Complete Endpoints Summary
 
-| Method | Endpoint | Access | Description | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/health` | Public | Service & PostgreSQL connectivity check | Production Ready ✅ |
-| `POST` | `/auth/signup` | Public | Register new user account (requires explicit sign-in) | Production Ready ✅ |
-| `POST` | `/auth/signin` | Public | Authenticate with credentials & set HttpOnly cookie | Production Ready ✅ |
-| `POST` | `/auth/signout` | Public | Invalidate & clear authentication cookie | Production Ready ✅ |
-| `GET` | `/auth/me` | Protected | Fetch authenticated user profile | Production Ready ✅ |
-| `POST` | `/auth/forgot-password` | Public | Request password recovery email (anti-enumeration) | Production Ready ✅ |
-| `POST` | `/auth/reset-password` | Public | Update password using single-use cryptographically verified token | Production Ready ✅ |
+### Authentication & User Endpoints
+| Method | Endpoint | Access | Purpose |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/health` | Public | Service & PostgreSQL health check |
+| `POST` | `/auth/signup` | Public | Register new user account (`EMPLOYEE`, `MANAGER`, `ADMIN`) |
+| `POST` | `/auth/signin` | Public | Authenticate credentials & issue HttpOnly session cookie |
+| `POST` | `/auth/signout` | Public | Invalidate & clear session cookie |
+| `GET` | `/auth/me` | Protected | Fetch authenticated user profile & permissions |
+| `POST` | `/auth/forgot-password` | Public | Request password recovery email (anti-enumeration protected) |
+| `POST` | `/auth/reset-password` | Public | Reset password using single-use SHA-256 token |
+
+### Travel Governance & Expense Endpoints
+| Method | Endpoint | Role Guard | Purpose |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/travel/requests` | `EMPLOYEE` | Create new travel request with upfront itemized expenses & proof URLs |
+| `GET` | `/travel/requests` | All Roles | Fetch role-scoped requests (Employee: own; Manager: team; Admin: all) |
+| `GET` | `/travel/requests/:id` | All Roles | Fetch full request details, itemized expenses, and timeline audit ledger |
+| `PUT` | `/travel/requests/:id/submit` | `EMPLOYEE` | Submit a draft request for Tier 1 Manager review |
+| `POST` | `/travel/requests/:id/manager-review` | `MANAGER` | Tier 1 review: `APPROVE_AND_FORWARD` or `REQUEST_REVISION` |
+| `POST` | `/travel/requests/:id/manager-forward-revision` | `MANAGER` | Forward Admin revision instructions to Employee with enriched guidance |
+| `POST` | `/travel/requests/:id/admin-review` | `ADMIN` | Tier 2 review: `APPROVE`, `SETTLE`, `REJECT`, or `REQUEST_REVISION` (Route A or B) |
+| `POST` | `/travel/requests/:id/resubmit` | `EMPLOYEE` | Resubmit altered request (always returns to Manager for re-verification) |
+| `GET` | `/travel/budgets` | `MANAGER`, `ADMIN` | Fetch department budget headroom and utilization in INR (`₹`) |
 
 ---
 
 ## 📡 Detailed Endpoint Specifications
 
-### 1. Health & Database Check
+### 1. Create Travel Request with Upfront Expenses
 
-Verifies server responsiveness and active PostgreSQL database connection.
+Creates a travel request. Both `UPCOMING` (pre-trip authorization) and `ALREADY_TRAVELLED` (post-trip reimbursement) require upfront itemized expenses with attachment image URLs (quotations or receipts).
 
-* **URL**: `/health`
-* **Method**: `GET`
-* **Access**: Public
-* **Headers**: None
-
-#### Success Response (`200 OK`)
-```json
-{
-  "status": "ok",
-  "database": "connected",
-  "timestamp": "2026-11-06T08:40:00.000Z"
-}
-```
-
-#### Error Response (`500 Internal Server Error`)
-```json
-{
-  "status": "error",
-  "database": "disconnected",
-  "message": "Database connection refused"
-}
-```
-
----
-
-### 2. User Signup
-
-Registers a new user account and hashes their password with bcrypt (10 rounds). Registration creates the account record without issuing an automatic session cookie; users authenticate explicitly via `/auth/signin` to access the dashboard.
-
-* **URL**: `/auth/signup`
+* **URL**: `/travel/requests`
 * **Method**: `POST`
-* **Access**: Public
-* **Headers**:
-  ```http
-  Content-Type: application/json
-  ```
+* **Access**: Authenticated (`EMPLOYEE`)
+* **Headers**: `Content-Type: application/json`
 
 #### Request Payload
-| Field | Type | Required | Validation Constraints |
-| :--- | :--- | :--- | :--- |
-| `name` | `string` | **Yes** | Min length: 2 characters |
-| `email` | `string` | **Yes** | Valid email format (stored lowercase & trimmed) |
-| `password` | `string` | **Yes** | Min length: 6 characters |
-
 ```json
 {
-  "name": "Jane Eyre",
-  "email": "jane@readventure.com",
-  "password": "SecurePassword123!"
+  "travel_type": "UPCOMING",
+  "title": "Client Architecture Workshop - Singapore",
+  "purpose": "Lead quarterly technical discovery and API integration workshop for APAC expansion.",
+  "project_code": "PROJ-APAC-2026",
+  "origin": "Bangalore (BLR)",
+  "destination": "Singapore (SIN)",
+  "departure_date": "2026-11-20",
+  "return_date": "2026-11-24",
+  "emergency_contact_name": "Meera Kannan",
+  "emergency_contact_phone": "+91 98400 12345",
+  "supporting_doc_url": "https://storage.tripflow.internal/itineraries/sin-workshop-v1.pdf",
+  "expenses": [
+    {
+      "category": "FLIGHT",
+      "merchant": "Singapore Airlines",
+      "amount": 58000.00,
+      "expense_date": "2026-11-20",
+      "receipt_image_url": "https://storage.tripflow.internal/quotes/sq-flight-quote.jpg",
+      "notes": "Economy direct fare quote"
+    },
+    {
+      "category": "HOTEL",
+      "merchant": "Marina Bay Sands Business Suites",
+      "amount": 34500.00,
+      "expense_date": "2026-11-21",
+      "receipt_image_url": "https://storage.tripflow.internal/quotes/hotel-quote.jpg",
+      "notes": "3 nights corporate rate"
+    },
+    {
+      "category": "MEALS_PER_DIEM",
+      "merchant": "Daily Per Diem Allowance",
+      "amount": 10000.00,
+      "expense_date": "2026-11-20",
+      "notes": "4 days daily standard per diem"
+    }
+  ],
+  "submit_now": true
 }
 ```
 
@@ -131,164 +126,180 @@ Registers a new user account and hashes their password with bcrypt (10 rounds). 
 ```json
 {
   "success": true,
-  "message": "User registered successfully. Please sign in with your credentials.",
+  "message": "Travel request submitted for Manager review",
   "data": {
-    "user": {
-      "id": "e81d4f2e-b1a8-4c90-9ef2-1b1234567890",
-      "name": "Jane Eyre",
-      "email": "jane@readventure.com",
-      "created_at": "2026-11-06T08:41:00.000Z",
-      "updated_at": "2026-11-06T08:41:00.000Z"
-    }
+    "id": "c1f7b82e-9d2a-4335-b35f-900eeae24b56",
+    "travel_type": "UPCOMING",
+    "title": "Client Architecture Workshop - Singapore",
+    "status": "PENDING_MANAGER_REVIEW",
+    "total_expenses": 102500.00,
+    "currency": "INR",
+    "created_at": "2026-11-09T09:30:00.000Z"
   }
 }
 ```
 
-#### Error Responses
-* **`400 Bad Request`**: Validation error (e.g., password < 6 chars, invalid email).
-* **`409 Conflict`**: Email already registered.
-
 ---
 
-### 3. User Signin
+### 2. Fetch Role-Scoped Travel Requests
 
-Authenticates an existing user and returns user info along with a new JWT in both the response body and an HttpOnly cookie.
+Retrieves travel requests filtered by the caller's role:
+- **Employee**: Only requests submitted by the logged-in user.
+- **Manager**: Requests submitted by direct reports assigned to this manager.
+- **Admin**: All enterprise requests across all departments.
 
-* **URL**: `/auth/signin`
-* **Method**: `POST`
-* **Access**: Public
-* **Headers**:
-  ```http
-  Content-Type: application/json
-  ```
-
-#### Request Payload
-```json
-{
-  "email": "jane@readventure.com",
-  "password": "SecurePassword123!"
-}
-```
-
-#### Success Response (`200 OK`)
-* **Response Headers**:
-  ```http
-  Set-Cookie: token=eyJhbGci...; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800
-  ```
-```json
-{
-  "success": true,
-  "message": "Signed in successfully",
-  "data": {
-    "user": {
-      "id": "e81d4f2e-b1a8-4c90-9ef2-1b1234567890",
-      "name": "Jane Eyre",
-      "email": "jane@readventure.com",
-      "created_at": "2026-11-06T08:41:00.000Z",
-      "updated_at": "2026-11-06T08:41:00.000Z"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-#### Error Response (`401 Unauthorized`)
-```json
-{
-  "success": false,
-  "message": "Invalid email or password"
-}
-```
-
----
-
-### 4. User Signout
-
-Clears the `token` HttpOnly cookie by setting its expiration to the Unix epoch.
-
-* **URL**: `/auth/signout`
-* **Method**: `POST`
-* **Access**: Public
-* **Response Headers**:
-  ```http
-  Set-Cookie: token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax
-  ```
-
-#### Success Response (`200 OK`)
-```json
-{
-  "success": true,
-  "message": "Signed out successfully",
-  "data": null
-}
-```
-
----
-
-### 5. Get Current User Profile
-
-Retrieves the currently authenticated user's profile. Accepts credentials via HttpOnly cookie or Bearer Authorization header.
-
-* **URL**: `/auth/me`
+* **URL**: `/travel/requests`
 * **Method**: `GET`
-* **Access**: **Protected** (Requires active session)
-* **Headers**:
-  ```http
-  Cookie: token=<jwt>
-  # OR
-  Authorization: Bearer <jwt>
-  ```
+* **Access**: Protected (All authenticated roles)
+* **Query Parameters**:
+  - `status` (optional): Filter by state (e.g. `PENDING_MANAGER_REVIEW`, `PENDING_ADMIN_APPROVAL`)
+  - `travel_type` (optional): `UPCOMING` or `ALREADY_TRAVELLED`
 
 #### Success Response (`200 OK`)
 ```json
 {
   "success": true,
-  "message": "Profile retrieved successfully",
+  "message": "Travel requests retrieved successfully",
   "data": {
-    "user": {
-      "id": "e81d4f2e-b1a8-4c90-9ef2-1b1234567890",
-      "name": "Jane Eyre",
-      "email": "jane@readventure.com",
-      "created_at": "2026-11-06T08:41:00.000Z",
-      "updated_at": "2026-11-06T08:41:00.000Z"
+    "requests": [
+      {
+        "id": "c1f7b82e-9d2a-4335-b35f-900eeae24b56",
+        "user_id": "e81d4f2e-b1a8-4c90-9ef2-1b1234567890",
+        "requester_name": "Arun Kumar",
+        "requester_department": "Engineering",
+        "travel_type": "UPCOMING",
+        "title": "Client Architecture Workshop - Singapore",
+        "destination": "Singapore (SIN)",
+        "departure_date": "2026-11-20",
+        "return_date": "2026-11-24",
+        "total_expenses": 102500.00,
+        "currency": "INR",
+        "status": "PENDING_MANAGER_REVIEW",
+        "created_at": "2026-11-09T09:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 3. Tier 1 Line Manager Review
+
+Manager evaluates travel necessity and expense proofs. They can either approve & forward to Admin, or send modification instructions to the Employee.
+
+* **URL**: `/travel/requests/:id/manager-review`
+* **Method**: `POST`
+* **Access**: Authenticated (`MANAGER`)
+* **Headers**: `Content-Type: application/json`
+
+#### Request Payload: Approve & Forward
+```json
+{
+  "action": "APPROVE_AND_FORWARD",
+  "remarks": "Validated client need and project code. Approved within APAC engineering travel allowance."
+}
+```
+
+#### Request Payload: Request Revision from Employee
+```json
+{
+  "action": "REQUEST_REVISION",
+  "remarks": "Please select the corporate standard hotel rate at Holiday Inn Express instead of Marina Bay Suites."
+}
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "message": "Request approved and escalated to Admin",
+  "data": {
+    "id": "c1f7b82e-9d2a-4335-b35f-900eeae24b56",
+    "status": "PENDING_ADMIN_APPROVAL",
+    "manager_reviewed_at": "2026-11-09T10:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 4. Tier 2 Admin Governance Review
+
+Admin audits budget allocations and compliance. They can grant final clearance, authorize reimbursement payout, reject, or request revisions.
+
+* **URL**: `/travel/requests/:id/admin-review`
+* **Method**: `POST`
+* **Access**: Authenticated (`ADMIN`)
+* **Headers**: `Content-Type: application/json`
+
+#### Action A: Final Clearance (Upcoming Travel)
+```json
+{
+  "action": "APPROVE",
+  "remarks": "Cleared for booking. Headroom validated against Engineering Q4 budget."
+}
+```
+*Resulting Status*: `APPROVED`
+
+#### Action B: Reimbursement Settlement (Already Travelled)
+```json
+{
+  "action": "SETTLE",
+  "remarks": "Tax invoices audited and approved. Payment scheduled for next payroll disbursement."
+}
+```
+*Resulting Status*: `SETTLED`
+
+#### Action C: Request Revision via Route A (Via Manager)
+```json
+{
+  "action": "REQUEST_REVISION",
+  "revision_target": "MANAGER",
+  "remarks": "Flight fare exceeds corporate ceiling. Manager please review alternate departure timings."
+}
+```
+*Resulting Status*: `REVISION_REQUESTED_BY_ADMIN_TO_MANAGER`
+
+#### Action D: Request Revision via Route B (Direct to Employee)
+```json
+{
+  "action": "REQUEST_REVISION",
+  "revision_target": "EMPLOYEE",
+  "remarks": "Missing hotel GST tax breakdown on invoice #INV-492. Please attach itemized tax copy."
+}
+```
+*Resulting Status*: `REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE`
+
+---
+
+### 5. Resubmit Revised Travel Request
+
+When an employee modifies their request after receiving instructions (from either Manager or Admin), they resubmit using this endpoint.
+
+> **CRITICAL INVARIANT**: Resubmission **ALWAYS transitions the status to `PENDING_MANAGER_REVIEW`**. It is mathematically impossible for an employee to bypass the manager directly to Admin.
+
+* **URL**: `/travel/requests/:id/resubmit`
+* **Method**: `POST`
+* **Access**: Authenticated (`EMPLOYEE`)
+* **Headers**: `Content-Type: application/json`
+
+#### Request Payload
+```json
+{
+  "departure_date": "2026-11-20",
+  "return_date": "2026-11-24",
+  "updated_expenses": [
+    {
+      "category": "HOTEL",
+      "merchant": "Holiday Inn Express Clarke Quay",
+      "amount": 22000.00,
+      "expense_date": "2026-11-21",
+      "receipt_image_url": "https://storage.tripflow.internal/quotes/holiday-inn-quote.jpg",
+      "notes": "Revised hotel booking to corporate approved rate"
     }
-  }
-}
-```
-
-#### Error Response (`401 Unauthorized`)
-```json
-{
-  "success": false,
-  "message": "Access denied. No authorization token provided."
-}
-```
-
----
-
-### 6. Forgot Password (Request Recovery Link)
-
-Initiates the password recovery flow. Generates a 32-byte secure random hex token, stores the **SHA-256 hash** in PostgreSQL with a 1-hour expiration timestamp, and sends a reset link to the user via Nodemailer (Gmail SMTP in production, Ethereal in development).
-
-> **🛡️ Security Guarantee: Anti-Enumeration**  
-> Regardless of whether the provided email address exists in the database, the server returns an identical `200 OK` response. This prevents malicious actors from probing and scraping valid user accounts.
-
-* **URL**: `/auth/forgot-password`
-* **Method**: `POST`
-* **Access**: Public
-* **Headers**:
-  ```http
-  Content-Type: application/json
-  ```
-
-#### Request Payload
-| Field | Type | Required | Validation Constraints |
-| :--- | :--- | :--- | :--- |
-| `email` | `string` | **Yes** | Valid RFC-compliant email address |
-
-```json
-{
-  "email": "jane@readventure.com"
+  ],
+  "employee_response_notes": "Updated hotel selection as requested, saving ₹12,500.00."
 }
 ```
 
@@ -296,105 +307,50 @@ Initiates the password recovery flow. Generates a 32-byte secure random hex toke
 ```json
 {
   "success": true,
-  "message": "If an account with that email exists, a password reset link has been sent.",
+  "message": "Revised request resubmitted to Manager for re-verification",
   "data": {
-    "message": "If an account with that email exists, a password reset link has been sent.",
-    "previewUrl": false
+    "id": "c1f7b82e-9d2a-4335-b35f-900eeae24b56",
+    "status": "PENDING_MANAGER_REVIEW",
+    "total_expenses": 90000.00,
+    "currency": "INR"
   }
-}
-```
-*(Note: In local development with Ethereal fallback, `previewUrl` contains the Ethereal web preview link).*
-
-#### Error Response (`400 Bad Request`)
-```json
-{
-  "success": false,
-  "message": "Please provide a valid email address"
 }
 ```
 
 ---
 
-### 7. Reset Password (Update Credentials)
+### 6. Department Budget Headroom
 
-Validates the recovery token against PostgreSQL. Upon verification, hashes the new password with bcrypt, updates the user's password, and **immediately clears the reset token and expiration date** from the database to prevent replay attacks.
+Retrieves real-time departmental budget utilization vs fiscal allocations in Indian Rupees (`₹`).
 
-* **URL**: `/auth/reset-password`
-* **Method**: `POST`
-* **Access**: Public
-* **Headers**:
-  ```http
-  Content-Type: application/json
-  ```
-
-#### Request Payload
-| Field | Type | Required | Validation Constraints |
-| :--- | :--- | :--- | :--- |
-| `token` | `string` | **Yes** | 64-character hex token from recovery email |
-| `newPassword` | `string` | **Yes** | Min length: 6 characters (UI enforces 8) |
-
-```json
-{
-  "token": "4f8a7c29e1b3d580fa23e4567890abcd4f8a7c29e1b3d580fa23e4567890abcd",
-  "newPassword": "BrandNewSecurePassword123!"
-}
-```
+* **URL**: `/travel/budgets`
+* **Method**: `GET`
+* **Access**: Authenticated (`MANAGER`, `ADMIN`)
 
 #### Success Response (`200 OK`)
 ```json
 {
   "success": true,
-  "message": "Password has been successfully reset. Please sign in with your new password.",
   "data": {
-    "message": "Password has been successfully reset. Please sign in with your new password."
+    "department": "Engineering",
+    "fiscal_year": 2026,
+    "fiscal_quarter": "Q4",
+    "total_allocation": 3500000.00,
+    "utilized_amount": 1420000.00,
+    "available_headroom": 2080000.00,
+    "currency": "INR",
+    "utilization_percentage": 40.57
   }
 }
 ```
 
-#### Error Responses
-
-* **`400 Bad Request`** (Invalid or Expired Token):
-  ```json
-  {
-    "success": false,
-    "message": "Invalid or expired password reset token"
-  }
-  ```
-
-* **`400 Bad Request`** (Password Too Short):
-  ```json
-  {
-    "success": false,
-    "message": "Password must be at least 6 characters long"
-  }
-  ```
-
-* **`400 Bad Request`** (Missing Parameters):
-  ```json
-  {
-    "success": false,
-    "message": "Token and new password are required"
-  }
-  ```
-
 ---
 
-## 🧪 Testing & Execution
+## 🔒 Security & Role Guard Middleware
 
-### Running the Test Suites
-
-```bash
-# Day 1 Auth & DB Verification (10/10 Passed)
-npm test
-
-# Day 2 Password Reset Backend Test (9/9 Passed)
-npm run test:day2
-
-# Complete End-to-End Lifecycle Suite (13/13 Passed)
-npm run test:e2e
-```
-
-### Postman Collection
-Import the verified collection into Postman:
-* Path: [`server/docs/Readventure_Auth_Postman_Collection.json`](Readventure_Auth_Postman_Collection.json)
-* Contains pre-configured requests, environment variables, and test scripts for automated cookie extraction.
+All protected endpoints enforce:
+1. **JWT Verification**: Resolves user UUID and role via HttpOnly cookie or Bearer authorization header.
+2. **Role Authorization (`requireRole`)**:
+   - `requireRole(['MANAGER'])` blocks unauthorized Employee attempts with `403 Forbidden`.
+   - `requireRole(['ADMIN'])` blocks Manager attempts to approve budgets or settle disbursements.
+3. **Data Access Scoping**: Users can never access or modify travel requests belonging to other departments or reporting trees.
