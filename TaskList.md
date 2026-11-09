@@ -55,22 +55,18 @@ Any agent or contributor modifying this codebase **must** adhere to these strict
 
 ### 🚀 Day 1: Database & Backend Foundation (09/11/2026) — 8.0 Hours
 
-- [ ] **Task 1: PostgreSQL Schema Migration & Seed Data** (Est: 2.5 Hours)
-  - [ ] Create `server/tests/db-migration.test.ts` to test schema tables, foreign keys, and INR defaults.
-  - [ ] Run test to verify it fails (`npx tsx server/tests/db-migration.test.ts`).
-  - [ ] Write SQL migration `server/src/shared/db/migrations/002_create_travel_governance_tables.sql`:
+- [x] **Task 1: PostgreSQL Schema Migration (Seed Data Omitted per Instructions)** (Est: 2.5 Hours) — ✅ Completed
+  - [x] Create `server/tests/db-migration.test.ts` to test schema tables, foreign keys, and INR defaults.
+  - [x] Run test to verify it fails (`npx tsx server/tests/db-migration.test.ts`).
+  - [x] Write SQL migration `server/src/shared/db/migrations/002_create_travel_governance_tables.sql`:
     - Alter `users` check constraint to `('EMPLOYEE', 'MANAGER', 'ADMIN')` and add `manager_id UUID`.
     - Create `department_budgets` table (default `total_allocation = 3500000.00` INR).
     - Create `travel_requests` table with 10 statuses, `travel_type`, `currency` default `INR`, `revision_target`.
     - Create `travel_expenses` table with category checks, merchant, amount, receipt image URL.
     - Create `request_timeline_events` audit ledger table with actor, role, transitions, remarks.
-  - [ ] Update `server/src/shared/db/migrate.ts` to execute migration `002`.
-  - [ ] Create seed data script `server/src/shared/db/seed-travel.ts` with test accounts:
-    - Employee: `arun.employee@tripflow.internal` (password: `Password123!`)
-    - Manager: `sarah.manager@tripflow.internal` (password: `Password123!`)
-    - Admin: `priya.admin@tripflow.internal` (password: `Password123!`)
-  - [ ] Run migration test and verify passes.
-  - [ ] Git commit: `feat(db): add travel governance schema migration and test seed data`.
+  - [x] Automatically executed via `server/src/shared/db/migrate.ts`.
+  - [x] Run migration test `npm run test:migration` and verify 100% passes.
+  - [x] *(Seed data intentionally skipped per user explicit instruction)*.
 
 - [ ] **Task 2: Travel Types, State Machine & Validation Schemas** (Est: 2.5 Hours)
   - [ ] Create unit test `server/tests/travel-fsm.test.ts` validating all allowed transitions and rejecting bypasses.
