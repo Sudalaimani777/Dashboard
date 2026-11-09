@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Travel Request — TripFlow Corporate Governance</title>
+  <!-- Google Fonts: Poppins (Warm Storycraft Standard) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Warm Storycraft Design System Tokens */
+    :root {
+      --bg-canvas: #F7F4EE;
+      --surface-pure: #FFFFFF;
+      --surface-muted: #FAF8F5;
+      --border-hairline: #E8DFD3;
+      --border-subtle: #DCD3C5;
+      --accent-primary: #8A582B;
+      --accent-hover: #754820;
+      --text-ink: #2B231D;
+      --text-sub: #756F68;
+      --text-muted: #A0988E;
+      --status-success: #2E7D32;
+      --status-success-bg: #F1F8F1;
+      --status-warning: #B9770E;
+      --status-warning-bg: #FEF9E7;
+      --status-danger: #9E2A2B;
+      --status-danger-bg: #FDF2F2;
+      --font-body: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-ink);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* Top Navigation Bar */
+    .navbar {
+      background: var(--surface-pure);
+      border-bottom: 1px solid var(--border-hairline);
+      padding: 0.85rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      background: var(--text-ink);
+      border-radius: 10px;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+    }
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      letter-spacing: -0.02em;
+    }
+
+    .user-block {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.825rem;
+      color: var(--text-ink);
+      font-weight: 500;
+    }
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Breadcrumbs */
+    .breadcrumb-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-bottom: 1.25rem;
+    }
+    .breadcrumb-link {
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .breadcrumb-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Main Container */
+    .main-content {
+      padding: 2rem 2.5rem 4rem 2.5rem;
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    /* Page Header */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.75rem;
+    }
+    .page-title {
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      letter-spacing: -0.02em;
+    }
+    .page-sub {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      margin-top: 0.25rem;
+      max-width: 640px;
+    }
+
+    /* Card Panels */
+    .card {
+      background: var(--surface-pure);
+      border: 1px solid var(--border-hairline);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(43, 35, 29, 0.04);
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      margin-bottom: 0.25rem;
+    }
+    .card-subtitle {
+      font-size: 0.775rem;
+      color: var(--text-sub);
+      margin-bottom: 1.25rem;
+    }
+
+    /* Form Layouts */
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.25rem;
+    }
+    .form-group {
+      margin-bottom: 1.15rem;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.775rem;
+      font-weight: 600;
+      color: var(--text-ink);
+      margin-bottom: 0.35rem;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--border-hairline);
+      background: var(--surface-muted);
+      border-radius: 10px;
+      padding: 0 0.85rem;
+      font-size: 0.825rem;
+      color: var(--text-ink);
+      font-family: var(--font-body);
+      font-weight: 500;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+    .form-textarea {
+      height: 84px;
+      padding: 0.65rem 0.85rem;
+      resize: vertical;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--accent-primary);
+      background: #FFF;
+      box-shadow: 0 0 0 1px var(--accent-primary);
+    }
+
+    /* Segmented Selector */
+    .segmented {
+      display: inline-flex;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 1.25rem;
+    }
+    .seg-btn {
+      border: none;
+      background: transparent;
+      padding: 0.55rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.15s ease;
+    }
+    .seg-btn.active {
+      background: #FFF;
+      color: var(--accent-primary);
+      box-shadow: 0 1px 3px rgba(43, 35, 29, 0.08);
+    }
+
+    /* Memo Info Box */
+    .memo-box {
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.825rem;
+      color: var(--text-ink);
+      line-height: 1.6;
+    }
+    .memo-box strong {
+      color: var(--text-ink);
+    }
+
+    /* Expense Ledger Table */
+    .table-wrap {
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.825rem;
+    }
+    th {
+      background: var(--surface-muted);
+      border-bottom: 1px solid var(--border-hairline);
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+    td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-hairline);
+      color: var(--text-ink);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #FCFAF7; }
+
+    .num {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    /* Proof Badges */
+    .badge-proof {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-ink);
+    }
+    .badge-proof.verified {
+      background: var(--status-success-bg);
+      border-color: #C8E6C9;
+      color: var(--status-success);
+      font-weight: 600;
+    }
+
+    /* Action Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      height: 42px;
+      padding: 0 1.35rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent-primary); color: #FFF; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: var(--surface-pure); border-color: var(--border-hairline); color: var(--text-ink); }
+    .btn-outline:hover { background: var(--surface-muted); border-color: var(--border-subtle); }
+    .btn-sm { height: 34px; padding: 0 0.85rem; font-size: 0.775rem; border-radius: 8px; }
+
+    /* Policy Indicator Card */
+    .policy-callout {
+      background: #FDFBF7;
+      border-left: 4px solid var(--accent-primary);
+      border-radius: 0 10px 10px 0;
+      padding: 0.85rem 1.15rem;
+      font-size: 0.8rem;
+      margin-top: 1rem;
+      color: var(--text-sub);
+    }
+
+    /* Approver Summary Pill */
+    .approver-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Sticky Bottom Actions Bar */
+    .form-footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-hairline);
+      margin-top: 2rem;
+    }
+
+    /* Upload Zone Mockup */
+    .upload-box {
+      border: 1.5px dashed var(--border-subtle);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+      background: var(--surface-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .upload-box:hover {
+      border-color: var(--accent-primary);
+      background: #FFFDF9;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="brand-group">
+      <a href="tripflow-full-mockup.html" class="brand-logo" title="Back to TripFlow Hub">TF</a>
+      <div>
+        <div class="brand-title">TripFlow</div>
+        <!-- <div style="font-size:0.7rem;color:var(--text-sub);letter-spacing:0.3px;">CORPORATE TRAVEL GOVERNANCE</div> -->
+      </div>
+    </div>
+
+    <div class="user-block">
+      <div class="user-avatar">JD</div>
+      <div>
+        <div style="font-weight:600;line-height:1.2;">Jane Doe</div>
+        <div style="font-size:0.725rem;color:var(--text-sub);">Staff Engineer (PRJ-ENG-409)</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumb-bar">
+      <a href="tripflow-full-mockup.html?role=employee" class="breadcrumb-link">
+        ← Back to My Travel Hub
+      </a>
+      <span>/</span>
+      <span>New Travel Submission</span>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Initiate Travel Request</h1>
+        <p class="page-sub">
+          Submit travel plans and estimated expenses for manager review and finance clearance.
+        </p>
+      </div>
+      <div>
+        <span class="num" style="font-size:0.85rem;color:var(--text-sub);">
+          Default Currency: <strong>INR (₹)</strong>
+        </span>
+      </div>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="segmented">
+      <button class="seg-btn active" id="seg-upcoming" onclick="switchTravelType('UPCOMING')">
+        Upcoming Travel (Pre-Trip)
+      </button>
+      <button class="seg-btn" id="seg-past" onclick="switchTravelType('PAST')">
+        Completed Travel (Reimbursement)
+      </button>
+    </div>
+
+    <!-- Context Notice Memo -->
+    <div class="memo-box" id="travel-notice-memo">
+      <strong>Pre-Trip Authorization:</strong> Provide your business trip objective, estimated expenses in INR (₹), and booking quotes for manager review before travel clearance.
+    </div>
+
+    <form id="travel-request-form" onsubmit="handleFormSubmit(event)">
+
+      <!-- SECTION 1: TRIP IDENTIFICATION & DATES -->
+      <div class="card">
+        <div class="card-title">1. Itinerary & Business Purpose</div>
+
+        <div class="form-group" style="margin-top:1.25rem;">
+          <label class="form-label" for="trip-title">Trip Title / Business Purpose *</label>
+          <input class="form-input" id="trip-title" required value="Annual Engineering Architecture Summit 2026" placeholder="e.g. AWS Cloud Architecture Symposium">
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="cost-center">Cost Center / Project Allocation *</label>
+            <select class="form-select" id="cost-center" required>
+              <option value="PRJ-ENG-409" selected>PRJ-ENG-409 — Core Platform Engineering (Q4 Remaining: ₹12,90,000.00)</option>
+              <option value="PRJ-SALES-202">PRJ-SALES-202 — Enterprise Strategic Accounts</option>
+              <option value="PRJ-PROD-101">PRJ-PROD-101 — Product Design & R&D</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="dest-city">Destination City & Country *</label>
+            <input class="form-input" id="dest-city" required value="Tokyo, Japan (HND)" placeholder="e.g. Bangalore, India (BLR)">
+          </div>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="form-label" for="start-date">Departure Date *</label>
+            <input class="form-input" type="date" id="start-date" required value="2026-11-15" onchange="calculateDuration()">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="end-date">Return Date *</label>
+            <input class="form-input" type="date" id="end-date" required value="2026-11-20" onchange="calculateDuration()">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Calculated Duration</label>
+            <input class="form-input" id="calc-duration" value="5 Days (4 Nights)" readonly style="background:var(--border-hairline);font-weight:600;">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="business-justification">Executive Necessity Justification *</label>
+          <textarea class="form-textarea" id="business-justification" required placeholder="Describe meetings, client engagements, or deliverables tied to this trip...">Present core platform architecture migration to APAC engineering leads and facilitate 3-day distributed infrastructure workshop.</textarea>
+        </div>
+      </div>
+
+      <!-- SECTION 2: ITEMIZED EXPENSES & PROOF ATTACHMENTS -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
+          <div>
+            <div class="card-title">2. Itemized Expenses & Proof Quotations</div>
+            <div class="card-subtitle" style="margin-bottom:0;">
+              Itemize expenses in INR (₹) and attach supporting quotes or receipts.
+            </div>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addNewExpenseRow()">
+            + Add Expense Line
+          </button>
+        </div>
+
+        <div class="table-wrap" style="margin-top:1.25rem;">
+          <table id="expense-ledger-table">
+            <thead>
+              <tr>
+                <th style="width:22%;">Category</th>
+                <th style="width:34%;">Vendor / Description</th>
+                <th style="width:20%;text-align:right;">Amount (INR ₹)</th>
+                <th style="width:18%;">Attachment Proof</th>
+                <th style="width:6%;text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="expense-rows-body">
+              <!-- Row 1: Flight -->
+              <tr data-row-id="1">
+                <td>
+                  <select class="form-select" style="height:36px;font-size:0.775rem;">
+                    <option selected>Flight (Economy Airfare)</option>
+                    <option>Lodging / Hotel</option>
+                    <option>Meals / Per-Diem</option>
+                    <option>Ground Transit</option>
+                    <option>Miscellaneous</option>
+                  </select>
+                </td>
+                <td>
+                  <input class="form-input" style="height:36px;font-size:0.775rem;" value="All Nippon Airways (Economy Roundtrip)">
+                </td>
+                <td style="text-align:right;">
+                  <input class="form-input num expense-amount-input" style="height:36px;font-size:0.775rem;text-align:right;" value="68000" oninput="recalculateTotal()" type="number" step="100">
+                </td>
+                <td>
+                  <span class="badge-proof verified">
+                    <span>✓</span> ana-quote.png
+                  </span>
+                </td>
+                <td style="text-align:center;">
+                  <button type="button" onclick="removeExpenseRow(this)" style="background:none;border:none;color:var(--status-danger);cursor:pointer;font-size:1.1rem;">&times;</button>
+                </td>
+              </tr>
+
+              <!-- Row 2: Hotel -->
+              <tr data-row-id="2">
+                <td>
+                  <select class="form-select" style="height:36px;font-size:0.775rem;">
+                    <option>Flight (Economy Airfare)</option>
+                    <option selected>Lodging / Hotel</option>
+                    <option>Meals / Per-Diem</option>
+                    <option>Ground Transit</option>
+                    <option>Miscellaneous</option>
+                  </select>
+                </td>
+                <td>
+                  <input class="form-input" style="height:36px;font-size:0.775rem;" value="Shinjuku Prince Hotel (5 Nights @ ₹11,200/nt)">
+                </td>
+                <td style="text-align:right;">
+                  <input class="form-input num expense-amount-input" style="height:36px;font-size:0.775rem;text-align:right;" value="56000" oninput="recalculateTotal()" type="number" step="100">
+                </td>
+                <td>
+                  <span class="badge-proof verified">
+                    <span>✓</span> hotel-booking.png
+                  </span>
+                </td>
+                <td style="text-align:center;">
+                  <button type="button" onclick="removeExpenseRow(this)" style="background:none;border:none;color:var(--status-danger);cursor:pointer;font-size:1.1rem;">&times;</button>
+                </td>
+              </tr>
+
+              <!-- Row 3: Per-Diem -->
+              <tr data-row-id="3">
+                <td>
+                  <select class="form-select" style="height:36px;font-size:0.775rem;">
+                    <option>Flight (Economy Airfare)</option>
+                    <option>Lodging / Hotel</option>
+                    <option selected>Meals / Per-Diem</option>
+                    <option>Ground Transit</option>
+                    <option>Miscellaneous</option>
+                  </select>
+                </td>
+                <td>
+                  <input class="form-input" style="height:36px;font-size:0.775rem;" value="Standard Tier Daily Allowance (5 Days @ ₹4,800/day)">
+                </td>
+                <td style="text-align:right;">
+                  <input class="form-input num expense-amount-input" style="height:36px;font-size:0.775rem;text-align:right;" value="24000" oninput="recalculateTotal()" type="number" step="100">
+                </td>
+                <td>
+                  <span class="badge-proof">Policy Rate</span>
+                </td>
+                <td style="text-align:center;">
+                  <button type="button" onclick="removeExpenseRow(this)" style="background:none;border:none;color:var(--status-danger);cursor:pointer;font-size:1.1rem;">&times;</button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:var(--surface-muted);">
+                <td colspan="2" style="font-weight:700;font-size:0.9rem;">Total Estimated Claim:</td>
+                <td style="text-align:right;font-weight:700;font-size:1.05rem;color:var(--accent-primary);" class="num" id="total-amount-display">
+                  ₹1,48,000.00
+                </td>
+                <td colspan="2" style="font-size:0.75rem;color:var(--text-sub);padding-left:1rem;">
+                  INR (₹) Standard
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Policy Compliance Banner -->
+        <div class="policy-callout">
+          <strong>Policy Check:</strong>
+          Tokyo lodging rate (₹11,200/night) is within the city cap of ₹13,000/night. Economy class selected.
+        </div>
+      </div>
+
+      <!-- SECTION 3: APPROVAL CHAIN -->
+      <div class="approver-strip">
+        <div>
+          <div style="font-size:0.725rem;font-weight:700;color:var(--accent-primary);text-transform:uppercase;letter-spacing:0.5px;">
+            Reviewing Manager
+          </div>
+          <div style="font-weight:700;font-size:0.95rem;margin-top:2px;">Marcus Brody</div>
+          <div style="font-size:0.75rem;color:var(--text-sub);">Engineering Director</div>
+        </div>
+
+        <div style="color:var(--text-muted);font-size:1.2rem;">➔</div>
+
+        <div>
+          <div style="font-size:0.725rem;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.5px;">
+            Finance & Executive Clearance
+          </div>
+          <div style="font-weight:700;font-size:0.95rem;margin-top:2px;">Alexander Vance</div>
+          <div style="font-size:0.75rem;color:var(--text-sub);">VP Finance & Operations</div>
+        </div>
+
+        <div style="text-align:right;">
+          <div style="font-size:0.75rem;color:var(--status-success);font-weight:600;">
+            ✓ Policy checks passed
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER ACTIONS -->
+      <div class="form-footer-bar">
+        <a href="tripflow-full-mockup.html?role=employee" class="btn btn-outline">
+          Cancel & Return to Hub
+        </a>
+
+        <div style="display:flex;gap:0.75rem;">
+          <button type="button" class="btn btn-outline" onclick="alert('Draft saved locally.')">
+            Save Draft
+          </button>
+          <button type="submit" class="btn btn-primary">
+            Submit for Approval ➔
+          </button>
+        </div>
+      </div>
+
+    </form>
+
+  </main>
+
+  <script>
+    function switchTravelType(type) {
+      const upBtn = document.getElementById('seg-upcoming');
+      const pastBtn = document.getElementById('seg-past');
+      const memo = document.getElementById('travel-notice-memo');
+
+      if (type === 'UPCOMING') {
+        upBtn.classList.add('active');
+        pastBtn.classList.remove('active');
+        memo.innerHTML = '<strong>Pre-Trip Authorization:</strong> Provide your business trip objective, estimated expenses in INR (₹), and booking quotes for manager review before travel clearance.';
+      } else {
+        pastBtn.classList.add('active');
+        upBtn.classList.remove('active');
+        memo.innerHTML = '<strong>Reimbursement Claim:</strong> Provide details for completed travel with actual incurred expenses and tax invoice receipts for reimbursement.';
+      }
+    }
+
+    function calculateDuration() {
+      const start = new Date(document.getElementById('start-date').value);
+      const end = new Date(document.getElementById('end-date').value);
+      if (start && end && end >= start) {
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById('calc-duration').value = `${diffDays} Days (${diffDays - 1} Nights)`;
+      }
+    }
+
+    function recalculateTotal() {
+      let sum = 0;
+      document.querySelectorAll('.expense-amount-input').forEach(input => {
+        const val = parseFloat(input.value) || 0;
+        sum += val;
+      });
+      // Format as INR
+      const formatted = '₹' + sum.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('total-amount-display').innerText = formatted;
+    }
+
+    function addNewExpenseRow() {
+      const tbody = document.getElementById('expense-rows-body');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>
+          <select class="form-select" style="height:36px;font-size:0.775rem;">
+            <option>Flight (Economy Airfare)</option>
+            <option>Lodging / Hotel</option>
+            <option>Meals / Per-Diem</option>
+            <option selected>Ground Transit</option>
+            <option>Miscellaneous</option>
+          </select>
+        </td>
+        <td>
+          <input class="form-input" style="height:36px;font-size:0.775rem;" placeholder="e.g. Airport Express & Taxi">
+        </td>
+        <td style="text-align:right;">
+          <input class="form-input num expense-amount-input" style="height:36px;font-size:0.775rem;text-align:right;" value="4500" oninput="recalculateTotal()" type="number" step="100">
+        </td>
+        <td>
+          <span class="badge-proof">receipt-quote.png</span>
+        </td>
+        <td style="text-align:center;">
+          <button type="button" onclick="removeExpenseRow(this)" style="background:none;border:none;color:var(--status-danger);cursor:pointer;font-size:1.1rem;">&times;</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+      recalculateTotal();
+    }
+
+    function removeExpenseRow(btn) {
+      const row = btn.closest('tr');
+      const tbody = document.getElementById('expense-rows-body');
+      if (tbody.children.length > 1) {
+        row.remove();
+        recalculateTotal();
+      } else {
+        alert('A minimum of one expense line item is required.');
+      }
+    }
+
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      const title = document.getElementById('trip-title').value;
+      const total = document.getElementById('total-amount-display').innerText;
+      alert(`✓ Travel Request "${title}" (${total}) submitted to Marcus Brody for review!`);
+      // Redirect back to Hub
+      window.location.href = 'tripflow-full-mockup.html?role=employee&submitted=true';
+    }
+  </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -239,6 +239,13 @@
     }
     tr:last-child td { border-bottom: none; }
     tbody tr:hover { background: #FCFAF7; }
+    tr.clickable-row {
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    tr.clickable-row:hover {
+      background: #FAF4EB !important;
+    }
 
     .num {
       font-family: var(--font-mono);
@@ -257,6 +264,16 @@
       background: var(--surface-muted);
       border: 1px solid var(--border-hairline);
       white-space: nowrap;
+    }
+    .status-text.warning {
+      background: var(--status-warning-bg);
+      border-color: #FAD7A0;
+      color: var(--status-warning);
+    }
+    .status-text.success {
+      background: var(--status-success-bg);
+      border-color: #C8E6C9;
+      color: var(--status-success);
     }
 
     /* Action Callout Pill */
@@ -494,7 +511,7 @@
       <div class="brand-logo">TF</div>
       <div>
         <div class="brand-title">TripFlow</div>
-        <div style="font-size:0.7rem;color:var(--text-sub);letter-spacing:0.3px;">CORPORATE TRAVEL GOVERNANCE</div>
+        <!-- <div style="font-size:0.7rem;color:var(--text-sub);letter-spacing:0.3px;">CORPORATE TRAVEL GOVERNANCE</div> -->
       </div>
     </div>
 
@@ -504,10 +521,10 @@
         Employee Portal
       </button>
       <button class="role-btn" id="btn-portal-mgr" onclick="switchPortal('manager', this)">
-        Manager Queue (Tier 1)
+        Manager Queue
       </button>
       <button class="role-btn" id="btn-portal-admin" onclick="switchPortal('admin', this)">
-        Admin Governance (Tier 2)
+        Admin
       </button>
     </div>
 
@@ -529,11 +546,9 @@
       <div class="page-header">
         <div>
           <h1 class="page-title">My Travel Hub</h1>
-          <p class="page-sub">Create travel requests with itemized expenses & receipt/quote images for Manager review and Admin clearance.</p>
+          <p class="page-sub">Submit travel plans, itemized expense quotes, and track review status.</p>
         </div>
-        <button class="btn btn-primary" onclick="openNewRequestModal()">
-          + New Travel Request
-        </button>
+        <a href="tripflow-new-request.html" class="btn btn-primary">+ New Travel Request</a>
       </div>
 
       <!-- KPI Summary Cards -->
@@ -581,8 +596,8 @@
             </thead>
             <tbody>
               <!-- Row 1: Upcoming in Manager Review -->
-              <tr>
-                <td class="num">TR-2026-089</td>
+              <tr class="clickable-row" onclick="window.location.href='tripflow-request-detail.html?id=TR-2026-089&role=employee'">
+                <td class="num"><strong>TR-2026-089</strong></td>
                 <td><strong>Annual Engineering Architecture Summit</strong></td>
                 <td>Tokyo (HND)</td>
                 <td>Nov 15 – Nov 20</td>
@@ -590,33 +605,33 @@
                 <td class="num">₹1,48,000.00</td>
                 <td><span class="status-text">Pending Manager Review</span></td>
                 <td style="text-align:right;">
-                  <button class="btn btn-outline btn-sm" onclick="openDrawer('employee-tokyo')">View Expenses & Quotes</button>
+                  <a href="tripflow-request-detail.html?id=TR-2026-089&role=employee" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">View Detailed Record ➔</a>
                 </td>
               </tr>
               <!-- Row 2: Past Settled -->
-              <tr>
-                <td class="num">TR-2026-042</td>
+              <tr class="clickable-row" onclick="window.location.href='tripflow-request-detail.html?id=TR-2026-042&role=employee'">
+                <td class="num"><strong>TR-2026-042</strong></td>
                 <td>Client Emergency Operations</td>
                 <td>Singapore (SIN)</td>
                 <td>Oct 20 – Oct 24</td>
                 <td><span class="badge-callout">Already Travelled</span></td>
                 <td class="num">₹1,02,500.00</td>
-                <td><span class="status-text">Settled & Paid</span></td>
+                <td><span class="status-text success">Settled & Paid</span></td>
                 <td style="text-align:right;">
-                  <button class="btn btn-outline btn-sm" onclick="openDrawer('employee-singapore')">View Receipts</button>
+                  <a href="tripflow-request-detail.html?id=TR-2026-042&role=employee" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">View Detailed Record ➔</a>
                 </td>
               </tr>
               <!-- Row 3: Admin requested revision -->
-              <tr>
-                <td class="num">TR-2026-095</td>
+              <tr class="clickable-row" onclick="window.location.href='tripflow-request-detail.html?id=TR-2026-095&role=employee'">
+                <td class="num"><strong>TR-2026-095</strong></td>
                 <td>AWS Cloud Architecture Symposium</td>
                 <td>Bangalore (BLR)</td>
                 <td>Dec 02 – Dec 05</td>
                 <td><span class="badge-callout">Upcoming Travel</span></td>
                 <td class="num">₹31,500.00</td>
-                <td><span class="status-text">Revision Requested</span></td>
+                <td><span class="status-text warning">Revision Requested</span></td>
                 <td style="text-align:right;">
-                  <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('employee-bangalore')">Fix & Resubmit to Manager</button>
+                  <a href="tripflow-request-detail.html?id=TR-2026-095&role=employee" class="btn btn-warning-outline btn-sm" onclick="event.stopPropagation()">Fix & Resubmit to Manager ➔</a>
                 </td>
               </tr>
             </tbody>
@@ -631,8 +646,8 @@
     <section id="portal-manager" class="portal-view">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Manager Approval Queue (Tier 1)</h1>
-          <p class="page-sub">Direct Line Governance: Audit business necessity, itemized expenses, and receipts/quotes. Approve to Admin or request alterations.</p>
+          <h1 class="page-title">Manager Approval Queue</h1>
+          <p class="page-sub">Review direct subordinate travel plans, expense quotes, and receipts.</p>
         </div>
         <div style="text-align:right;">
           <div style="font-size:0.775rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.5px;">Pending Manager Review</div>
@@ -640,22 +655,10 @@
         </div>
       </div>
 
-      <!-- Action Guidance Card -->
-      <div class="memo-box" style="background:#FFFDF9;border-left:4px solid var(--accent-primary);display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <strong>Manager Decision Powers:</strong>
-          <span style="color:var(--text-sub);margin-left:6px;">Click <strong style="color:var(--status-success);">Approve & Forward</strong> to escalate to Admin, or <strong style="color:var(--status-warning);">Review / Revise</strong> to send modification instructions back to the employee.</span>
-        </div>
-        <span class="badge-callout warning">Action Required</span>
-      </div>
-
       <div class="card">
         <div class="card-title-bar">
-          <div>
-            <div class="table-title">Direct Subordinate Travel Submissions</div>
-            <div style="font-size:0.775rem;color:var(--text-sub);margin-top:2px;">Review details and attached receipts/quotes below:</div>
-          </div>
-          <span class="badge-callout">2 Items Awaiting Manager Audit</span>
+          <div class="table-title">Direct Subordinate Travel Submissions</div>
+          <span class="badge-callout">2 Awaiting Review</span>
         </div>
 
         <div class="table-wrap">
@@ -674,7 +677,7 @@
             </thead>
             <tbody>
               <!-- Item 1: Tokyo Architecture Summit -->
-              <tr id="row-mgr-tokyo">
+              <tr id="row-mgr-tokyo" class="clickable-row" onclick="window.location.href='tripflow-request-detail.html?id=TR-2026-089&role=manager'">
                 <td class="num"><strong>TR-2026-089</strong></td>
                 <td>
                   <div style="font-weight:600;">Jane Doe</div>
@@ -693,21 +696,15 @@
                 <td><span class="status-text" id="status-mgr-tokyo">Pending Manager Review</span></td>
                 <td style="text-align:right;">
                   <div class="action-group" style="justify-content:flex-end;">
-                    <button class="btn btn-success btn-sm" onclick="openDrawer('mgr-tokyo', 'approve')">
-                      Approve & Forward
-                    </button>
-                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('mgr-tokyo', 'revise')">
-                      Review / Revise
-                    </button>
-                    <button class="btn btn-outline btn-sm" onclick="openDrawer('mgr-tokyo', 'view')">
-                      Audit
-                    </button>
+                    <a href="tripflow-request-detail.html?id=TR-2026-089&role=manager" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">
+                      Audit Details ➔
+                    </a>
                   </div>
                 </td>
               </tr>
 
               <!-- Item 2: Resubmission after Admin direct revision -->
-              <tr id="row-mgr-bangalore">
+              <tr id="row-mgr-bangalore" class="clickable-row" onclick="window.location.href='tripflow-request-detail.html?id=TR-2026-095&role=manager'">
                 <td class="num"><strong>TR-2026-095</strong></td>
                 <td>
                   <div style="font-weight:600;">Rohan Sharma</div>
@@ -726,15 +723,9 @@
                 <td><span class="status-text" id="status-mgr-bangalore">Resubmitted to Manager</span></td>
                 <td style="text-align:right;">
                   <div class="action-group" style="justify-content:flex-end;">
-                    <button class="btn btn-primary btn-sm" onclick="openDrawer('mgr-bangalore', 'approve')">
-                      Re-approve & Forward
-                    </button>
-                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('mgr-bangalore', 'revise')">
-                      Review / Revise
-                    </button>
-                    <button class="btn btn-outline btn-sm" onclick="openDrawer('mgr-bangalore', 'view')">
-                      Inspect
-                    </button>
+                    <a href="tripflow-request-detail.html?id=TR-2026-095&role=manager" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">
+                      Audit Alterations ➔
+                    </a>
                   </div>
                 </td>
               </tr>
@@ -750,8 +741,8 @@
     <section id="portal-admin" class="portal-view">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Admin Governance & Budget Authority</h1>
-          <p class="page-sub">Tier 2 Executive Authority: Audit department budget pools, authorize final travel clearance, or settle reimbursement payouts.</p>
+          <h1 class="page-title">Finance & Executive Clearance</h1>
+          <p class="page-sub">Manage departmental budget pools, grant travel clearance, and approve reimbursements.</p>
         </div>
         <div style="text-align:right;">
           <div style="font-size:0.775rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.5px;">Eng Q4 Remaining Pool</div>
@@ -778,21 +769,9 @@
         </div>
       </div>
 
-      <!-- Action Guidance Card -->
-      <div class="memo-box" style="background:#FFFDF9;border-left:4px solid var(--accent-primary);display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <strong>Admin Decision & Revision Options:</strong>
-          <span style="color:var(--text-sub);margin-left:6px;">Click <strong style="color:var(--accent-primary);">Approve</strong> for final clearance or payout. If changes are needed, you can dispatch instructions <strong>via the Manager</strong> or <strong>directly to the Employee</strong> (both return to Manager for re-verification).</span>
-        </div>
-        <span class="badge-callout warning">Executive Decision Pending</span>
-      </div>
-
       <div class="card">
         <div class="card-title-bar">
-          <div>
-            <div class="table-title">Admin Executive Decision Queue</div>
-            <div style="font-size:0.775rem;color:var(--text-sub);margin-top:2px;">Manager-approved requests ready for Tier 2 clearance or settlement:</div>
-          </div>
+          <div class="table-title">Admin Decision Queue</div>
           <span class="badge-callout">2 Actions Pending</span>
         </div>
 
@@ -811,7 +790,7 @@
             </thead>
             <tbody>
               <!-- Row 1: Upcoming Travel (Tokyo Summit) -->
-              <tr id="row-admin-tokyo">
+              <tr id="row-admin-tokyo" class="clickable-row" onclick="window.location.href='tripflow-request-detail.html?id=TR-2026-089&role=admin'">
                 <td class="num"><strong>TR-2026-089</strong></td>
                 <td>
                   <div style="font-weight:600;">Jane Doe</div>
@@ -829,21 +808,15 @@
                 </td>
                 <td style="text-align:right;">
                   <div class="action-group" style="justify-content:flex-end;">
-                    <button class="btn btn-primary btn-sm" onclick="openDrawer('admin-tokyo', 'approve')">
-                      Approve Clearance
-                    </button>
-                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('admin-tokyo', 'revise')">
-                      Request Revision
-                    </button>
-                    <button class="btn btn-outline btn-sm" onclick="openDrawer('admin-tokyo', 'view')">
-                      Inspect
-                    </button>
+                    <a href="tripflow-request-detail.html?id=TR-2026-089&role=admin" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">
+                      Executive Governance ➔
+                    </a>
                   </div>
                 </td>
               </tr>
 
               <!-- Row 2: Already Travelled (Singapore Operations) -->
-              <tr id="row-admin-singapore">
+              <tr id="row-admin-singapore" class="clickable-row" onclick="window.location.href='tripflow-request-detail.html?id=TR-2026-042&role=admin'">
                 <td class="num"><strong>TR-2026-042</strong></td>
                 <td>
                   <div style="font-weight:600;">Sarah Jenkins</div>
@@ -861,15 +834,9 @@
                 </td>
                 <td style="text-align:right;">
                   <div class="action-group" style="justify-content:flex-end;">
-                    <button class="btn btn-success btn-sm" onclick="openDrawer('admin-singapore', 'approve')">
-                      Authorize Payout (₹1,02,500)
-                    </button>
-                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('admin-singapore', 'revise')">
-                      Request Revision
-                    </button>
-                    <button class="btn btn-outline btn-sm" onclick="openDrawer('admin-singapore', 'view')">
-                      Inspect
-                    </button>
+                    <a href="tripflow-request-detail.html?id=TR-2026-042&role=admin" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">
+                      Disbursement Clearance ➔
+                    </a>
                   </div>
                 </td>
               </tr>
@@ -1011,6 +978,26 @@
   </div>
 
   <script>
+    // Handle URL parameters on load (e.g. ?role=manager or ?submitted=true)
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const role = params.get('role');
+      if (role === 'manager') {
+        const btn = document.getElementById('btn-portal-mgr');
+        if (btn) switchPortal('manager', btn);
+      } else if (role === 'admin') {
+        const btn = document.getElementById('btn-portal-admin');
+        if (btn) switchPortal('admin', btn);
+      } else if (role === 'employee') {
+        const btn = document.getElementById('btn-portal-emp');
+        if (btn) switchPortal('employee', btn);
+      }
+
+      if (params.get('submitted')) {
+        showToast('✓ Travel request submitted to Marcus Brody for review!');
+      }
+    });
+
     // Portal Switcher
     function switchPortal(portal, btn) {
       document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
@@ -1029,11 +1016,11 @@
       } else if (portal === 'manager') {
         avatar.innerText = 'MB';
         userDisplay.innerText = 'Marcus Brody';
-        roleDisplay.innerText = 'Engineering Manager (Tier 1 Approver)';
+        roleDisplay.innerText = 'Engineering Director';
       } else {
         avatar.innerText = 'AV';
         userDisplay.innerText = 'Alexander Vance';
-        roleDisplay.innerText = 'Admin / VP Finance & Operations (Tier 2)';
+        roleDisplay.innerText = 'VP Finance & Operations';
       }
     }
 
@@ -1061,7 +1048,7 @@
 
     function submitNewRequest() {
       closeModal();
-      showToast('Travel request submitted to Manager Marcus Brody for Tier 1 review!');
+      showToast('Travel request submitted to Marcus Brody for review!');
     }
 
     function showToast(message) {
@@ -1163,11 +1150,11 @@
           <!-- DECISION ACTIONS PANEL -->
           <div class="decision-action-box">
             <div class="decision-action-title">
-              <span>Manager Tier 1 Action</span>
+              <span>Manager Decision</span>
               <span class="badge-callout">Action Required</span>
             </div>
             <p style="font-size:0.775rem;color:var(--text-sub);margin-bottom:1rem;">
-              Approving escalates this travel request to Admin Alexander Vance for Tier 2 clearance.
+              Approving escalates this travel request to Finance for clearance.
             </p>
             <div style="display:flex;gap:0.75rem;">
               <button class="btn btn-success" style="flex:1;" onclick="executeManagerAction('APPROVE_TO_ADMIN')">
@@ -1282,8 +1269,8 @@
           <!-- ADMIN DECISION ACTIONS PANEL -->
           <div class="decision-action-box">
             <div class="decision-action-title">
-              <span>Admin Executive Authority Action</span>
-              <span class="badge-callout">Tier 2 Clearance</span>
+              <span>Executive Authority Action</span>
+              <span class="badge-callout">Clearance Required</span>
             </div>
             <p style="font-size:0.775rem;color:var(--text-sub);margin-bottom:1rem;">
               Granting clearance authorizes ticket issuance and hotel booking.
@@ -1313,7 +1300,7 @@
         title.innerText = 'Admin Payout Authorization: Singapore Onsite';
         content.innerHTML = `
           <div class="memo-box" style="background:#F1F8F1;border-color:#C8E6C9;line-height:1.7;">
-            <div><strong style="color:var(--status-success);">✓ Case 1: Post-Trip Reimbursement Claim</strong></div>
+            <div><strong style="color:var(--status-success);">✓ Post-Trip Reimbursement Claim</strong></div>
             <div style="font-size:0.8rem;">Employee: Sarah Jenkins • Approved by Manager: Marcus Brody</div>
             <div style="font-size:0.8rem;">Actual Claim Total: <strong class="num">₹1,02,500.00</strong> • Attached: 4 tax receipts verified</div>
           </div>
@@ -1397,7 +1384,7 @@
       closeDrawerDirect();
       if (action === 'APPROVE_TO_ADMIN') {
         document.getElementById('status-mgr-tokyo').innerHTML = 'Approved to Admin';
-        showToast('✓ Manager Approved! Request forwarded to Admin Alexander Vance for Tier 2 clearance.');
+        showToast('✓ Manager Approved! Request forwarded to Finance for clearance.');
       } else if (action === 'RE_APPROVE_TO_ADMIN') {
         document.getElementById('status-mgr-bangalore').innerHTML = 'Re-approved to Admin';
         showToast('✓ Alterations Verified! Re-approved and forwarded to Admin.');
