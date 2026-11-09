@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Travel Request Detailed Record — TripFlow Corporate Governance</title>
+  <!-- Google Fonts: Poppins (Warm Storycraft Standard) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Warm Storycraft Design System Tokens */
+    :root {
+      --bg-canvas: #F7F4EE;
+      --surface-pure: #FFFFFF;
+      --surface-muted: #FAF8F5;
+      --border-hairline: #E8DFD3;
+      --border-subtle: #DCD3C5;
+      --accent-primary: #8A582B;
+      --accent-hover: #754820;
+      --text-ink: #2B231D;
+      --text-sub: #756F68;
+      --text-muted: #A0988E;
+      --status-success: #2E7D32;
+      --status-success-bg: #F1F8F1;
+      --status-warning: #B9770E;
+      --status-warning-bg: #FEF9E7;
+      --status-danger: #9E2A2B;
+      --status-danger-bg: #FDF2F2;
+      --font-body: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-ink);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    /* Top Navigation Bar */
+    .navbar {
+      background: var(--surface-pure);
+      border-bottom: 1px solid var(--border-hairline);
+      padding: 0.85rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      background: var(--text-ink);
+      border-radius: 10px;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+    }
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      letter-spacing: -0.02em;
+    }
+
+    /* Role Switcher in Topbar */
+    .role-switcher {
+      display: flex;
+      align-items: center;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      border-radius: 9999px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .role-btn {
+      border: none;
+      background: transparent;
+      padding: 0.45rem 1.15rem;
+      border-radius: 9999px;
+      font-size: 0.775rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.15s ease;
+    }
+    .role-btn.active {
+      background: var(--surface-pure);
+      color: var(--accent-primary);
+      box-shadow: 0 1px 3px rgba(43, 35, 29, 0.08);
+    }
+
+    .user-block {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.825rem;
+      color: var(--text-ink);
+      font-weight: 500;
+    }
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Breadcrumbs */
+    .breadcrumb-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-bottom: 1.25rem;
+    }
+    .breadcrumb-link {
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .breadcrumb-link:hover { text-decoration: underline; }
+
+    /* Main Container */
+    .main-content {
+      padding: 2rem 2.5rem 5rem 2.5rem;
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    /* Header Banner */
+    .detail-header-card {
+      background: var(--surface-pure);
+      border: 1px solid var(--border-hairline);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(43, 35, 29, 0.04);
+    }
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .request-id-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .request-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      letter-spacing: -0.02em;
+      margin-top: 2px;
+    }
+
+    /* Clean Typographic Status Indicators (Zero colored circles) */
+    .status-text {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-ink);
+      padding: 0.3rem 0.85rem;
+      border-radius: 8px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      white-space: nowrap;
+    }
+    .status-text.warning {
+      background: var(--status-warning-bg);
+      border-color: #FAD7A0;
+      color: var(--status-warning);
+    }
+    .status-text.success {
+      background: var(--status-success-bg);
+      border-color: #C8E6C9;
+      color: var(--status-success);
+    }
+
+    /* Key Metadata Strip */
+    .metadata-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .meta-item-label {
+      font-size: 0.725rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .meta-item-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-ink);
+      margin-top: 2px;
+    }
+
+    /* Two-Tier Workflow Stepper */
+    .stepper-card {
+      background: var(--surface-pure);
+      border: 1px solid var(--border-hairline);
+      border-radius: 16px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.75rem;
+    }
+    .stepper-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-sub);
+      margin-bottom: 1rem;
+    }
+    .stepper-track {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      position: relative;
+    }
+    .step-node {
+      position: relative;
+      padding-right: 1rem;
+    }
+    .step-bar {
+      height: 4px;
+      background: var(--border-hairline);
+      border-radius: 2px;
+      margin-bottom: 0.75rem;
+    }
+    .step-node.completed .step-bar { background: var(--status-success); }
+    .step-node.active .step-bar { background: var(--accent-primary); }
+    .step-number {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .step-name {
+      font-size: 0.825rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      margin-top: 2px;
+    }
+    .step-detail {
+      font-size: 0.725rem;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    /* Two-Column Layout */
+    .detail-layout-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* Content Cards */
+    .card {
+      background: var(--surface-pure);
+      border: 1px solid var(--border-hairline);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(43, 35, 29, 0.04);
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      margin-bottom: 0.25rem;
+    }
+    .card-subtitle {
+      font-size: 0.775rem;
+      color: var(--text-sub);
+      margin-bottom: 1.25rem;
+    }
+
+    /* Expense Ledger Table */
+    .table-wrap {
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.825rem;
+    }
+    th {
+      background: var(--surface-muted);
+      border-bottom: 1px solid var(--border-hairline);
+      padding: 0.8rem 1.15rem;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+    td {
+      padding: 0.95rem 1.15rem;
+      border-bottom: 1px solid var(--border-hairline);
+      color: var(--text-ink);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #FCFAF7; }
+
+    .num {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    /* Proof Badges & Links */
+    .proof-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent-primary);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .proof-chip:hover {
+      background: #FAF4EB;
+      border-color: var(--accent-primary);
+    }
+
+    /* Audit Timeline */
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 1rem;
+    }
+    .timeline-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      margin-top: 0.35rem;
+      flex-shrink: 0;
+    }
+    .timeline-body {
+      flex: 1;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 0.85rem 1.15rem;
+      font-size: 0.8rem;
+    }
+    .timeline-meta {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-sub);
+      font-size: 0.725rem;
+      margin-bottom: 0.25rem;
+    }
+    .timeline-remarks {
+      color: var(--text-ink);
+      font-weight: 500;
+      margin-top: 0.25rem;
+    }
+
+    /* Governance Action Sidebar Cards */
+    .governance-action-box {
+      background: #FFFDF9;
+      border: 2px solid var(--accent-primary);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 16px rgba(138, 88, 43, 0.08);
+      margin-bottom: 1.5rem;
+    }
+    .gov-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.35rem;
+    }
+    .gov-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      height: 40px;
+      padding: 0 1.25rem;
+      border-radius: 10px;
+      font-size: 0.825rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent-primary); color: #FFF; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { background: var(--surface-pure); border-color: var(--border-hairline); color: var(--text-ink); }
+    .btn-outline:hover { background: var(--surface-muted); border-color: var(--border-subtle); }
+    .btn-success { background: var(--status-success); color: #FFF; }
+    .btn-success:hover { background: #256629; }
+    .btn-warning-outline { background: #FFFDF9; border-color: #E0C090; color: #8F5B00; }
+    .btn-warning-outline:hover { background: #FEF9E7; }
+    .btn-danger-outline { background: transparent; border-color: #E6B0B1; color: var(--status-danger); }
+    .btn-danger-outline:hover { background: var(--status-danger-bg); }
+    .btn-block { width: 100%; margin-bottom: 0.65rem; }
+
+    /* Form Fields */
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: 0.775rem; font-weight: 600; color: var(--text-ink); margin-bottom: 0.35rem; }
+    .form-textarea {
+      width: 100%;
+      height: 75px;
+      border: 1px solid var(--border-hairline);
+      background: #FFF;
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.8rem;
+      color: var(--text-ink);
+      font-family: var(--font-body);
+      font-weight: 500;
+      outline: none;
+      resize: none;
+    }
+    .form-textarea:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 1px var(--accent-primary); }
+
+    /* Checkbox Card for Manager */
+    .check-list-box {
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.775rem;
+      line-height: 1.8;
+    }
+
+    /* Radio Choice Card for Admin Revision */
+    .routing-choice-box {
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+      background: #FFF;
+      cursor: pointer;
+    }
+    .routing-choice-box.selected {
+      border-color: var(--accent-primary);
+      background: #FAF6F0;
+    }
+
+    /* Lightbox Modal for Proof Image */
+    .proof-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(43, 35, 29, 0.65);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .proof-modal-overlay.open { display: flex; }
+    .proof-modal-card {
+      background: var(--surface-pure);
+      border-radius: 16px;
+      padding: 1.5rem;
+      max-width: 620px;
+      width: 100%;
+      box-shadow: 0 16px 40px rgba(43, 35, 29, 0.25);
+    }
+    .proof-canvas-mock {
+      background: #FAF8F5;
+      border: 1px dashed var(--border-subtle);
+      border-radius: 10px;
+      padding: 2rem;
+      text-align: center;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="navbar">
+    <div class="brand-group">
+      <a href="tripflow-full-mockup.html" class="brand-logo" title="Back to TripFlow Hub">TF</a>
+      <div>
+        <div class="brand-title">TripFlow</div>
+        <!-- <div style="font-size:0.7rem;color:var(--text-sub);letter-spacing:0.3px;">CORPORATE TRAVEL GOVERNANCE</div> -->
+      </div>
+    </div>
+
+    <!-- Interactive Role Switcher Pill -->
+    <div class="role-switcher">
+      <button class="role-btn" id="btn-role-employee" onclick="switchPerspective('employee')">
+        Employee View
+      </button>
+      <button class="role-btn" id="btn-role-manager" onclick="switchPerspective('manager')">
+        Manager View
+      </button>
+      <button class="role-btn" id="btn-role-admin" onclick="switchPerspective('admin')">
+        Finance & Admin View
+      </button>
+    </div>
+
+    <div class="user-block">
+      <div class="user-avatar" id="avatar-circle">JD</div>
+      <div>
+        <div id="user-name-display" style="font-weight:600;line-height:1.2;">Jane Doe</div>
+        <div id="user-role-display" style="font-size:0.725rem;color:var(--text-sub);">Staff Engineer (PRJ-ENG-409)</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumb-bar">
+      <a id="back-hub-link" href="tripflow-full-mockup.html" class="breadcrumb-link">
+        ← Back to Hub Dashboard
+      </a>
+      <span>/</span>
+      <span id="breadcrumb-req-id">TR-2026-089</span>
+      <span>/</span>
+      <span>Detailed Information</span>
+    </nav>
+
+    <!-- Header Banner Card -->
+    <div class="detail-header-card">
+      <div class="header-top-row">
+        <div>
+          <div class="request-id-tag" id="head-req-id">REQUEST ID: TR-2026-089 • UPCOMING TRAVEL (PRE-TRIP)</div>
+          <h1 class="request-title" id="head-title">Annual Engineering Architecture Summit</h1>
+        </div>
+        <div>
+          <span class="status-text" id="head-status-badge">Pending Manager Review</span>
+        </div>
+      </div>
+
+      <p id="head-objective" style="font-size:0.875rem;color:var(--text-sub);max-width:850px;line-height:1.6;">
+        Present core platform architecture & microservice migration roadmaps to the Tokyo APAC engineering staff and conduct hands-on governance alignment workshops.
+      </p>
+
+      <!-- Key Metadata Strip -->
+      <div class="metadata-strip">
+        <div>
+          <div class="meta-item-label">Employee / Requester</div>
+          <div class="meta-item-value" id="meta-requester">Jane Doe (Staff Eng)</div>
+        </div>
+        <div>
+          <div class="meta-item-label">Cost Center / Project</div>
+          <div class="meta-item-value" id="meta-project">PRJ-ENG-409 (Core Eng)</div>
+        </div>
+        <div>
+          <div class="meta-item-label">Travel Destination & Dates</div>
+          <div class="meta-item-value" id="meta-dates">Tokyo (HND) • Nov 15–20</div>
+        </div>
+        <div>
+          <div class="meta-item-label">Total Expense Valuation</div>
+          <div class="meta-item-value num" id="meta-total" style="color:var(--accent-primary);">₹1,48,000.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stepper: Governance Pipeline -->
+    <div class="stepper-card">
+      <div class="stepper-title">Approval & Clearance Pipeline</div>
+      <div class="stepper-track" id="governance-stepper">
+        <div class="step-node completed">
+          <div class="step-bar"></div>
+          <div class="step-number">Stage 1</div>
+          <div class="step-name">Submitted</div>
+          <div class="step-detail" id="step-1-detail">Nov 05, 2026 • Quotes attached</div>
+        </div>
+        <div class="step-node active" id="step-node-mgr">
+          <div class="step-bar"></div>
+          <div class="step-number">Stage 2</div>
+          <div class="step-name">Manager Review</div>
+          <div class="step-detail" id="step-2-detail">Marcus Brody • In review</div>
+        </div>
+        <div class="step-node" id="step-node-admin">
+          <div class="step-bar"></div>
+          <div class="step-number">Stage 3</div>
+          <div class="step-name">Finance Clearance</div>
+          <div class="step-detail" id="step-3-detail">Alexander Vance • Budget check</div>
+        </div>
+        <div class="step-node" id="step-node-final">
+          <div class="step-bar"></div>
+          <div class="step-number">Stage 4</div>
+          <div class="step-name">Cleared for Booking</div>
+          <div class="step-detail" id="step-4-detail">Ticketing & settlement</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two-Column Layout -->
+    <div class="detail-layout-grid">
+
+      <!-- LEFT COLUMN: LEDGER, PROOF & AUDIT TRAIL -->
+      <div>
+
+        <!-- Itemized Expense Ledger & Quotation Receipts -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+            <div>
+              <div class="card-title">Itemized Expenses & Verified Evidence</div>
+              <div class="card-subtitle" style="margin-bottom:0;">
+                All expenses itemized in Indian Rupees (₹) with quotation or receipt proof attachments.
+              </div>
+            </div>
+            <span class="status-text num" style="font-size:0.75rem;">INR (₹) Standard</span>
+          </div>
+
+          <div class="table-wrap" style="margin-top:1.25rem;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Vendor / Description</th>
+                  <th style="text-align:right;">Amount (INR ₹)</th>
+                  <th>Attached Evidence</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-body">
+                <tr>
+                  <td>Flight (Airfare)</td>
+                  <td>All Nippon Airways (Economy Roundtrip)</td>
+                  <td class="num" style="text-align:right;">₹68,000.00</td>
+                  <td>
+                    <button class="proof-chip" onclick="openProofModal('ana-quote.png', 'ANA Quotation — Flight NH828 Economy Fare Proof')">
+                      🔍 ana-quote.png
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Lodging / Hotel</td>
+                  <td>Shinjuku Prince Hotel (5 Nights @ ₹11,200/nt)</td>
+                  <td class="num" style="text-align:right;">₹56,000.00</td>
+                  <td>
+                    <button class="proof-chip" onclick="openProofModal('hotel-booking.png', 'Shinjuku Prince Hotel Corporate Booking Quote')">
+                      🔍 hotel-booking.png
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Meals / Per-Diem</td>
+                  <td>Standard Daily Allowance (5 Days @ ₹4,800/day)</td>
+                  <td class="num" style="text-align:right;">₹24,000.00</td>
+                  <td>
+                    <span class="proof-chip" style="cursor:default;color:var(--text-sub);">
+                      ✓ Policy Standard
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr style="background:var(--surface-muted);">
+                  <td colspan="2" style="font-weight:700;">Total Evaluated Valuation:</td>
+                  <td class="num" style="text-align:right;font-weight:700;font-size:1.05rem;color:var(--accent-primary);" id="ledger-total">
+                    ₹1,48,000.00
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Activity & Audit History -->
+        <div class="card">
+          <div class="card-title">Activity & Audit History</div>
+          <div class="card-subtitle">Log of decisions, remarks, and status changes.</div>
+
+          <div class="timeline-list" id="audit-timeline-list">
+            <!-- Event 1 -->
+            <div class="timeline-item">
+              <div class="timeline-indicator"></div>
+              <div class="timeline-body">
+                <div class="timeline-meta">
+                  <strong>Travel Request Submitted</strong>
+                  <span>Nov 05, 2026 • 10:14 AM</span>
+                </div>
+                <div>Requester Jane Doe submitted itinerary and 3 itemized expense quotes for manager review.</div>
+              </div>
+            </div>
+
+            <!-- Event 2 -->
+            <div class="timeline-item" id="timeline-event-2">
+              <div class="timeline-indicator" style="background:var(--status-warning);"></div>
+              <div class="timeline-body">
+                <div class="timeline-meta">
+                  <strong>Under Manager Review</strong>
+                  <span>In Progress</span>
+                </div>
+                <div>Assigned to Marcus Brody (Engineering Director) for operational necessity and budget cap verification.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: ROLE-SPECIFIC ACTION PANELS -->
+      <div>
+
+        <!-- 1. EMPLOYEE PERSPECTIVE PANEL -->
+        <div id="panel-employee-view" class="governance-action-box">
+          <div class="gov-badge">Employee Actions</div>
+          <div class="gov-title">Request Status</div>
+
+          <div id="emp-status-message" class="memo-box" style="margin-bottom:1rem;background:#FFF;border-color:var(--border-hairline);">
+            Your travel request is currently with <strong>Marcus Brody</strong> for review. You will receive an automated notification once evaluated.
+          </div>
+
+          <div id="emp-action-buttons">
+            <button class="btn btn-outline btn-block" onclick="alert('Travel request withdrawn.')">
+              Withdraw Travel Request
+            </button>
+            <a id="btn-emp-back" href="tripflow-full-mockup.html?role=employee" class="btn btn-outline btn-block">
+              ← Return to My Travel Hub
+            </a>
+          </div>
+
+          <!-- Revision resubmission block (Shown only if status is REVISION_REQUESTED) -->
+          <div id="emp-revision-container" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-hairline);">
+            <div style="font-size:0.775rem;font-weight:700;color:var(--status-warning);margin-bottom:0.5rem;">
+              Requested Adjustments:
+            </div>
+            <div style="font-size:0.8rem;background:#FEF9E7;padding:0.75rem;border-radius:8px;border:1px solid #FAD7A0;margin-bottom:1rem;">
+              <em>"Reduce lodging estimate to partner hotel rate (₹2,750/night) and re-submit."</em>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Employee Modification Notes to Manager</label>
+              <textarea class="form-textarea" placeholder="Explain adjustments made..."></textarea>
+            </div>
+            <div style="font-size:0.725rem;color:var(--text-sub);margin-bottom:0.75rem;font-style:italic;">
+              * Note: Modified requests will return to Marcus Brody for review before clearance.
+            </div>
+            <button class="btn btn-primary btn-block" onclick="alert('Resubmitted to Manager Marcus Brody for re-verification!')">
+              Resubmit Alterations to Manager
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. MANAGER PERSPECTIVE PANEL -->
+        <div id="panel-manager-view" class="governance-action-box" style="display:none;">
+          <div class="gov-badge">Manager Review</div>
+          <div class="gov-title">Review Decision</div>
+          <p style="font-size:0.775rem;color:var(--text-sub);margin-bottom:1rem;">
+            Verify travel necessity, itemized quotes, and departmental caps before approving.
+          </p>
+
+          <div class="check-list-box">
+            <div style="color:var(--status-success);font-weight:600;">✓ Business purpose justified (Tokyo team summit)</div>
+            <div style="color:var(--status-success);font-weight:600;">✓ Economy class airfare verified (₹68,000 ANA)</div>
+            <div style="color:var(--status-success);font-weight:600;">✓ Hotel nightly cap verified (₹11,200 vs ₹13,000 cap)</div>
+            <div style="color:var(--status-success);font-weight:600;">✓ Within Q4 Engineering Department budget</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Revision Remarks <span style="font-weight:400;color:var(--text-sub);">(If requesting changes)</span></label>
+            <textarea class="form-textarea" id="mgr-notes-input" placeholder="e.g. Please choose an earlier return flight or adjust hotel..."></textarea>
+          </div>
+
+          <button class="btn btn-success btn-block" onclick="executeDecision('MGR_APPROVE')">
+            Approve & Forward to Finance ➔
+          </button>
+          <button class="btn btn-warning-outline btn-block" onclick="executeDecision('MGR_REVISE')">
+            Send Revision to Employee
+          </button>
+          <button class="btn btn-danger-outline btn-block" onclick="executeDecision('MGR_REJECT')">
+            Reject Request
+          </button>
+        </div>
+
+        <!-- 3. ADMIN PERSPECTIVE PANEL -->
+        <div id="panel-admin-view" class="governance-action-box" style="display:none;">
+          <div class="gov-badge">Finance & Operations</div>
+          <div class="gov-title">Executive Clearance</div>
+
+          <!-- Pool Impact -->
+          <div class="memo-box" style="background:#FFF;border-color:var(--border-hairline);margin-bottom:1rem;">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--accent-primary);text-transform:uppercase;">Eng Q4 Budget Pool</div>
+            <div style="font-size:0.85rem;margin-top:4px;">Available Headroom: <strong class="num" style="color:var(--status-success);">₹12,90,000.00</strong></div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">After this trip: ₹11,42,000.00 remaining</div>
+          </div>
+
+          <!-- Revision Routing Selector -->
+          <div style="margin-bottom:1rem;">
+            <label class="form-label">If Requesting Changes, Choose Dispatch Route:</label>
+            <div class="routing-choice-box selected" id="opt-route-a" onclick="selectAdminRoute('MANAGER')">
+              <strong>Route A: Send via Manager</strong>
+              <div style="font-size:0.7rem;color:var(--text-sub);">Marcus Brody coordinates alteration with employee</div>
+            </div>
+            <div class="routing-choice-box" id="opt-route-b" onclick="selectAdminRoute('EMPLOYEE')">
+              <strong>Route B: Direct to Employee</strong>
+              <div style="font-size:0.7rem;color:var(--text-sub);">Direct note to Jane Doe (returns to manager first)</div>
+            </div>
+            <div style="font-size:0.725rem;color:var(--text-sub);font-style:italic;">
+              * Note: Once modified, the request will route back to Marcus Brody for verification.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Policy Directive Instructions</label>
+            <textarea class="form-textarea" id="admin-notes-input" placeholder="e.g. Please reduce hotel per-diem or choose partner airline..."></textarea>
+          </div>
+
+          <button class="btn btn-primary btn-block" onclick="executeDecision('ADMIN_APPROVE')">
+            Grant Travel Clearance ➔
+          </button>
+          <button class="btn btn-warning-outline btn-block" onclick="executeDecision('ADMIN_REVISE')">
+            Dispatch Revision Directive
+          </button>
+          <button class="btn btn-danger-outline btn-block" onclick="executeDecision('ADMIN_REJECT')">
+            Reject Request Permanently
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- LIGHTBOX PROOF PREVIEW MODAL -->
+  <div id="proof-modal" class="proof-modal-overlay" onclick="closeProofModal(event)">
+    <div class="proof-modal-card" onclick="event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-hairline);padding-bottom:0.75rem;">
+        <div style="font-weight:700;font-size:1rem;" id="proof-modal-title">Receipt / Quotation Evidence</div>
+        <button onclick="closeProofModalDirect()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-sub);">&times;</button>
+      </div>
+
+      <div class="proof-canvas-mock">
+        <div style="font-size:2.5rem;color:var(--accent-primary);margin-bottom:0.5rem;">📄</div>
+        <div style="font-weight:700;font-size:1.05rem;" id="proof-file-name">ana-quote.png</div>
+        <div style="font-size:0.8rem;color:var(--text-sub);margin-top:0.25rem;">
+          Verified Official Quotation Document • Timestamped & Embedded
+        </div>
+        <div style="margin-top:1rem;display:inline-block;padding:0.4rem 1rem;background:var(--status-success-bg);color:var(--status-success);border:1px solid #C8E6C9;border-radius:6px;font-weight:600;font-size:0.775rem;">
+          ✓ Legibility & Integrity Check Passed
+        </div>
+      </div>
+
+      <div style="text-align:right;">
+        <button class="btn btn-outline btn-sm" onclick="closeProofModalDirect()">Close Preview</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // URL Parameter Extraction
+    const urlParams = new URLSearchParams(window.location.search);
+    const reqIdParam = urlParams.get('id') || 'TR-2026-089';
+    const roleParam = urlParams.get('role') || 'employee';
+
+    // Request Database Mock
+    const requestData = {
+      'TR-2026-089': {
+        id: 'TR-2026-089',
+        type: 'UPCOMING',
+        title: 'Annual Engineering Architecture Summit',
+        objective: 'Present core platform architecture & microservice migration roadmaps to the Tokyo APAC engineering staff and conduct hands-on governance alignment workshops.',
+        requester: 'Jane Doe (Senior Staff Engineer)',
+        project: 'PRJ-ENG-409 (Core Platform)',
+        destination: 'Tokyo, Japan (HND)',
+        dates: 'Nov 15 – Nov 20, 2026 (5 Days)',
+        total: '₹1,48,000.00',
+        status: 'Pending Manager Review',
+        stage: 2,
+        expenses: [
+          { cat: 'Flight (Airfare)', desc: 'All Nippon Airways (Economy Roundtrip)', amount: '₹68,000.00', proof: 'ana-quote.png' },
+          { cat: 'Lodging / Hotel', desc: 'Shinjuku Prince Hotel (5 Nights @ ₹11,200/nt)', amount: '₹56,000.00', proof: 'hotel-booking.png' },
+          { cat: 'Meals / Per-Diem', desc: 'Standard Daily Allowance (5 Days @ ₹4,800/day)', amount: '₹24,000.00', proof: 'Policy Standard' }
+        ]
+      },
+      'TR-2026-042': {
+        id: 'TR-2026-042',
+        type: 'PAST',
+        title: 'Client Emergency Operations Onsite',
+        objective: 'On-site post-incident recovery and client operational stabilization in Singapore central data center facility.',
+        requester: 'Sarah Jenkins (Infrastructure Lead)',
+        project: 'PRJ-SALES-202 (Client Operations)',
+        destination: 'Singapore (SIN)',
+        dates: 'Oct 20 – Oct 24, 2026 (Completed)',
+        total: '₹1,02,500.00',
+        status: 'Settled & Paid',
+        stage: 4,
+        expenses: [
+          { cat: 'Flight (Airfare)', desc: 'Singapore Airlines (Economy Class)', amount: '₹48,500.00', proof: 'sq-invoice.pdf' },
+          { cat: 'Lodging / Hotel', desc: 'Grand Pacific Hotel (4 Nights)', amount: '₹38,000.00', proof: 'hotel-tax-receipt.jpg' },
+          { cat: 'Ground Transit', desc: 'Grab Taxi Airport Transfers', amount: '₹6,000.00', proof: 'grab-receipts.pdf' },
+          { cat: 'Meals / Per-Diem', desc: 'Actual Incurred Per-Diem Allowance', amount: '₹10,000.00', proof: 'meals-receipt.jpg' }
+        ]
+      },
+      'TR-2026-095': {
+        id: 'TR-2026-095',
+        type: 'UPCOMING',
+        title: 'AWS Cloud Architecture Symposium',
+        objective: 'Participate in AWS distributed cloud design summit and certify platform microservices for high throughput.',
+        requester: 'Rohan Sharma (DevOps Lead)',
+        project: 'PRJ-ENG-409 (Core Platform)',
+        destination: 'Bangalore (BLR)',
+        dates: 'Dec 02 – Dec 05, 2026',
+        total: '₹31,500.00',
+        status: 'Revision Requested',
+        stage: 2,
+        expenses: [
+          { cat: 'Flight (Airfare)', desc: 'IndiGo Airlines Roundtrip', amount: '₹16,500.00', proof: 'indigo-quote.png' },
+          { cat: 'Lodging / Hotel', desc: 'Partner Business Hotel (3 Nights @ ₹3,000/nt)', amount: '₹9,000.00', proof: 'hotel-blr.png' },
+          { cat: 'Meals / Per-Diem', desc: 'Bangalore Daily Allowance', amount: '₹6,000.00', proof: 'Policy Standard' }
+        ]
+      }
+    };
+
+    let currentReq = requestData[reqIdParam] || requestData['TR-2026-089'];
+    let currentRole = roleParam;
+
+    function initPage() {
+      // Set header data
+      document.getElementById('breadcrumb-req-id').innerText = currentReq.id;
+      document.getElementById('head-req-id').innerText = `REQUEST ID: ${currentReq.id} • ${currentReq.type === 'UPCOMING' ? 'UPCOMING TRAVEL (PRE-TRIP)' : 'ALREADY TRAVELLED (POST-TRIP)'}`;
+      document.getElementById('head-title').innerText = currentReq.title;
+      document.getElementById('head-objective').innerText = currentReq.objective;
+      document.getElementById('head-status-badge').innerText = currentReq.status;
+      if (currentReq.status === 'Revision Requested') {
+        document.getElementById('head-status-badge').className = 'status-text warning';
+      } else if (currentReq.status === 'Settled & Paid' || currentReq.status === 'Approved') {
+        document.getElementById('head-status-badge').className = 'status-text success';
+      }
+
+      document.getElementById('meta-requester').innerText = currentReq.requester;
+      document.getElementById('meta-project').innerText = currentReq.project;
+      document.getElementById('meta-dates').innerText = currentReq.dates;
+      document.getElementById('meta-total').innerText = currentReq.total;
+
+      // Populate Ledger
+      const tbody = document.getElementById('ledger-body');
+      tbody.innerHTML = '';
+      currentReq.expenses.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.cat}</td>
+          <td>${item.desc}</td>
+          <td class="num" style="text-align:right;">${item.amount}</td>
+          <td>
+            ${item.proof.includes('.') ? 
+              `<button class="proof-chip" onclick="openProofModal('${item.proof}', '${item.desc}')">🔍 ${item.proof}</button>` : 
+              `<span class="proof-chip" style="cursor:default;color:var(--text-sub);">✓ ${item.proof}</span>`}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('ledger-total').innerText = currentReq.total;
+
+      // Switch to proper perspective
+      switchPerspective(currentRole);
+    }
+
+    function switchPerspective(role) {
+      currentRole = role;
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`btn-role-${role}`).classList.add('active');
+
+      // Panels
+      document.getElementById('panel-employee-view').style.display = role === 'employee' ? 'block' : 'none';
+      document.getElementById('panel-manager-view').style.display = role === 'manager' ? 'block' : 'none';
+      document.getElementById('panel-admin-view').style.display = role === 'admin' ? 'block' : 'none';
+
+      // Avatar & user info
+      const avatar = document.getElementById('avatar-circle');
+      const name = document.getElementById('user-name-display');
+      const roleText = document.getElementById('user-role-display');
+
+      if (role === 'employee') {
+        avatar.innerText = 'JD';
+        name.innerText = 'Jane Doe';
+        roleText.innerText = 'Senior Staff Engineer (PRJ-ENG-409)';
+      } else if (role === 'manager') {
+        avatar.innerText = 'MB';
+        name.innerText = 'Marcus Brody';
+        roleText.innerText = 'Engineering Director';
+      } else {
+        avatar.innerText = 'AV';
+        name.innerText = 'Alexander Vance';
+        roleText.innerText = 'VP Finance & Operations';
+      }
+
+      // Update back button href
+      document.getElementById('back-hub-link').href = `tripflow-full-mockup.html?role=${role}`;
+      document.getElementById('btn-emp-back').href = `tripflow-full-mockup.html?role=${role}`;
+
+      // Handle revision block for employee
+      if (role === 'employee' && currentReq.status === 'Revision Requested') {
+        document.getElementById('emp-revision-container').style.display = 'block';
+        document.getElementById('emp-status-message').innerHTML = '<strong>Revision Required:</strong> Alexander Vance has requested adjustments to this request. Update quotes and resubmit for review.';
+      } else if (role === 'employee') {
+        document.getElementById('emp-revision-container').style.display = 'none';
+      }
+    }
+
+    let selectedAdminRoute = 'MANAGER';
+    function selectAdminRoute(route) {
+      selectedAdminRoute = route;
+      if (route === 'MANAGER') {
+        document.getElementById('opt-route-a').classList.add('selected');
+        document.getElementById('opt-route-b').classList.remove('selected');
+      } else {
+        document.getElementById('opt-route-b').classList.add('selected');
+        document.getElementById('opt-route-a').classList.remove('selected');
+      }
+    }
+
+    function executeDecision(action) {
+      if (action === 'MGR_APPROVE') {
+        alert('✓ Approved! Request has been forwarded to Finance for final clearance.');
+        window.location.href = 'tripflow-full-mockup.html?role=manager';
+      } else if (action === 'MGR_REVISE') {
+        const notes = document.getElementById('mgr-notes-input').value || 'Please adjust quote selection.';
+        alert(`✓ Revision instructions sent to employee: "${notes}"`);
+        window.location.href = 'tripflow-full-mockup.html?role=manager';
+      } else if (action === 'MGR_REJECT') {
+        alert('Travel request rejected.');
+        window.location.href = 'tripflow-full-mockup.html?role=manager';
+      } else if (action === 'ADMIN_APPROVE') {
+        alert('✓ Travel Clearance Granted! Jane Doe is now authorized for booking.');
+        window.location.href = 'tripflow-full-mockup.html?role=admin';
+      } else if (action === 'ADMIN_REVISE') {
+        const notes = document.getElementById('admin-notes-input').value || 'Please reduce lodging quote.';
+        if (selectedAdminRoute === 'MANAGER') {
+          alert(`✓ Revision dispatched to Marcus Brody to coordinate adjustment: "${notes}"`);
+        } else {
+          alert(`✓ Direct revision note dispatched to employee: "${notes}"`);
+        }
+        window.location.href = 'tripflow-full-mockup.html?role=admin';
+      } else if (action === 'ADMIN_REJECT') {
+        alert('Travel request permanently rejected.');
+        window.location.href = 'tripflow-full-mockup.html?role=admin';
+      }
+    }
+
+    // Lightbox modal functions
+    function openProofModal(fileName, title) {
+      document.getElementById('proof-file-name').innerText = fileName;
+      document.getElementById('proof-modal-title').innerText = title;
+      document.getElementById('proof-modal').classList.add('open');
+    }
+    function closeProofModalDirect() {
+      document.getElementById('proof-modal').classList.remove('open');
+    }
+    function closeProofModal(e) {
+      if (e.target === document.getElementById('proof-modal')) {
+        closeProofModalDirect();
+      }
+    }
+
+    // Run on startup
+    initPage();
+  </script>
+</body>
+</html>
