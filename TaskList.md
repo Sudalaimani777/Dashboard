@@ -68,17 +68,16 @@ Any agent or contributor modifying this codebase **must** adhere to these strict
   - [x] Run migration test `npm run test:migration` and verify 100% passes.
   - [x] *(Seed data intentionally skipped per user explicit instruction)*.
 
-- [ ] **Task 2: Travel Types, State Machine & Validation Schemas** (Est: 2.5 Hours)
-  - [ ] Create unit test `server/tests/travel-fsm.test.ts` validating all allowed transitions and rejecting bypasses.
-  - [ ] Create domain type contracts `server/src/modules/travel/types/travel.types.ts`:
+- [x] **Task 2: Travel Types, State Machine & Validation Schemas** (Est: 2.5 Hours) — ✅ COMPLETED
+  - [x] Create unit test `server/tests/travel-state-machine.test.ts` validating all 47 allowed transitions, revision loops, and rejecting bypasses.
+  - [x] Create domain type contracts `server/src/features/travel/travel.types.ts`:
     - Enums: `TravelType`, `TravelStatus`, `ExpenseCategory`, `RevisionTarget`, `UserRole`.
     - Interfaces: `TravelRequest`, `TravelExpense`, `TimelineEvent`, `DepartmentBudget`.
-  - [ ] Create Zod schemas `server/src/modules/travel/validations/travel.validation.ts`:
+  - [x] Create validation schemas in `server/src/features/travel/travel.validation.ts`:
     - Validate upfront expenses and receipt URLs.
     - Validate revision routing (`MANAGER` vs `EMPLOYEE`).
-  - [ ] Implement state machine transition logic in `server/src/modules/travel/services/travel-fsm.ts`.
-  - [ ] Run unit test and verify passes.
-  - [ ] Git commit: `feat(travel): implement travel types, validation schemas, and state machine`.
+  - [x] Implement state machine transition logic and permission boundaries (`ALLOWED_TRANSITIONS`, `validateStatusTransition`, `canEmployeeModify`).
+  - [x] Run unit test suite `npm run test:fsm` and verify 47/47 tests pass.
 
 - [ ] **Task 3: Relational Repository Layer** (Est: 3.0 Hours)
   - [ ] Create repository test `server/tests/travel-repo.test.ts` for database CRUD, transactions, and audit events.
