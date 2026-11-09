@@ -129,7 +129,7 @@ Run `npm run build` in `client/` to verify zero type errors.
 - [ ] **Step 1: Implement `ForgotPasswordCard.tsx`**
 Create `client/src/features/auth/components/ForgotPasswordCard.tsx` featuring:
 1. Clean editorial card centered on `#F7F4EE` canvas.
-2. Direct brand wordmark link (`Readventure`).
+2. Direct brand wordmark link (`TripFlow`).
 3. Title: "Reset your password".
 4. Subtitle: "Enter the email address associated with your account, and we will send you a recovery link."
 5. Email input with validation error display.
@@ -178,7 +178,7 @@ Create `client/src/features/auth/components/ResetPasswordCard.tsx` featuring:
 5. **Success State**:
    - Title: "Password updated"
    - Subtitle: "Your password has been reset successfully. You can now sign in with your new credentials."
-   - Primary action: "Sign in to Readventure" button navigating to `/signin`.
+   - Primary action: "Sign in to TripFlow" button navigating to `/signin`.
 
 - [ ] **Step 2: Verify component compiles**
 Run `npm run build` in `client/` to verify zero syntax/build errors.

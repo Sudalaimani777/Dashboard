@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Readventure - Auth API (Full Lifecycle)",
-    "_postman_id": "c1f7b920-802b-42fa-9087-readventure001",
-    "description": "Complete End-to-End Postman Collection for testing Signup, Signin, Signout, Profile, Forgot Password, and Reset Password flows in Readventure.",
+    "name": "TripFlow - Auth API (Full Lifecycle)",
+    "_postman_id": "c1f7b920-802b-42fa-9087-TripFlow001",
+    "description": "Complete End-to-End Postman Collection for testing Signup, Signin, Signout, Profile, Forgot Password, and Reset Password flows in TripFlow.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -13,7 +13,7 @@
     },
     {
       "key": "testEmail",
-      "value": "alex@readventure.com",
+      "value": "alex@TripFlow.com",
       "type": "string"
     },
     {

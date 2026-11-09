@@ -1,6 +1,6 @@
 # Design Specification: Frontend Warm Storycraft UI & Auth State
 
-* **Project**: Readventure (User Authentication System)
+* **Project**: TripFlow (User Authentication System)
 * **Milestone**: Day 2 — Sub-Project 2 (Frontend Foundation, Landing Page & Sign-in UI)
 * **Date**: 2026-11-05
 * **Status**: Validated Design
@@ -10,7 +10,7 @@
 
 ## 1. Overview & Business Goals
 
-This specification details the architecture, design tokens, component hierarchy, and verification plan for the **Readventure** frontend. It completes the Day 2 frontend milestone (Landing Page UI, Sign-in Page UI, and `useAuth` state management) while adhering to strict **Anti-AI-Design** standards and the **Warm Storycraft** visual system.
+This specification details the architecture, design tokens, component hierarchy, and verification plan for the **TripFlow** frontend. It completes the Day 2 frontend milestone (Landing Page UI, Sign-in Page UI, and `useAuth` state management) while adhering to strict **Anti-AI-Design** standards and the **Warm Storycraft** visual system.
 
 ### Goals
 - Implement a responsive, editorial-grade **Landing Page** and **Sign-in Page** using **Poppins** typography and the **Warm Storycraft** palette.
@@ -109,7 +109,7 @@ client/
 
 ### 4.1. Landing Page (`/`)
 * **Header**:
-  * Wordmark **Readventure** in bold Poppins (`#2B231D`).
+  * Wordmark **TripFlow** in bold Poppins (`#2B231D`).
   * Links: "Explore", "About".
   * Dynamic CTA: If authenticated, "Open Dashboard"; if guest, "Sign In" (warm outlined button).
 * **Hero**:
@@ -133,7 +133,7 @@ client/
   * "Forgot password?" link (routes to `/forgot-password`).
   * Solid `#8A582B` full-width button: **"Sign In"** (with disabled & loading state).
   * Direct error banner (`#9E2A2B` border/text on `#FDF2F2` background) if credentials fail.
-  * Bottom link: *"New to Readventure? Create an account"* (`/signup`).
+  * Bottom link: *"New to TripFlow? Create an account"* (`/signup`).
 
 ### 4.3. Protected Dashboard (`/dashboard`)
 * Guarded by `ProtectedRoute`.

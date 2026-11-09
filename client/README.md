@@ -1,12 +1,12 @@
-# Readventure Web Client
+# TripFlow Web Client
 
-The responsive frontend application for **Readventure**, a personalized literary companion and reading journey tracker. Built with React 19, TypeScript, Tailwind CSS v4, and the bespoke **Warm Storycraft** design system.
+The responsive frontend application for **TripFlow**, a personalized literary companion and reading journey tracker. Built with React 19, TypeScript, Tailwind CSS v4, and the bespoke **Warm Storycraft** design system.
 
 ---
 
 ## 🎨 Visual Philosophy: Warm Storycraft
 
-Readventure rejects generic AI-generated aesthetics (purple gradients, floating icon chips, neon glows, and pill badges) in favor of a tactile, editorial literary aesthetic:
+TripFlow rejects generic AI-generated aesthetics (purple gradients, floating icon chips, neon glows, and pill badges) in favor of a tactile, editorial literary aesthetic:
 - **Palette**: Warm linen canvas (`#F7F4EE`), crisp porcelain card surfaces (`#FFFFFF` / `#FAF8F5`), hairline sand borders (`#E8DFD3`), rich warm hazelnut accents (`#8A582B`), and deep espresso ink (`#2B231D`).
 - **Typography**: Clean geometric typography (**Poppins**) paired with literary serif highlights.
 - **Microcopy**: Calm, direct, respectful phrasing with zero conversational filler or welded arrow characters (`->`).

@@ -28,7 +28,7 @@ export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
             <BookOpen className="w-5 h-5" />
           </div>
           <span className="text-xl font-bold tracking-tight text-[#2B231D]">
-            Readventure
+            TripFlow
           </span>
         </div>
 

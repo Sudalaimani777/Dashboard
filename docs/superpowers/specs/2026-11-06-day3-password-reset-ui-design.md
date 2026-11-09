@@ -1,4 +1,4 @@
-# Readventure Day 3: Password Reset UI & Flow Specification
+# TripFlow Day 3: Password Reset UI & Flow Specification
 
 **Date:** 2026-11-06  
 **Status:** Approved  
@@ -9,7 +9,7 @@
 
 ## 1. Overview & Business Intent
 
-The purpose of Day 3 is to complete the full-stack authentication cycle of the **Readventure** application by designing, building, and verifying the **Forgot Password** and **Reset Password** user interfaces.
+The purpose of Day 3 is to complete the full-stack authentication cycle of the **TripFlow** application by designing, building, and verifying the **Forgot Password** and **Reset Password** user interfaces.
 
 ### 1.1 Key Goals
 1. Provide an effortless, reassuring recovery journey for users who lose access to their accounts.
@@ -32,11 +32,11 @@ The purpose of Day 3 is to complete the full-stack authentication cycle of the *
 
 | Category | AI Slop Tell (Banned ❌) | High-End Storycraft Pattern (Enforced ✅) |
 | :--- | :--- | :--- |
-| **Icons & Header** | Floating `KeyRound` / `Mail` inside `bg-amber-100 p-3 rounded-2xl` chip | **Clean editorial header**. Direct brand presence (`Readventure` wordmark + book glyph), bold Poppins typography (`#2B231D`), zero floating badge chips. |
+| **Icons & Header** | Floating `KeyRound` / `Mail` inside `bg-amber-100 p-3 rounded-2xl` chip | **Clean editorial header**. Direct brand presence (`TripFlow` wordmark + book glyph), bold Poppins typography (`#2B231D`), zero floating badge chips. |
 | **Form Widgets** | 4-bar rainbow strength meter (red $\rightarrow$ yellow $\rightarrow$ green) with checkmark lists | **Subtle contextual validation**. Simple, calm helper text: *"Minimum 8 characters"* that respects the actual backend requirement. |
 | **Microcopy** | Filler: *"Don't worry! It happens to the best of us"* & welded arrows (`Send Reset Link →`) | **Calm, respectful copy**. Clean labels: *"Reset your password"*, *"Enter the email address associated with your account"*, and button text: *"Send recovery link"*. No arrow glyphs. |
 | **Feedback States** | Sparkles, confetti, or celebratory animated envelopes (`✨ Check your email`) | **Quiet, grounded confirmation card**. Calmly states next steps, notes the 1-hour expiration window, and preserves **anti-enumeration** (same message whether account exists or not). |
-| **Surfaces & Layout** | Generic `w-full max-w-md bg-white rounded-2xl shadow-md` floating in a void | **Intentional utility sheet**. Proportioned to match Readventure's design tokens (Warm canvas `#F7F4EE`, warm border `#E8DFD3`, `#FAF8F5` surface tint, `#756F68` stone gray text). |
+| **Surfaces & Layout** | Generic `w-full max-w-md bg-white rounded-2xl shadow-md` floating in a void | **Intentional utility sheet**. Proportioned to match TripFlow's design tokens (Warm canvas `#F7F4EE`, warm border `#E8DFD3`, `#FAF8F5` surface tint, `#756F68` stone gray text). |
 
 ---
 
@@ -72,7 +72,7 @@ resetPassword: (data: ResetPasswordRequest) => Promise<ApiResponse<null>>
 
 ### 4.1 `ForgotPasswordCard.tsx` (`/forgot-password`)
 - **Default State**:
-  - Header: Readventure brand link/logo + title **"Reset your password"**.
+  - Header: TripFlow brand link/logo + title **"Reset your password"**.
   - Subtitle: *"Enter the email address associated with your account, and we will send you a recovery link."*
   - Form:
     - Label: `Email address`
@@ -117,7 +117,7 @@ resetPassword: (data: ResetPasswordRequest) => Promise<ApiResponse<null>>
 - **Success State**:
   - Title: **"Password updated"**
   - Subtitle: *"Your password has been reset successfully. You can now sign in with your new credentials."*
-  - Action: Button *"Sign in to Readventure"* navigating to `/signin`.
+  - Action: Button *"Sign in to TripFlow"* navigating to `/signin`.
 
 ---
 
@@ -151,7 +151,7 @@ resetPassword: (data: ResetPasswordRequest) => Promise<ApiResponse<null>>
    - Enter mismatched passwords $\rightarrow$ verify validation blocks submission.
    - Enter valid matching password ($\ge 8$ chars) $\rightarrow$ submit.
    - Verify transition to *"Password updated"* success state.
-   - Click *"Sign in to Readventure"* and log in with the new password.
+   - Click *"Sign in to TripFlow"* and log in with the new password.
    - Verify successful authentication and redirection to `/dashboard`.
 4. **Edge Case Tests**:
    - Visit `http://localhost:5173/reset-password` without `?token` $\rightarrow$ verify missing token guard card.

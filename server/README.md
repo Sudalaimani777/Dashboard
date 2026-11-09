@@ -1,6 +1,6 @@
-# Readventure Backend Service
+# TripFlow Backend Service
 
-The core authentication and reading companion backend service for **Readventure**, built with Node.js, Express, TypeScript, and PostgreSQL.
+The core authentication and reading companion backend service for **TripFlow**, built with Node.js, Express, TypeScript, and PostgreSQL.
 
 ---
 
@@ -38,7 +38,7 @@ server/
 ├── docs/
 │   ├── API.md                                   # Comprehensive REST API reference
 │   ├── DATABASE.md                              # PostgreSQL schema and indexes
-│   └── Readventure_Auth_Postman_Collection.json # Importable Postman collection
+│   └── TripFlow_Auth_Postman_Collection.json # Importable Postman collection
 ├── src/
 │   ├── config/                                  # Environment and service configurations
 │   ├── features/
@@ -65,7 +65,7 @@ server/
 
 ### 1. Prerequisites
 - **Node.js** v20 or higher
-- **PostgreSQL** running locally on port 5432 with a database named `readventure`
+- **PostgreSQL** running locally on port 5432 with a database named `TripFlow`
 
 ### 2. Installation
 ```bash
@@ -81,7 +81,7 @@ cp .env.example .env
 Update `.env` with your PostgreSQL credentials, a secure `JWT_SECRET`, and optional Gmail SMTP credentials:
 ```env
 PORT=5000
-DATABASE_URL=postgresql://postgres:password@localhost:5432/readventure
+DATABASE_URL=postgresql://postgres:password@localhost:5432/TripFlow
 JWT_SECRET=your_super_secret_jwt_key
 JWT_EXPIRES_IN=7d
 CLIENT_URL=http://localhost:5173
@@ -91,7 +91,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
-EMAIL_FROM="Readventure <no-reply@readventure.com>"
+EMAIL_FROM="TripFlow <no-reply@TripFlow.com>"
 ```
 
 ### 4. Run Database Migrations

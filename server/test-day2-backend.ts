@@ -18,7 +18,7 @@ async function runTests() {
     server = app.listen(PORT, () => resolve());
   });
 
-  const testEmail = `day2_user_${Date.now()}@readventure.com`;
+  const testEmail = `day2_user_${Date.now()}@TripFlow.com`;
   const originalPassword = 'InitialPassword123!';
   const updatedPassword = 'NewSecretPassword456!';
   let receivedResetToken = '';
@@ -73,7 +73,7 @@ async function runTests() {
       const res = await fetch(`${baseUrl}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'ghost_nonexistent@readventure.com' }),
+        body: JSON.stringify({ email: 'ghost_nonexistent@TripFlow.com' }),
       });
       const body = await res.json();
       return res.status === 200 && body.success === true;

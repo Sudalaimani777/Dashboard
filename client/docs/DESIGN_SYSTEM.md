@@ -1,6 +1,6 @@
 # Warm Storycraft Design System
 
-The visual design system and component guidelines for the **Readventure** application.
+The visual design system and component guidelines for the **TripFlow** application.
 
 ---
 
@@ -90,7 +90,7 @@ Modern web tools and AI code generators have saturated the web with generic "AI 
 
 ## 🛡️ Anti-AI-Slop Checklist for New Features
 
-When developing new screens or components for Readventure, verify against this checklist:
+When developing new screens or components for TripFlow, verify against this checklist:
 - [ ] No floating icon chips inside pastel rounded squares.
 - [ ] No purple-to-blue or rainbow gradients.
 - [ ] No 4-bar password strength checklists.

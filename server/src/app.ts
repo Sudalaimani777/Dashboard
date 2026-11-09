@@ -21,7 +21,7 @@ app.use(express.json());
 // Base Route
 app.get('/', (_req, res) => {
   res.status(200).json({
-    message: 'Readventure Authentication API is running',
+    message: 'TripFlow Authentication API is running',
     version: '1.0.0',
   });
 });

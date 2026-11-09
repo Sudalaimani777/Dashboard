@@ -87,7 +87,7 @@ export const SignInCard: React.FC = () => {
             to="/"
             className="inline-block mb-3 text-sm font-semibold tracking-wide text-[#8A582B] hover:text-[#754820] transition-colors"
           >
-            Readventure
+            TripFlow
           </Link>
           <CardTitle className="text-2xl font-bold text-[#2B231D]">Sign In</CardTitle>
           <CardDescription className="text-sm text-[#756F68] mt-1">

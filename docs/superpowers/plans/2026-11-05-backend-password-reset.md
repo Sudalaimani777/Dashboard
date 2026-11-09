@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node.js, Express 5, TypeScript 5, PostgreSQL (`pg`), Nodemailer, Bcryptjs, Crypto (native Node.js).
 
-**Spec:** [`docs/superpowers/specs/2026-11-05-backend-password-reset-design.md`](file:///c:/Users/SudalaimaniKannan/Documents/Codings/Readventure/docs/superpowers/specs/2026-11-05-backend-password-reset-design.md)
+**Spec:** [`docs/superpowers/specs/2026-11-05-backend-password-reset-design.md`](file:///c:/Users/SudalaimaniKannan/Documents/Codings/TripFlow/docs/superpowers/specs/2026-11-05-backend-password-reset-design.md)
 
 ## Global Constraints
 
@@ -78,7 +78,7 @@ export const config = {
   db: {
     user: process.env.DB_USER || 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'readventure_db',
+    database: process.env.DB_NAME || 'TripFlow_db',
     password: process.env.DB_PASSWORD || 'postgres',
     port: Number(process.env.DB_PORT) || 5432,
   },
@@ -87,7 +87,7 @@ export const config = {
     port: Number(process.env.SMTP_PORT) || 587,
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
-    from: process.env.EMAIL_FROM || 'Readventure <noreply@readventure.com>',
+    from: process.env.EMAIL_FROM || 'TripFlow <noreply@TripFlow.com>',
   },
 };
 ```
@@ -190,14 +190,14 @@ export class EmailService implements IEmailService {
     const mailOptions = {
       from: config.smtp.from,
       to: toEmail,
-      subject: 'Reset Your Readventure Password',
-      text: `Hello ${recipientName},\n\nYou requested to reset your Readventure password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour. If you did not request this, please ignore this email.\n\nBest regards,\nThe Readventure Team`,
+      subject: 'Reset Your TripFlow Password',
+      text: `Hello ${recipientName},\n\nYou requested to reset your TripFlow password. Click the link below to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour. If you did not request this, please ignore this email.\n\nBest regards,\nThe TripFlow Team`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e4e7; border-radius: 8px;">
           <h2 style="color: #08060d; margin-top: 0;">Reset Your Password</h2>
           <p style="color: #6b6375; font-size: 16px;">Hello <strong>${recipientName}</strong>,</p>
           <p style="color: #6b6375; font-size: 16px; line-height: 1.5;">
-            We received a request to reset the password for your Readventure account. Click the button below to choose a new password:
+            We received a request to reset the password for your TripFlow account. Click the button below to choose a new password:
           </p>
           <div style="text-align: center; margin: 32px 0;">
             <a href="${resetUrl}" style="background-color: #aa3bff; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
@@ -789,7 +789,7 @@ async function runTests() {
     server = app.listen(PORT, () => resolve());
   });
 
-  const testEmail = `day2_user_${Date.now()}@readventure.com`;
+  const testEmail = `day2_user_${Date.now()}@TripFlow.com`;
   const originalPassword = 'InitialPassword123!';
   const updatedPassword = 'NewSecretPassword456!';
   let receivedResetToken = '';
@@ -844,7 +844,7 @@ async function runTests() {
       const res = await fetch(`${baseUrl}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'ghost_nonexistent@readventure.com' }),
+        body: JSON.stringify({ email: 'ghost_nonexistent@TripFlow.com' }),
       });
       const body = await res.json();
       return res.status === 200 && body.success === true;

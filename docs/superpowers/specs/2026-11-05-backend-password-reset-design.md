@@ -1,6 +1,6 @@
 # Design Specification: Backend Password Reset & Email Integration
 
-* **Project**: Readventure (User Authentication System)
+* **Project**: TripFlow (User Authentication System)
 * **Milestone**: Day 2 — Sub-Project 1 (Backend Services)
 * **Date**: 2026-11-05
 * **Status**: Validated Design
@@ -9,7 +9,7 @@
 
 ## 1. Overview & Business Goals
 
-This specification details the architecture, design, and verification plan for the **Forgot Password** and **Reset Password** backend endpoints and email delivery system. It completes the Day 2 backend requirements while preserving Readventure's **Feature-Based Architecture**.
+This specification details the architecture, design, and verification plan for the **Forgot Password** and **Reset Password** backend endpoints and email delivery system. It completes the Day 2 backend requirements while preserving TripFlow's **Feature-Based Architecture**.
 
 ### Goals
 - Enable users to securely request a password reset link sent to their registered email address.
@@ -58,7 +58,7 @@ Add optional SMTP settings and client URL with sensible development defaults:
 - `SMTP_PORT`: `Number(process.env.SMTP_PORT) || 587`
 - `SMTP_USER`: `process.env.SMTP_USER || ''`
 - `SMTP_PASS`: `process.env.SMTP_PASS || ''`
-- `EMAIL_FROM`: `process.env.EMAIL_FROM || 'Readventure <noreply@readventure.com>'`
+- `EMAIL_FROM`: `process.env.EMAIL_FROM || 'TripFlow <noreply@TripFlow.com>'`
 
 ### 3.2. Email Service (`src/shared/services/email.service.ts`)
 Encapsulates `nodemailer` mail transmission:
@@ -127,7 +127,7 @@ Methods added to `IAuthRepository`:
 * **Request Body**:
   ```json
   {
-    "email": "alex@readventure.com"
+    "email": "alex@TripFlow.com"
   }
   ```
 * **Success Response (`200 OK`)**:

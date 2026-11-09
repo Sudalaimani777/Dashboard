@@ -2,13 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a production-grade, responsive frontend for Readventure featuring the Warm Storycraft design system, Poppins typography, customized Shadcn UI primitives, full authentication state management (`useAuth`), responsive Landing page, Sign-in page, and protected Dashboard.
+**Goal:** Build a production-grade, responsive frontend for TripFlow featuring the Warm Storycraft design system, Poppins typography, customized Shadcn UI primitives, full authentication state management (`useAuth`), responsive Landing page, Sign-in page, and protected Dashboard.
 
 **Architecture:** Client follows Feature-Based Architecture (`features/auth`, `features/landing`, `features/dashboard`, `shared/components/ui`). State is driven by React Context (`AuthContext`) which automatically hydrates existing sessions from `/api/auth/me` with `credentials: 'include'`. The visual layer is built using Tailwind CSS v4, Lucide React, and Shadcn-inspired primitives themed with the Warm Storycraft color tokens (`#8A582B`, `#996735`, `#D4A373`, `#756F68`, `#F7F4EE`, `#2B231D`).
 
 **Tech Stack:** React 19, TypeScript, Vite, Tailwind CSS v4 (`@tailwindcss/vite`), React Router (`react-router-dom`), Lucide React, `clsx`, `tailwind-merge`.
 
-**Spec:** [`docs/superpowers/specs/2026-11-05-frontend-warm-storycraft-design.md`](file:///c:/Users/SudalaimaniKannan/Documents/Codings/Readventure/docs/superpowers/specs/2026-11-05-frontend-warm-storycraft-design.md)
+**Spec:** [`docs/superpowers/specs/2026-11-05-frontend-warm-storycraft-design.md`](file:///c:/Users/SudalaimaniKannan/Documents/Codings/TripFlow/docs/superpowers/specs/2026-11-05-frontend-warm-storycraft-design.md)
 
 ## Global Constraints
 
@@ -668,7 +668,7 @@ export const SignInCard: React.FC = () => {
       <Card className="w-full max-w-md bg-[#FFFFFF] border-[#E8DFD3] shadow-md shadow-[#8A582B]/5 rounded-2xl">
         <CardHeader className="text-center pb-6">
           <Link to="/" className="inline-block mb-3 text-sm font-semibold tracking-wide text-[#8A582B] hover:text-[#754820] transition-colors">
-            Readventure
+            TripFlow
           </Link>
           <CardTitle className="text-2xl font-bold text-[#2B231D]">Sign In</CardTitle>
           <CardDescription className="text-sm text-[#756F68] mt-1">
@@ -780,7 +780,7 @@ export const Navbar: React.FC = () => {
     <header className="w-full border-b border-[#E8DFD3] bg-[#F7F4EE]">
       <div className="max-w-6xl mx-auto px-6 h-18 flex items-center justify-between">
         <Link to="/" className="text-xl font-bold tracking-tight text-[#2B231D]">
-          Readventure
+          TripFlow
         </Link>
 
         <nav className="flex items-center gap-6">
@@ -911,7 +911,7 @@ export const Footer: React.FC = () => {
   return (
     <footer className="w-full border-t border-[#E8DFD3] mt-20 py-8 bg-[#F7F4EE]">
       <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#756F68] gap-4">
-        <div>© 2026 Readventure. All rights reserved.</div>
+        <div>© 2026 TripFlow. All rights reserved.</div>
         <div className="flex items-center gap-6">
           <span className="hover:text-[#2B231D] cursor-pointer">Privacy</span>
           <span className="hover:text-[#2B231D] cursor-pointer">Terms</span>
@@ -996,7 +996,7 @@ export const DashboardPage: React.FC = () => {
       <header className="w-full border-b border-[#E8DFD3] bg-[#FFFFFF]">
         <div className="max-w-6xl mx-auto px-6 h-18 flex items-center justify-between">
           <div className="text-xl font-bold tracking-tight text-[#2B231D]">
-            Readventure
+            TripFlow
           </div>
           <div className="flex items-center gap-4">
             <span className="text-xs text-[#756F68] hidden sm:inline">

@@ -10,7 +10,7 @@ export const Navbar: React.FC = () => {
     <header className="w-full border-b border-[#E8DFD3] bg-[#F7F4EE]">
       <div className="max-w-6xl mx-auto px-6 h-18 flex items-center justify-between">
         <Link to="/" className="text-xl font-bold tracking-tight text-[#2B231D]">
-          Readventure
+          TripFlow
         </Link>
 
         <nav className="flex items-center gap-4 sm:gap-6">

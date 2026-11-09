@@ -19,7 +19,7 @@ export const MarginaliaQuoteCard: React.FC<MarginaliaQuoteCardProps> = ({
           <Quote className="w-3.5 h-3.5" />
           {sourceTag}
         </span>
-        <span className="text-[11px] text-[#756F68]">Readventure Anthology</span>
+        <span className="text-[11px] text-[#756F68]">TripFlow Anthology</span>
       </div>
 
       <div className="py-4 my-auto space-y-3">

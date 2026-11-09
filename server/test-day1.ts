@@ -23,7 +23,7 @@ async function runTests() {
     });
   });
 
-  const testEmail = `mentor_test_${Date.now()}@readventure.com`;
+  const testEmail = `mentor_test_${Date.now()}@TripFlow.com`;
   const testPassword = 'Password123!';
   let authToken = '';
   let cookieHeader = '';

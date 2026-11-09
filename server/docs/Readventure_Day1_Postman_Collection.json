@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Readventure - Day 1 Auth API (HttpOnly Cookie & Bearer)",
+    "name": "TripFlow - Day 1 Auth API (HttpOnly Cookie & Bearer)",
     "description": "Day 1 Postman verification collection for Signup, Signin, Signout, and Protected Profile endpoints with automatic cookie and Bearer token support.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -55,7 +55,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Alex Johnson\",\n  \"email\": \"alex@readventure.com\",\n  \"password\": \"SecurePass123!\"\n}"
+          "raw": "{\n  \"name\": \"Alex Johnson\",\n  \"email\": \"alex@TripFlow.com\",\n  \"password\": \"SecurePass123!\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/auth/signup",
@@ -90,7 +90,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"alex@readventure.com\",\n  \"password\": \"SecurePass123!\"\n}"
+          "raw": "{\n  \"email\": \"alex@TripFlow.com\",\n  \"password\": \"SecurePass123!\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/auth/signin",
@@ -145,7 +145,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Duplicate Alex\",\n  \"email\": \"alex@readventure.com\",\n  \"password\": \"SecurePass123!\"\n}"
+          "raw": "{\n  \"name\": \"Duplicate Alex\",\n  \"email\": \"alex@TripFlow.com\",\n  \"password\": \"SecurePass123!\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/auth/signup",
@@ -166,7 +166,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"alex@readventure.com\",\n  \"password\": \"WrongPassword!\"\n}"
+          "raw": "{\n  \"email\": \"alex@TripFlow.com\",\n  \"password\": \"WrongPassword!\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/auth/signin",

@@ -19,7 +19,7 @@ const colors = {
 
 async function runFullFlowE2E() {
   console.log(`\n${colors.bright}${colors.cyan}======================================================${colors.reset}`);
-  console.log(`${colors.bright}${colors.cyan}   READVENTURE COMPLETE AUTH LIFECYCLE E2E TEST${colors.reset}`);
+  console.log(`${colors.bright}${colors.cyan}   TripFlow COMPLETE AUTH LIFECYCLE E2E TEST${colors.reset}`);
   console.log(`${colors.cyan}   Register -> Signin -> Protected Profile -> Signout ->`);
   console.log(`   Forgot Password -> Email Preview -> Reset Password ->`);
   console.log(`   Old Password Rejected -> New Password Signin${colors.reset}`);
@@ -34,7 +34,7 @@ async function runFullFlowE2E() {
   const timestamp = Date.now();
   const testUser = {
     name: 'Maya Explorer',
-    email: `maya_flow_${timestamp}@readventure.com`,
+    email: `maya_flow_${timestamp}@TripFlow.com`,
     originalPassword: 'Password123!',
     newPassword: 'BrandNewSecretPassword2026!',
   };

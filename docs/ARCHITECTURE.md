@@ -1,12 +1,12 @@
-# Readventure Full-Stack Architecture
+# TripFlow Full-Stack Architecture
 
-This document describes the end-to-end system architecture, security model, request lifecycle, and data flow for the **Readventure** application.
+This document describes the end-to-end system architecture, security model, request lifecycle, and data flow for the **TripFlow** application.
 
 ---
 
 ## 🏛️ System Overview
 
-Readventure is a decoupled, modern full-stack web application designed for personal literary discovery, book tracking, and reading habit cadence. It couples a responsive client built with **React 19**, **Tailwind CSS v4**, and **Vite** to a modular backend service powered by **Express 5**, **TypeScript**, and **PostgreSQL**.
+TripFlow is a decoupled, modern full-stack web application designed for personal literary discovery, book tracking, and reading habit cadence. It couples a responsive client built with **React 19**, **Tailwind CSS v4**, and **Vite** to a modular backend service powered by **Express 5**, **TypeScript**, and **PostgreSQL**.
 
 ```mermaid
 flowchart LR
@@ -43,7 +43,7 @@ The system utilizes an **HttpOnly Cookie** architecture for primary session mana
 
 ### Registration & Login Lifecycle
 
-To enforce intentional authentication and prevent unverified auto-logins, Readventure separates account creation (`/signup`) from session establishment (`/signin`):
+To enforce intentional authentication and prevent unverified auto-logins, TripFlow separates account creation (`/signup`) from session establishment (`/signin`):
 1. **Visitor Registration**: Creating an account registers the user record and password hash in PostgreSQL without issuing a session cookie.
 2. **Seamless Navigation Hand-off**: The client redirects the user to `/signin` with route state (`registeredEmail` and a calm confirmation notice), pre-filling their email.
 3. **Explicit Authentication**: The user enters their credentials to authenticate, receiving an `HttpOnly` session cookie before accessing the protected `/dashboard`.

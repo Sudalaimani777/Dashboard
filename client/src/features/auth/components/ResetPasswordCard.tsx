@@ -95,7 +95,7 @@ export const ResetPasswordCard: React.FC = () => {
             to="/"
             className="inline-block mb-3 text-sm font-semibold tracking-wide text-[#8A582B] hover:text-[#754820] transition-colors"
           >
-            Readventure
+            TripFlow
           </Link>
 
           {isMissingToken ? (
@@ -181,7 +181,7 @@ export const ResetPasswordCard: React.FC = () => {
             <div className="space-y-6">
               <div className="rounded-xl border border-[#E8DFD3] bg-[#FAF8F5] p-5 text-left">
                 <p className="text-sm text-[#2B231D] leading-relaxed">
-                  Your password has been changed. You can now sign in to your Readventure library with your new password.
+                  Your password has been changed. You can now sign in to your TripFlow library with your new password.
                 </p>
               </div>
 
@@ -192,7 +192,7 @@ export const ResetPasswordCard: React.FC = () => {
                 className="w-full"
                 onClick={() => navigate('/signin')}
               >
-                Sign in to Readventure
+                Sign in to TripFlow
               </Button>
             </div>
           ) : (
