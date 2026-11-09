@@ -333,7 +333,7 @@
       border: 1px solid var(--border-hairline);
       border-radius: 16px;
       width: 100%;
-      max-width: 680px;
+      max-width: 720px;
       max-height: 90vh;
       overflow-y: auto;
       padding: 1.75rem;
@@ -364,7 +364,7 @@
     .drawer-panel {
       background: var(--surface-pure);
       width: 100%;
-      max-width: 640px;
+      max-width: 660px;
       height: 100%;
       overflow-y: auto;
       padding: 2.25rem;
@@ -444,6 +444,27 @@
       justify-content: space-between;
     }
 
+    /* Radio Card for Revision Routing */
+    .routing-choice {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .routing-option {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      background: #FFF;
+      cursor: pointer;
+      font-size: 0.775rem;
+    }
+    .routing-option.selected {
+      border-color: var(--accent-primary);
+      background: #FAF6F0;
+    }
+
     /* Notification Toast */
     .toast-notification {
       position: fixed;
@@ -482,8 +503,8 @@
       <button class="role-btn active" id="btn-portal-emp" onclick="switchPortal('employee', this)">
         Employee Portal
       </button>
-      <button class="role-btn" id="btn-portal-hr" onclick="switchPortal('hr', this)">
-        HR Queue (Tier 1)
+      <button class="role-btn" id="btn-portal-mgr" onclick="switchPortal('manager', this)">
+        Manager Queue (Tier 1)
       </button>
       <button class="role-btn" id="btn-portal-admin" onclick="switchPortal('admin', this)">
         Admin Governance (Tier 2)
@@ -508,7 +529,7 @@
       <div class="page-header">
         <div>
           <h1 class="page-title">My Travel Hub</h1>
-          <p class="page-sub">Manage upcoming business travel authorizations, itemized schedules, and retrospective reimbursement claims.</p>
+          <p class="page-sub">Create travel requests with itemized expenses & receipt/quote images for Manager review and Admin clearance.</p>
         </div>
         <button class="btn btn-primary" onclick="openNewRequestModal()">
           + New Travel Request
@@ -518,19 +539,19 @@
       <!-- KPI Summary Cards -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-label">Active Upcoming Trip</div>
-          <div class="kpi-value">1</div>
-          <div class="kpi-detail">Tokyo Summit (Nov 15 – Nov 20)</div>
+          <div class="kpi-label">Active Travel Requests</div>
+          <div class="kpi-value">2</div>
+          <div class="kpi-detail">Tokyo Architecture Summit • Bangalore Symposium</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Authorized Budget Cap</div>
-          <div class="kpi-value">$2,000.00</div>
-          <div class="kpi-detail" style="color:var(--status-success);">Itemized $1,850.00 ($150 under cap)</div>
+          <div class="kpi-label">Pending Total Value</div>
+          <div class="kpi-value">₹1,79,500.00</div>
+          <div class="kpi-detail" style="color:var(--status-warning);">Under Manager Review & Revision</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">YTD Settled Claims</div>
-          <div class="kpi-value">$1,260.00</div>
-          <div class="kpi-detail">Singapore Operations Onsite</div>
+          <div class="kpi-label">YTD Settled Reimbursements</div>
+          <div class="kpi-value">₹1,02,500.00</div>
+          <div class="kpi-detail">Singapore Operations Onsite (Paid)</div>
         </div>
       </div>
 
@@ -539,7 +560,7 @@
         <div class="card-title-bar">
           <div>
             <div class="table-title">My Travel Requests</div>
-            <div style="font-size:0.775rem;color:var(--text-sub);margin-top:2px;">Track current status, respond to revision remarks, or submit detailed bookings.</div>
+            <div style="font-size:0.775rem;color:var(--text-sub);margin-top:2px;">Track current status, respond to revision remarks, or view expense breakdowns.</div>
           </div>
           <span class="badge-callout">3 Records</span>
         </div>
@@ -553,23 +574,23 @@
                 <th>Destination</th>
                 <th>Dates</th>
                 <th>Flow Type</th>
-                <th>Budget / Claim</th>
+                <th>Total Expenses</th>
                 <th>Status</th>
                 <th style="text-align:right;">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Row 1: Upcoming in Stage 2 -->
+              <!-- Row 1: Upcoming in Manager Review -->
               <tr>
                 <td class="num">TR-2026-089</td>
                 <td><strong>Annual Engineering Architecture Summit</strong></td>
                 <td>Tokyo (HND)</td>
                 <td>Nov 15 – Nov 20</td>
-                <td><span class="badge-callout">Upcoming (Stage 2)</span></td>
-                <td class="num">$2,000.00 Cap</td>
-                <td><span class="status-text">Budget Cap Locked</span></td>
+                <td><span class="badge-callout">Upcoming Travel</span></td>
+                <td class="num">₹1,48,000.00</td>
+                <td><span class="status-text">Pending Manager Review</span></td>
                 <td style="text-align:right;">
-                  <button class="btn btn-outline btn-sm" onclick="openDrawer('employee-tokyo')">View & Submit Schedule</button>
+                  <button class="btn btn-outline btn-sm" onclick="openDrawer('employee-tokyo')">View Expenses & Quotes</button>
                 </td>
               </tr>
               <!-- Row 2: Past Settled -->
@@ -579,23 +600,23 @@
                 <td>Singapore (SIN)</td>
                 <td>Oct 20 – Oct 24</td>
                 <td><span class="badge-callout">Already Travelled</span></td>
-                <td class="num">$1,260.00 Claim</td>
+                <td class="num">₹1,02,500.00</td>
                 <td><span class="status-text">Settled & Paid</span></td>
                 <td style="text-align:right;">
-                  <button class="btn btn-outline btn-sm" onclick="openDrawer('employee-singapore')">View Invoices</button>
+                  <button class="btn btn-outline btn-sm" onclick="openDrawer('employee-singapore')">View Receipts</button>
                 </td>
               </tr>
-              <!-- Row 3: Upcoming in Stage 1 -->
+              <!-- Row 3: Admin requested revision -->
               <tr>
                 <td class="num">TR-2026-095</td>
                 <td>AWS Cloud Architecture Symposium</td>
                 <td>Bangalore (BLR)</td>
                 <td>Dec 02 – Dec 05</td>
-                <td><span class="badge-callout">Upcoming (Stage 1)</span></td>
-                <td class="num" style="color:var(--text-muted);">Unassigned</td>
-                <td><span class="status-text">Pending HR Intent</span></td>
+                <td><span class="badge-callout">Upcoming Travel</span></td>
+                <td class="num">₹31,500.00</td>
+                <td><span class="status-text">Revision Requested</span></td>
                 <td style="text-align:right;">
-                  <button class="btn btn-outline btn-sm" onclick="openDrawer('employee-bangalore')">View Intent</button>
+                  <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('employee-bangalore')">Fix & Resubmit to Manager</button>
                 </td>
               </tr>
             </tbody>
@@ -605,36 +626,36 @@
     </section>
 
     <!-- ================================================================ -->
-    <!-- 2. HR AUDIT & COMPLIANCE QUEUE (TIER 1)                           -->
+    <!-- 2. MANAGER AUDIT QUEUE (TIER 1)                                   -->
     <!-- ================================================================ -->
-    <section id="portal-hr" class="portal-view">
-      <!-- <div class="page-header">
+    <section id="portal-manager" class="portal-view">
+      <div class="page-header">
         <div>
-          <h1 class="page-title">HR Compliance & Audit Queue</h1>
-          <p class="page-sub">Tier 1 Gatekeeper: Audit trip business necessity (Stage 1), verify travel policy compliance (Stage 2), and approve or request alterations.</p>
+          <h1 class="page-title">Manager Approval Queue (Tier 1)</h1>
+          <p class="page-sub">Direct Line Governance: Audit business necessity, itemized expenses, and receipts/quotes. Approve to Admin or request alterations.</p>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:0.775rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.5px;">Pending Audit Action</div>
+          <div style="font-size:0.775rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.5px;">Pending Manager Review</div>
           <div class="num" style="font-size:1.4rem;font-weight:700;color:var(--accent-primary);">2 Requests</div>
         </div>
-      </div> -->
+      </div>
 
       <!-- Action Guidance Card -->
-      <!-- <div class="memo-box" style="background:#FFFDF9;border-left:4px solid var(--accent-primary);display:flex;justify-content:space-between;align-items:center;">
+      <div class="memo-box" style="background:#FFFDF9;border-left:4px solid var(--accent-primary);display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <strong>HR Decision Powers:</strong>
-          <span style="color:var(--text-sub);margin-left:6px;">For each request, click <strong style="color:var(--status-success);">Approve</strong> to advance to Tier 2 Admin, or <strong style="color:var(--status-warning);">Review / Revise</strong> to dispatch alteration instructions to the employee.</span>
+          <strong>Manager Decision Powers:</strong>
+          <span style="color:var(--text-sub);margin-left:6px;">Click <strong style="color:var(--status-success);">Approve & Forward</strong> to escalate to Admin, or <strong style="color:var(--status-warning);">Review / Revise</strong> to send modification instructions back to the employee.</span>
         </div>
         <span class="badge-callout warning">Action Required</span>
-      </div> -->
+      </div>
 
       <div class="card">
         <div class="card-title-bar">
           <div>
-            <div class="table-title">Incoming Verification Queue</div>
-            <div style="font-size:0.775rem;color:var(--text-sub);margin-top:2px;">Review employee submissions against travel policy. Direct 1-click decisions below:</div>
+            <div class="table-title">Direct Subordinate Travel Submissions</div>
+            <div style="font-size:0.775rem;color:var(--text-sub);margin-top:2px;">Review details and attached receipts/quotes below:</div>
           </div>
-          <span class="badge-callout">2 Items Awaiting Decision</span>
+          <span class="badge-callout">2 Items Awaiting Manager Audit</span>
         </div>
 
         <div class="table-wrap">
@@ -645,15 +666,15 @@
                 <th>Employee</th>
                 <th>Department</th>
                 <th>Trip Title</th>
-                <th>Workflow Phase</th>
-                <th>Financials</th>
+                <th>Type</th>
+                <th>Expenses & Proof</th>
                 <th>Status</th>
-                <th style="min-width:260px;text-align:right;">Decision Options (Approve / Review)</th>
+                <th style="min-width:260px;text-align:right;">Decision Options</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Item 1: Stage 2 Bookings Ready for HR Policy Clearance -->
-              <tr id="row-hr-tokyo">
+              <!-- Item 1: Tokyo Architecture Summit -->
+              <tr id="row-mgr-tokyo">
                 <td class="num"><strong>TR-2026-089</strong></td>
                 <td>
                   <div style="font-weight:600;">Jane Doe</div>
@@ -664,32 +685,29 @@
                   <div style="font-weight:600;">Tokyo Architecture Summit</div>
                   <div style="font-size:0.725rem;color:var(--text-sub);">Nov 15 – Nov 20 • Tokyo (HND)</div>
                 </td>
-                <td><span class="badge-callout warning">Stage 2: Detailed Bookings</span></td>
+                <td><span class="badge-callout">Upcoming Travel</span></td>
                 <td>
-                  <div class="num" style="font-size:0.9rem;font-weight:700;">$1,850.00</div>
-                  <div style="font-size:0.725rem;color:var(--status-success);">Within $2,000 Cap</div>
+                  <div class="num" style="font-size:0.9rem;font-weight:700;">₹1,48,000.00</div>
+                  <div style="font-size:0.725rem;color:var(--text-sub);">3 Quotes Attached</div>
                 </td>
-                <td><span class="status-text" id="status-hr-tokyo">Pending HR Final</span></td>
+                <td><span class="status-text" id="status-mgr-tokyo">Pending Manager Review</span></td>
                 <td style="text-align:right;">
                   <div class="action-group" style="justify-content:flex-end;">
-                    <!-- PROMINENT APPROVE BUTTON -->
-                    <button class="btn btn-success btn-sm" onclick="openDrawer('hr-tokyo-schedule', 'approve')">
-                      Approve & Clear
+                    <button class="btn btn-success btn-sm" onclick="openDrawer('mgr-tokyo', 'approve')">
+                      Approve & Forward
                     </button>
-                    <!-- PROMINENT REVIEW / REVISE BUTTON -->
-                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('hr-tokyo-schedule', 'revise')">
+                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('mgr-tokyo', 'revise')">
                       Review / Revise
                     </button>
-                    <!-- FULL AUDIT DRAWER LINK -->
-                    <button class="btn btn-outline btn-sm" onclick="openDrawer('hr-tokyo-schedule', 'view')">
+                    <button class="btn btn-outline btn-sm" onclick="openDrawer('mgr-tokyo', 'view')">
                       Audit
                     </button>
                   </div>
                 </td>
               </tr>
 
-              <!-- Item 2: Stage 1 Intent Ready for HR Necessity Verification -->
-              <tr id="row-hr-bangalore">
+              <!-- Item 2: Resubmission after Admin direct revision -->
+              <tr id="row-mgr-bangalore">
                 <td class="num"><strong>TR-2026-095</strong></td>
                 <td>
                   <div style="font-weight:600;">Rohan Sharma</div>
@@ -700,25 +718,22 @@
                   <div style="font-weight:600;">AWS Cloud Symposium</div>
                   <div style="font-size:0.725rem;color:var(--text-sub);">Dec 02 – Dec 05 • Bangalore (BLR)</div>
                 </td>
-                <td><span class="badge-callout">Stage 1: Travel Intent</span></td>
+                <td><span class="badge-callout">Upcoming Travel</span></td>
                 <td>
-                  <div class="num" style="color:var(--text-muted);font-size:0.8rem;">No Expense (Intent)</div>
-                  <div style="font-size:0.725rem;color:var(--text-sub);">Awaiting Admin Cap</div>
+                  <div class="num" style="font-size:0.9rem;font-weight:700;">₹31,500.00</div>
+                  <div style="font-size:0.725rem;color:var(--status-success);">Revised Quotes Attached</div>
                 </td>
-                <td><span class="status-text" id="status-hr-bangalore">Pending HR Intent</span></td>
+                <td><span class="status-text" id="status-mgr-bangalore">Resubmitted to Manager</span></td>
                 <td style="text-align:right;">
                   <div class="action-group" style="justify-content:flex-end;">
-                    <!-- PROMINENT APPROVE BUTTON -->
-                    <button class="btn btn-primary btn-sm" onclick="openDrawer('hr-bangalore-intent', 'approve')">
-                      Approve Intent
+                    <button class="btn btn-primary btn-sm" onclick="openDrawer('mgr-bangalore', 'approve')">
+                      Re-approve & Forward
                     </button>
-                    <!-- PROMINENT REVIEW / REVISE BUTTON -->
-                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('hr-bangalore-intent', 'revise')">
+                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('mgr-bangalore', 'revise')">
                       Review / Revise
                     </button>
-                    <!-- FULL AUDIT DRAWER LINK -->
-                    <button class="btn btn-outline btn-sm" onclick="openDrawer('hr-bangalore-intent', 'view')">
-                      Details
+                    <button class="btn btn-outline btn-sm" onclick="openDrawer('mgr-bangalore', 'view')">
+                      Inspect
                     </button>
                   </div>
                 </td>
@@ -730,17 +745,17 @@
     </section>
 
     <!-- ================================================================ -->
-    <!-- 3. ADMIN GOVERNANCE & BUDGET AUTHORITY (TIER 2)                  -->
+    <!-- 3. ADMIN GOVERNANCE & EXECUTIVE AUTHORITY (TIER 2)               -->
     <!-- ================================================================ -->
     <section id="portal-admin" class="portal-view">
       <div class="page-header">
         <div>
           <h1 class="page-title">Admin Governance & Budget Authority</h1>
-          <p class="page-sub">Tier 2 Executive Authority: Set travel budget caps, evaluate department pool utilization, and give final travel clearances.</p>
+          <p class="page-sub">Tier 2 Executive Authority: Audit department budget pools, authorize final travel clearance, or settle reimbursement payouts.</p>
         </div>
         <div style="text-align:right;">
           <div style="font-size:0.775rem;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.5px;">Eng Q4 Remaining Pool</div>
-          <div class="num" style="font-size:1.4rem;font-weight:700;color:var(--accent-primary);">$18,400.00</div>
+          <div class="num" style="font-size:1.4rem;font-weight:700;color:var(--accent-primary);">₹12,90,000.00</div>
         </div>
       </div>
 
@@ -748,26 +763,26 @@
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">Engineering Travel Pool (Q4)</div>
-          <div class="kpi-value">$50,000.00</div>
-          <div class="kpi-detail" style="color:var(--status-success);">$18,400.00 available (63.2% spent)</div>
+          <div class="kpi-value">₹35,00,000.00</div>
+          <div class="kpi-detail" style="color:var(--status-success);">₹12,90,000.00 available (63.1% spent)</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Sales Operations Pool (Q4)</div>
-          <div class="kpi-value">$75,000.00</div>
-          <div class="kpi-detail">$31,200.00 available (58.4% spent)</div>
+          <div class="kpi-value">₹50,00,000.00</div>
+          <div class="kpi-detail">₹21,50,000.00 available (57.0% spent)</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Awaiting Budget Cap</div>
-          <div class="kpi-value">1</div>
-          <div class="kpi-detail" style="color:var(--status-warning);">HR Intent Cleared • Ready to Allocate</div>
+          <div class="kpi-label">Manager-Approved Awaiting Sign-off</div>
+          <div class="kpi-value">2</div>
+          <div class="kpi-detail" style="color:var(--status-warning);">1 Upcoming Clearance • 1 Past Reimbursement</div>
         </div>
       </div>
 
       <!-- Action Guidance Card -->
       <div class="memo-box" style="background:#FFFDF9;border-left:4px solid var(--accent-primary);display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <strong>Admin Decision Powers:</strong>
-          <span style="color:var(--text-sub);margin-left:6px;">Click <strong style="color:var(--accent-primary);">Set Budget Cap</strong> to authorize financial ceiling (Stage 1), or <strong style="color:var(--status-warning);">Review / Revise</strong> to request itinerary modification.</span>
+          <strong>Admin Decision & Revision Options:</strong>
+          <span style="color:var(--text-sub);margin-left:6px;">Click <strong style="color:var(--accent-primary);">Approve</strong> for final clearance or payout. If changes are needed, you can dispatch instructions <strong>via the Manager</strong> or <strong>directly to the Employee</strong> (both return to Manager for re-verification).</span>
         </div>
         <span class="badge-callout warning">Executive Decision Pending</span>
       </div>
@@ -776,9 +791,9 @@
         <div class="card-title-bar">
           <div>
             <div class="table-title">Admin Executive Decision Queue</div>
-            <div style="font-size:0.775rem;color:var(--text-sub);margin-top:2px;">Decide on Stage 1 budget allocation or grant Stage 2 final travel authorization:</div>
+            <div style="font-size:0.775rem;color:var(--text-sub);margin-top:2px;">Manager-approved requests ready for Tier 2 clearance or settlement:</div>
           </div>
-          <span class="badge-callout">1 Action Pending</span>
+          <span class="badge-callout">2 Actions Pending</span>
         </div>
 
         <div class="table-wrap">
@@ -786,44 +801,73 @@
             <thead>
               <tr>
                 <th>Request ID</th>
-                <th>Employee</th>
+                <th>Employee & Manager</th>
                 <th>Destination</th>
-                <th>Travel Window</th>
-                <th>Executive Decision Needed</th>
-                <th>Department Pool Impact</th>
-                <th style="min-width:280px;text-align:right;">Decision Options (Approve / Review)</th>
+                <th>Type</th>
+                <th>Total Claim / Estimate</th>
+                <th>Department Impact</th>
+                <th style="min-width:280px;text-align:right;">Executive Decisions</th>
               </tr>
             </thead>
             <tbody>
-              <!-- Row 1: Stage 1 Budget Cap Allocation -->
+              <!-- Row 1: Upcoming Travel (Tokyo Summit) -->
               <tr id="row-admin-tokyo">
                 <td class="num"><strong>TR-2026-089</strong></td>
                 <td>
                   <div style="font-weight:600;">Jane Doe</div>
-                  <div style="font-size:0.725rem;color:var(--text-sub);">Engineering (Cost Center PRJ-ENG-409)</div>
+                  <div style="font-size:0.725rem;color:var(--text-sub);">Approved by Mgr: Marcus Brody</div>
                 </td>
                 <td>Tokyo (HND)</td>
-                <td>Nov 15 – Nov 20</td>
+                <td><span class="badge-callout">Upcoming Travel</span></td>
                 <td>
-                  <strong style="color:var(--accent-primary);">Allocate Travel Budget Cap</strong>
-                  <div style="font-size:0.725rem;color:var(--text-sub);">HR Intent cleared; needs authorized ceiling</div>
+                  <div class="num" style="font-size:0.9rem;font-weight:700;">₹1,48,000.00</div>
+                  <div style="font-size:0.725rem;color:var(--status-success);">3 Quote proofs verified</div>
                 </td>
                 <td>
                   <div style="font-size:0.8rem;font-weight:600;">Engineering Q4</div>
-                  <div class="num" style="font-size:0.725rem;color:var(--status-success);">$18,400.00 headroom</div>
+                  <div class="num" style="font-size:0.725rem;color:var(--status-success);">₹12,90,000.00 headroom</div>
                 </td>
                 <td style="text-align:right;">
                   <div class="action-group" style="justify-content:flex-end;">
-                    <!-- PROMINENT APPROVE & SET BUDGET CAP BUTTON -->
-                    <button class="btn btn-primary btn-sm" onclick="openDrawer('admin-alloc-budget', 'approve')">
-                      Set Budget Cap ($2,000)
+                    <button class="btn btn-primary btn-sm" onclick="openDrawer('admin-tokyo', 'approve')">
+                      Approve Clearance
                     </button>
-                    <!-- PROMINENT REVIEW / REVISE BUTTON -->
-                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('admin-alloc-budget', 'revise')">
-                      Review / Revise
+                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('admin-tokyo', 'revise')">
+                      Request Revision
                     </button>
-                    <!-- AUDIT DETAILS -->
-                    <button class="btn btn-outline btn-sm" onclick="openDrawer('admin-alloc-budget', 'view')">
+                    <button class="btn btn-outline btn-sm" onclick="openDrawer('admin-tokyo', 'view')">
+                      Inspect
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 2: Already Travelled (Singapore Operations) -->
+              <tr id="row-admin-singapore">
+                <td class="num"><strong>TR-2026-042</strong></td>
+                <td>
+                  <div style="font-weight:600;">Sarah Jenkins</div>
+                  <div style="font-size:0.725rem;color:var(--text-sub);">Approved by Mgr: Marcus Brody</div>
+                </td>
+                <td>Singapore (SIN)</td>
+                <td><span class="badge-callout">Already Travelled</span></td>
+                <td>
+                  <div class="num" style="font-size:0.9rem;font-weight:700;">₹1,02,500.00</div>
+                  <div style="font-size:0.725rem;color:var(--status-success);">Tax receipts verified</div>
+                </td>
+                <td>
+                  <div style="font-size:0.8rem;font-weight:600;">Engineering Q4</div>
+                  <div class="num" style="font-size:0.725rem;color:var(--status-success);">₹12,90,000.00 headroom</div>
+                </td>
+                <td style="text-align:right;">
+                  <div class="action-group" style="justify-content:flex-end;">
+                    <button class="btn btn-success btn-sm" onclick="openDrawer('admin-singapore', 'approve')">
+                      Authorize Payout (₹1,02,500)
+                    </button>
+                    <button class="btn btn-warning-outline btn-sm" onclick="openDrawer('admin-singapore', 'revise')">
+                      Request Revision
+                    </button>
+                    <button class="btn btn-outline btn-sm" onclick="openDrawer('admin-singapore', 'view')">
                       Inspect
                     </button>
                   </div>
@@ -845,22 +889,22 @@
       <div class="modal-header">
         <div>
           <div class="modal-title">Initiate Travel Request</div>
-          <div style="font-size:0.775rem;color:var(--text-sub);">Select whether this is an upcoming trip or retrospective claim</div>
+          <div style="font-size:0.775rem;color:var(--text-sub);">Submit travel details with estimated or actual expenses to your reporting Manager</div>
         </div>
         <button class="close-btn" onclick="closeModal()">&times;</button>
       </div>
 
       <div class="segmented">
         <button class="seg-btn active" id="seg-up" onclick="toggleModalType('UPCOMING')">
-          Upcoming Trip (Pre-Travel)
+          Upcoming Travel (Pre-Trip)
         </button>
         <button class="seg-btn" id="seg-past" onclick="toggleModalType('PAST')">
-          Already Travelled (Post-Travel)
+          Already Travelled (Post-Trip Reimbursement)
         </button>
       </div>
 
       <div class="memo-box" id="modal-memo">
-        <strong>Stage 1 Governance Rule:</strong> For upcoming trips, submit business intent and dates only. <strong>Do not attach expense figures.</strong> Admin will assign your authorized budget cap after HR verifies necessity.
+        <strong>Upcoming Travel Notice:</strong> Provide your business trip objective, estimated expenses in INR (₹) (airfare, lodging quotes, per-diem), and booking quotes for your Manager's verification.
       </div>
 
       <div class="form-group">
@@ -890,22 +934,61 @@
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Supporting Document URL (Agenda / Conference Invite)</label>
-        <input class="form-input" placeholder="https://conference.org/agenda.pdf">
+      <!-- Itemized Expenses Section (Upfront in both flows) -->
+      <div style="margin-top:1rem;margin-bottom:1rem;">
+        <label class="form-label" style="font-size:0.8rem;text-transform:uppercase;">Itemized Expenses & Attachment Proofs *</label>
+        <div class="table-wrap" style="margin-bottom:0.75rem;">
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Vendor / Description</th>
+                <th style="text-align:right;">Amount (₹)</th>
+                <th>Receipt / Quote Proof</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Flight</td>
+                <td>All Nippon Airways (Economy)</td>
+                <td class="num" style="text-align:right;">68,000.00</td>
+                <td><span class="badge-callout success">ana-quote.png attached</span></td>
+              </tr>
+              <tr>
+                <td>Hotel</td>
+                <td>Shinjuku Prince Hotel (5 Nights)</td>
+                <td class="num" style="text-align:right;">56,000.00</td>
+                <td><span class="badge-callout success">hotel-booking.png attached</span></td>
+              </tr>
+              <tr>
+                <td>Meals / Per-Diem</td>
+                <td>Company Standard Allowance</td>
+                <td class="num" style="text-align:right;">24,000.00</td>
+                <td><span class="badge-callout">Policy Standard</span></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:var(--surface-muted);">
+                <td colspan="2" style="font-weight:700;">Total Expenses:</td>
+                <td class="num" style="text-align:right;font-weight:700;color:var(--accent-primary);">₹1,48,000.00</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border-hairline);">
         <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
         <button class="btn btn-primary" onclick="submitNewRequest()">
-          Submit Trip Intent to HR
+          Submit to Manager for Approval
         </button>
       </div>
     </div>
   </div>
 
   <!-- ================================================================ -->
-  <!-- DYNAMIC ACTION DRAWER (AUDIT, APPROVE, REVIEW)                    -->
+  <!-- DYNAMIC ACTION DRAWER (MANAGER AUDIT & ADMIN GOVERNANCE)         -->
   <!-- ================================================================ -->
   <div id="trip-drawer" class="drawer-overlay" onclick="closeDrawer(event)">
     <div class="drawer-panel" onclick="event.stopPropagation()">
@@ -917,7 +1000,7 @@
         <button class="close-btn" onclick="closeDrawerDirect()">&times;</button>
       </div>
 
-      <!-- Container Dynamically Injected by JavaScript -->
+      <!-- Injected by JavaScript -->
       <div id="drawer-dynamic-content"></div>
     </div>
   </div>
@@ -943,18 +1026,17 @@
         avatar.innerText = 'JD';
         userDisplay.innerText = 'Jane Doe';
         roleDisplay.innerText = 'Senior Staff Engineer';
-      } else if (portal === 'hr') {
-        avatar.innerText = 'SH';
-        userDisplay.innerText = 'Sarah HR';
-        roleDisplay.innerText = 'HR Compliance Auditor (Tier 1)';
+      } else if (portal === 'manager') {
+        avatar.innerText = 'MB';
+        userDisplay.innerText = 'Marcus Brody';
+        roleDisplay.innerText = 'Engineering Manager (Tier 1 Approver)';
       } else {
         avatar.innerText = 'AV';
         userDisplay.innerText = 'Alexander Vance';
-        roleDisplay.innerText = 'Admin / Engineering Director (Tier 2)';
+        roleDisplay.innerText = 'Admin / VP Finance & Operations (Tier 2)';
       }
     }
 
-    // Modal Handling
     function openNewRequestModal() {
       document.getElementById('new-request-modal').classList.add('open');
     }
@@ -969,17 +1051,17 @@
       if (type === 'UPCOMING') {
         up.classList.add('active');
         past.classList.remove('active');
-        memo.innerHTML = '<strong>Stage 1 Governance Rule:</strong> For upcoming trips, submit business intent and dates only. <strong>Do not attach expense figures.</strong> Admin will assign your authorized budget cap after HR verifies necessity.';
+        memo.innerHTML = '<strong>Upcoming Travel Notice:</strong> Provide your business trip objective, estimated expenses in INR (₹) (airfare, lodging quotes, per-diem), and booking quotes for your Manager\'s verification.';
       } else {
         past.classList.add('active');
         up.classList.remove('active');
-        memo.innerHTML = '<strong>Already Travelled Rule:</strong> Retrospective reimbursement claim. Attach completed travel purpose and tax invoices for direct HR validation and Admin disbursement.';
+        memo.innerHTML = '<strong>Already Travelled Notice:</strong> Attach your completed trip details, actual incurred expenses in INR (₹), and tax invoice receipt photos for Manager review and Admin reimbursement payout.';
       }
     }
 
     function submitNewRequest() {
       closeModal();
-      showToast('Trip Intent submitted successfully! It has been dispatched to the HR Queue for review.');
+      showToast('Travel request submitted to Manager Marcus Brody for Tier 1 review!');
     }
 
     function showToast(message) {
@@ -988,7 +1070,7 @@
       toast.classList.add('show');
       setTimeout(() => {
         toast.classList.remove('show');
-      }, 4000);
+      }, 4500);
     }
 
     // Dynamic Drawer & Decision Actions
@@ -998,52 +1080,70 @@
       const reqId = document.getElementById('drawer-req-id');
 
       // -------------------------------------------------------------
-      // 1. HR AUDITING TOKYO SCHEDULE (STAGE 2)
+      // 1. MANAGER AUDITING TOKYO REQUEST (TIER 1)
       // -------------------------------------------------------------
-      if (mode === 'hr-tokyo-schedule') {
+      if (mode === 'mgr-tokyo') {
         reqId.innerText = 'REQUEST ID: TR-2026-089';
-        title.innerText = 'HR Compliance Audit: Tokyo Summit';
+        title.innerText = 'Manager Audit: Tokyo Architecture Summit';
         
         const focusRevise = intentMode === 'revise' ? 'autofocus style="border-color:var(--status-warning);background:#FFF;"' : '';
 
         content.innerHTML = `
-          <div class="memo-box" style="background:#FEF9E7;border-color:#FAD7A0;color:var(--status-warning);font-weight:600;display:flex;justify-content:space-between;align-items:center;">
-            <div>Stage 2 Policy Audit • Admin Budget Cap: <span class="num">$2,000.00</span></div>
-            <span class="badge-callout success">Itemized: $1,850.00</span>
+          <div class="memo-box" style="background:#FDFBF7;border-left:4px solid var(--accent-primary);line-height:1.7;">
+            <div><strong>Requester:</strong> Jane Doe (Staff Engineer) • <strong>Project:</strong> PRJ-ENG-409</div>
+            <div><strong>Dates:</strong> Nov 15 – Nov 20 (5 days) • <strong>Destination:</strong> Tokyo, Japan (HND)</div>
+            <div><strong>Objective:</strong> Present core engineering platform architecture & align with Tokyo APAC team.</div>
           </div>
 
-          <!-- Policy Compliance Check -->
+          <!-- Policy & Proof Verification Checklist -->
           <div style="margin-bottom:1.25rem;">
-            <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.5rem;color:var(--text-ink);text-transform:uppercase;letter-spacing:0.5px;">Policy Verification Checklist</div>
+            <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.5rem;color:var(--text-ink);text-transform:uppercase;letter-spacing:0.5px;">Manager Checklist</div>
             <div class="memo-box" style="line-height:1.8;background:#FFF;border:1px solid var(--border-hairline);">
-              <div style="color:var(--status-success);font-weight:600;">✓ Flight ($850.00) conforms to company economy class mandate</div>
-              <div style="color:var(--status-success);font-weight:600;">✓ Hotel ($140/night) within Tokyo city per-diem ceiling ($160/night)</div>
-              <div style="color:var(--status-success);font-weight:600;">✓ Total schedule ($1,850.00) strictly below Admin Cap ($2,000.00)</div>
-              <div style="color:var(--status-success);font-weight:600;">✓ Business conference dates match approved Stage 1 window</div>
+              <div style="color:var(--status-success);font-weight:600;">✓ Business necessity justified (APAC alignment)</div>
+              <div style="color:var(--status-success);font-weight:600;">✓ Economy class airfare verified (₹68,000 ANA quotation attached)</div>
+              <div style="color:var(--status-success);font-weight:600;">✓ Hotel nightly rate (₹11,200/nt) within Tokyo city policy cap (₹13,000/nt)</div>
+              <div style="color:var(--status-success);font-weight:600;">✓ Total estimate (₹1,48,000.00) within Q4 departmental budget</div>
             </div>
           </div>
 
-          <!-- Schedule Breakdown -->
+          <!-- Itemized Breakdown with Proof -->
           <div style="margin-bottom:1.25rem;">
-            <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.5rem;color:var(--text-ink);text-transform:uppercase;letter-spacing:0.5px;">Itemized Booking Items</div>
+            <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.5rem;color:var(--text-ink);text-transform:uppercase;letter-spacing:0.5px;">Itemized Expense & Proof (INR)</div>
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
                     <th>Category</th>
-                    <th>Vendor / Merchant</th>
-                    <th style="text-align:right;">Amount</th>
+                    <th>Vendor / Description</th>
+                    <th style="text-align:right;">Amount (₹)</th>
+                    <th>Quote / Receipt Image</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>Airfare</td><td>All Nippon Airways (Economy)</td><td class="num" style="text-align:right;">$850.00</td></tr>
-                  <tr><td>Lodging</td><td>Shinjuku Prince Hotel (5 Nights)</td><td class="num" style="text-align:right;">$700.00</td></tr>
-                  <tr><td>Meals / Per-Diem</td><td>Standard Daily Allowance</td><td class="num" style="text-align:right;">$300.00</td></tr>
+                  <tr>
+                    <td>Airfare</td>
+                    <td>All Nippon Airways</td>
+                    <td class="num" style="text-align:right;">₹68,000.00</td>
+                    <td><a href="#" style="color:var(--accent-primary);font-size:0.75rem;font-weight:600;">ana-quote.png</a></td>
+                  </tr>
+                  <tr>
+                    <td>Lodging</td>
+                    <td>Shinjuku Prince Hotel (5 Nights)</td>
+                    <td class="num" style="text-align:right;">₹56,000.00</td>
+                    <td><a href="#" style="color:var(--accent-primary);font-size:0.75rem;font-weight:600;">hotel-booking.png</a></td>
+                  </tr>
+                  <tr>
+                    <td>Meals / Per-Diem</td>
+                    <td>Company Standard Daily Allowance</td>
+                    <td class="num" style="text-align:right;">₹24,000.00</td>
+                    <td><span class="badge-callout">Company Rate</span></td>
+                  </tr>
                 </tbody>
                 <tfoot>
                   <tr style="background:var(--surface-muted);">
-                    <td colspan="2" style="font-weight:700;">Total Itemized:</td>
-                    <td class="num" style="text-align:right;font-weight:700;color:var(--accent-primary);">$1,850.00</td>
+                    <td colspan="2" style="font-weight:700;">Total Estimate:</td>
+                    <td class="num" style="text-align:right;font-weight:700;color:var(--accent-primary);">₹1,48,000.00</td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>
@@ -1053,145 +1153,151 @@
           <!-- Revision Instructions Input -->
           <div class="form-group">
             <label class="form-label" style="font-size:0.8rem;">
-              Review Instructions / Revision Notes 
-              <span style="color:var(--text-sub);font-weight:400;">(Required if requesting alteration)</span>
+              Manager Revision Instructions 
+              <span style="color:var(--text-sub);font-weight:400;">(Required if requesting changes)</span>
             </label>
-            <textarea class="form-input" id="hr-revision-notes" ${focusRevise} style="height:75px;padding:8px;resize:none;" 
-              placeholder="e.g. Please re-book return flight on earlier evening schedule, or select standard room..."></textarea>
+            <textarea class="form-input" id="mgr-revision-notes" ${focusRevise} style="height:75px;padding:8px;resize:none;" 
+              placeholder="e.g. Please choose an earlier return flight or adjust room selection..."></textarea>
           </div>
 
           <!-- DECISION ACTIONS PANEL -->
           <div class="decision-action-box">
             <div class="decision-action-title">
-              <span>HR Audit Decision (Tier 1)</span>
-              <span class="badge-callout">Decision Required</span>
+              <span>Manager Tier 1 Action</span>
+              <span class="badge-callout">Action Required</span>
             </div>
             <p style="font-size:0.775rem;color:var(--text-sub);margin-bottom:1rem;">
-              Choose an action below to advance this travel request:
+              Approving escalates this travel request to Admin Alexander Vance for Tier 2 clearance.
             </p>
             <div style="display:flex;gap:0.75rem;">
-              <button class="btn btn-success" style="flex:1;" onclick="executeHrAction('APPROVE_STAGE2')">
-                Approve & Grant Travel Clearance
+              <button class="btn btn-success" style="flex:1;" onclick="executeManagerAction('APPROVE_TO_ADMIN')">
+                Approve & Forward to Admin
               </button>
-              <button class="btn btn-warning-outline" style="flex:1;" onclick="executeHrAction('REVISE_STAGE2')">
+              <button class="btn btn-warning-outline" style="flex:1;" onclick="executeManagerAction('REVISE_TO_EMPLOYEE')">
                 Send Revision to Employee
               </button>
             </div>
             <div style="margin-top:0.75rem;display:flex;justify-content:space-between;align-items:center;padding-top:0.75rem;border-top:1px solid var(--border-hairline);">
-              <span style="font-size:0.725rem;color:var(--text-muted);">Rejection requires administrative rationale</span>
-              <button class="btn btn-danger-outline btn-sm" onclick="executeHrAction('REJECT')">
+              <span style="font-size:0.725rem;color:var(--text-muted);">Rejection denies the request permanently</span>
+              <button class="btn btn-danger-outline btn-sm" onclick="executeManagerAction('REJECT')">
                 Reject Request
-              </button>
-            </div>
-          </div>
-        `;
-      } 
-      // -------------------------------------------------------------
-      // 2. HR VERIFYING BANGALORE INTENT (STAGE 1)
-      // -------------------------------------------------------------
-      else if (mode === 'hr-bangalore-intent') {
-        reqId.innerText = 'REQUEST ID: TR-2026-095';
-        title.innerText = 'HR Intent Verification: AWS Symposium';
-
-        const focusRevise = intentMode === 'revise' ? 'autofocus style="border-color:var(--status-warning);background:#FFF;"' : '';
-
-        content.innerHTML = `
-          <div class="memo-box" style="background:#F1F8F1;border-color:#C8E6C9;color:var(--status-success);font-weight:600;">
-            Stage 1 Intent Review • No Expenses Attached • Verify Business Necessity
-          </div>
-
-          <div class="memo-box" style="background:#FFF;line-height:1.7;">
-            <div><strong>Requester:</strong> Rohan Sharma (DevOps Lead)</div>
-            <div><strong>Destination:</strong> Bangalore, India (BLR)</div>
-            <div><strong>Travel Dates:</strong> Dec 02 – Dec 05, 2026 (4 days)</div>
-            <div><strong>Project Code:</strong> PRJ-ENG-409</div>
-            <div><strong>Event / Agenda:</strong> AWS Cloud Symposium 2026 keynote & hands-on lab</div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">HR Intent Review Remarks / Instructions</label>
-            <textarea class="form-input" id="hr-intent-notes" ${focusRevise} style="height:70px;padding:8px;resize:none;" 
-              placeholder="Provide instructions if dates conflict with upcoming sprint or if team travel limits apply..."></textarea>
-          </div>
-
-          <!-- DECISION ACTIONS PANEL -->
-          <div class="decision-action-box">
-            <div class="decision-action-title">
-              <span>HR Intent Verification Action</span>
-              <span class="badge-callout">Stage 1 Decision</span>
-            </div>
-            <div style="display:flex;gap:0.75rem;">
-              <button class="btn btn-primary" style="flex:1;" onclick="executeHrAction('APPROVE_STAGE1')">
-                Approve Intent & Forward to Admin
-              </button>
-              <button class="btn btn-warning-outline" style="flex:1;" onclick="executeHrAction('REVISE_STAGE1')">
-                Request Intent Modification
               </button>
             </div>
           </div>
         `;
       }
       // -------------------------------------------------------------
-      // 3. ADMIN BUDGET CAP ALLOCATOR (STAGE 1)
+      // 2. MANAGER RE-VERIFYING BANGALORE AFTER ADMIN REVISION
       // -------------------------------------------------------------
-      else if (mode === 'admin-alloc-budget') {
+      else if (mode === 'mgr-bangalore') {
+        reqId.innerText = 'REQUEST ID: TR-2026-095';
+        title.innerText = 'Manager Re-Verification: AWS Symposium';
+        content.innerHTML = `
+          <div class="memo-box" style="background:#FEF9E7;border-left:4px solid var(--status-warning);line-height:1.7;">
+            <div><strong>Context:</strong> Admin requested budget scaling. Employee Rohan Sharma updated quotes and resubmitted to Manager for re-verification.</div>
+            <div style="margin-top:4px;"><strong>Admin Instruction:</strong> <em>"Reduce lodging estimate to partner hotel rate (₹2,750/night) and re-submit."</em></div>
+            <div style="margin-top:4px;color:var(--status-success);font-weight:600;">✓ Employee scaled lodging down by ₹5,000. Total now: ₹31,500.00.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Manager Re-audit Remarks</label>
+            <textarea class="form-input" id="mgr-re-notes" style="height:65px;padding:8px;resize:none;" 
+              placeholder="Add optional notes for Admin on the re-verified figures..."></textarea>
+          </div>
+
+          <div class="decision-action-box">
+            <div class="decision-action-title">
+              <span>Manager Re-Verification</span>
+              <span class="badge-callout success">Alterations Verified</span>
+            </div>
+            <div style="display:flex;gap:0.75rem;">
+              <button class="btn btn-primary" style="flex:1;" onclick="executeManagerAction('RE_APPROVE_TO_ADMIN')">
+                Re-approve & Forward to Admin
+              </button>
+              <button class="btn btn-warning-outline" style="flex:1;" onclick="executeManagerAction('REVISE_TO_EMPLOYEE')">
+                Request Further Changes
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      // -------------------------------------------------------------
+      // 3. ADMIN GOVERNANCE: TOKYO SUMMIT (TIER 2)
+      // -------------------------------------------------------------
+      else if (mode === 'admin-tokyo') {
         reqId.innerText = 'REQUEST ID: TR-2026-089';
-        title.innerText = 'Admin Budget Authority: Tokyo Summit';
+        title.innerText = 'Admin Executive Clearance: Tokyo Summit';
 
         const focusRevise = intentMode === 'revise' ? 'autofocus style="border-color:var(--status-warning);background:#FFF;"' : '';
 
         content.innerHTML = `
-          <div class="memo-box" style="background:#F1F8F1;border-color:#C8E6C9;color:var(--status-success);font-weight:600;">
-            HR Intent Cleared on Nov 06 • Set Executive Budget Cap & Authorize Booking
+          <div class="memo-box" style="background:#F1F8F1;border-color:#C8E6C9;line-height:1.7;">
+            <div><strong style="color:var(--status-success);">✓ Verified & Approved by Manager Marcus Brody on Nov 06</strong></div>
+            <div style="font-size:0.8rem;color:var(--text-sub);">Jane Doe • Engineering • Total Estimate: <strong class="num">₹1,48,000.00</strong></div>
           </div>
 
-          <!-- Pool Impact & Budget Allocator -->
+          <!-- Pool Impact -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem;">
             <div class="memo-box" style="margin-bottom:0;background:#FFF;">
               <div style="font-size:0.75rem;font-weight:700;color:var(--accent-primary);text-transform:uppercase;">Eng Q4 Budget Pool</div>
-              <div style="font-size:0.85rem;margin-top:4px;">Total Budget: <strong class="num">$50,000.00</strong></div>
-              <div style="font-size:0.85rem;color:var(--status-success);margin-top:2px;">Remaining Headroom: <strong class="num">$18,400.00</strong></div>
+              <div style="font-size:0.85rem;margin-top:4px;">Available Headroom: <strong class="num" style="color:var(--status-success);">₹12,90,000.00</strong></div>
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px;">After this trip: ₹11,42,000.00 remaining</div>
             </div>
 
-            <div style="border:2px solid var(--accent-primary);border-radius:12px;padding:0.85rem 1rem;background:#FDFBF8;">
-              <label class="form-label" style="color:var(--accent-primary);font-size:0.8rem;">Authorized Budget Ceiling *</label>
-              <div style="display:flex;align-items:center;gap:0.4rem;margin-top:4px;">
-                <span style="font-weight:700;font-size:1.2rem;color:var(--accent-primary);">$</span>
-                <input class="form-input num" id="admin-cap-val" style="font-size:1.2rem;font-weight:700;color:var(--accent-primary);height:40px;background:#FFF;" value="2000.00">
-              </div>
+            <div class="memo-box" style="margin-bottom:0;background:#FFF;">
+              <div style="font-size:0.75rem;font-weight:700;color:var(--accent-primary);text-transform:uppercase;">Trip Proof Summary</div>
+              <div style="font-size:0.825rem;margin-top:4px;">All Nippon Airways quote verified</div>
+              <div style="font-size:0.825rem;margin-top:2px;">Shinjuku Prince Hotel quote verified</div>
+            </div>
+          </div>
+
+          <!-- Revision Routing Selector (Direct to Employee vs via Manager) -->
+          <div style="margin-bottom:1rem;">
+            <label class="form-label" style="font-size:0.8rem;">
+              If Requesting Revision, Choose Dispatch Route:
+            </label>
+            <div class="routing-choice">
+              <label class="routing-option selected" id="opt-route-mgr" onclick="selectRoute('MANAGER')">
+                <input type="radio" name="admin_route" checked style="margin-right:6px;">
+                <strong>Route A: Send to Manager</strong>
+                <div style="font-size:0.7rem;color:var(--text-sub);margin-top:2px;">Manager coordinates revision with employee</div>
+              </label>
+              <label class="routing-option" id="opt-route-emp" onclick="selectRoute('EMPLOYEE')">
+                <input type="radio" name="admin_route" style="margin-right:6px;">
+                <strong>Route B: Direct to Employee</strong>
+                <div style="font-size:0.7rem;color:var(--text-sub);margin-top:2px;">Direct note to Jane Doe (returns to Mgr first)</div>
+              </label>
+            </div>
+            <div style="font-size:0.725rem;color:var(--text-sub);font-style:italic;">
+              * Note: Regardless of route, once the employee modifies the request, it returns to Manager first for re-verification.
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Admin Budget Memorandum & Policy Guidance</label>
-            <input class="form-input" id="admin-memo" value="Approved at $2,000 ceiling. Economy airfare and standard Shinjuku hotel rates authorized.">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Review Instructions / Alteration Guidance (If requiring changes from employee)</label>
-            <textarea class="form-input" id="admin-rev-notes" ${focusRevise} style="height:65px;padding:8px;resize:none;" 
-              placeholder="Provide instructions if trip duration or budget needs scaling back..."></textarea>
+            <label class="form-label">Revision Instructions / Policy Directive</label>
+            <textarea class="form-input" id="admin-revision-notes" ${focusRevise} style="height:65px;padding:8px;resize:none;" 
+              placeholder="e.g. Please reduce hotel per-diem or select partner airline..."></textarea>
           </div>
 
           <!-- ADMIN DECISION ACTIONS PANEL -->
           <div class="decision-action-box">
             <div class="decision-action-title">
-              <span>Admin Budget Authority Action</span>
-              <span class="badge-callout">Tier 2 Decision</span>
+              <span>Admin Executive Authority Action</span>
+              <span class="badge-callout">Tier 2 Clearance</span>
             </div>
             <p style="font-size:0.775rem;color:var(--text-sub);margin-bottom:1rem;">
-              Allocating locks the budget ceiling and unlocks Stage 2 itemized schedule booking for Jane Doe:
+              Granting clearance authorizes ticket issuance and hotel booking.
             </p>
             <div style="display:flex;gap:0.75rem;">
-              <button class="btn btn-primary" style="flex:1.2;" onclick="executeAdminAction('APPROVE_CAP')">
-                Allocate Budget Cap ($2,000) & Authorize Booking
+              <button class="btn btn-primary" style="flex:1.2;" onclick="executeAdminAction('APPROVE_CLEARANCE')">
+                Grant Final Travel Clearance
               </button>
-              <button class="btn btn-warning-outline" style="flex:1;" onclick="executeAdminAction('REVISE')">
-                Request Modification
+              <button class="btn btn-warning-outline" style="flex:1;" onclick="executeAdminAction('DISPATCH_REVISION')">
+                Dispatch Revision Instructions
               </button>
             </div>
             <div style="margin-top:0.75rem;display:flex;justify-content:space-between;align-items:center;padding-top:0.75rem;border-top:1px solid var(--border-hairline);">
-              <span style="font-size:0.725rem;color:var(--text-muted);">Rejection cancels trip intent</span>
+              <span style="font-size:0.725rem;color:var(--text-muted);">Rejection permanently cancels travel</span>
               <button class="btn btn-danger-outline btn-sm" onclick="executeAdminAction('REJECT')">
                 Reject Request
               </button>
@@ -1200,51 +1306,73 @@
         `;
       }
       // -------------------------------------------------------------
-      // 4. EMPLOYEE VIEW
+      // 4. ADMIN GOVERNANCE: SINGAPORE REIMBURSEMENT (CASE 1)
+      // -------------------------------------------------------------
+      else if (mode === 'admin-singapore') {
+        reqId.innerText = 'REQUEST ID: TR-2026-042';
+        title.innerText = 'Admin Payout Authorization: Singapore Onsite';
+        content.innerHTML = `
+          <div class="memo-box" style="background:#F1F8F1;border-color:#C8E6C9;line-height:1.7;">
+            <div><strong style="color:var(--status-success);">✓ Case 1: Post-Trip Reimbursement Claim</strong></div>
+            <div style="font-size:0.8rem;">Employee: Sarah Jenkins • Approved by Manager: Marcus Brody</div>
+            <div style="font-size:0.8rem;">Actual Claim Total: <strong class="num">₹1,02,500.00</strong> • Attached: 4 tax receipts verified</div>
+          </div>
+
+          <div class="decision-action-box">
+            <div class="decision-action-title">
+              <span>Admin Financial Disbursement</span>
+              <span class="badge-callout success">Ready to Settle</span>
+            </div>
+            <p style="font-size:0.775rem;color:var(--text-sub);margin-bottom:1rem;">
+              Authorize payout of ₹1,02,500.00 to Sarah Jenkins' payroll direct deposit.
+            </p>
+            <div style="display:flex;gap:0.75rem;">
+              <button class="btn btn-success" style="flex:1;" onclick="executeAdminAction('SETTLE_PAYOUT')">
+                Authorize Reimbursement Payout (₹1,02,500.00)
+              </button>
+              <button class="btn btn-warning-outline" style="flex:1;" onclick="executeAdminAction('DISPATCH_REVISION')">
+                Request Invoice Revision
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      // -------------------------------------------------------------
+      // 5. EMPLOYEE DETAIL VIEW
       // -------------------------------------------------------------
       else {
         reqId.innerText = 'REQUEST ID: TR-2026-089';
         title.innerText = 'Tokyo Architecture Summit';
         content.innerHTML = `
-          <div class="memo-box" style="background:#F1F8F1;border-color:#C8E6C9;color:var(--status-success);font-weight:600;">
-            Admin Budget Cap Locked: <span class="num">$2,000.00</span> • Itemized Total: <span class="num">$1,850.00</span> ($150 Under Cap)
+          <div class="memo-box" style="background:#FDFBF7;border-left:4px solid var(--accent-primary);line-height:1.7;">
+            <div><strong>Status:</strong> <span class="status-text">Pending Manager Review</span></div>
+            <div><strong>Approver:</strong> Marcus Brody (Engineering Manager)</div>
+            <div><strong>Total Estimated Expenses:</strong> <span class="num" style="font-weight:700;">₹1,48,000.00</span></div>
           </div>
 
           <div style="margin-bottom:1.25rem;">
-            <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.5rem;color:var(--text-ink);text-transform:uppercase;">Itemized Booking Schedule</div>
+            <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.5rem;color:var(--text-ink);text-transform:uppercase;">Submitted Expenses & Quotes</div>
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
                     <th>Category</th>
-                    <th>Merchant</th>
-                    <th style="text-align:right;">Amount</th>
+                    <th>Vendor</th>
+                    <th style="text-align:right;">Amount (₹)</th>
+                    <th>Attached Proof</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>Airfare</td><td>All Nippon Airways</td><td class="num" style="text-align:right;">$850.00</td></tr>
-                  <tr><td>Lodging</td><td>Shinjuku Prince Hotel (5 Nights)</td><td class="num" style="text-align:right;">$700.00</td></tr>
-                  <tr><td>Meals / Per-Diem</td><td>Company Standard Allowance</td><td class="num" style="text-align:right;">$300.00</td></tr>
+                  <tr><td>Flight</td><td>All Nippon Airways</td><td class="num" style="text-align:right;">₹68,000.00</td><td>ana-quote.png</td></tr>
+                  <tr><td>Hotel</td><td>Shinjuku Prince Hotel (5 Nights)</td><td class="num" style="text-align:right;">₹56,000.00</td><td>hotel-booking.png</td></tr>
+                  <tr><td>Meals / Per-Diem</td><td>Company Allowance</td><td class="num" style="text-align:right;">₹24,000.00</td><td>Standard Rate</td></tr>
                 </tbody>
-                <tfoot>
-                  <tr style="background:var(--surface-muted);">
-                    <td colspan="2" style="font-weight:700;">Total:</td>
-                    <td class="num" style="text-align:right;font-weight:700;color:var(--accent-primary);">$1,850.00</td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           </div>
 
-          <div class="memo-box">
-            <div style="font-size:0.75rem;font-weight:700;color:var(--accent-primary);margin-bottom:4px;">ADMIN GOVERNANCE MEMO</div>
-            "Allocated $2,000 budget cap. Economy airfare and standard Shinjuku hotel rates authorized."
-          </div>
-
           <div style="text-align:right;margin-top:1.25rem;">
-            <button class="btn btn-primary" onclick="closeDrawerDirect();showToast('Schedule resubmitted to HR for clearance!');">
-              Submit Detailed Schedule to HR for Clearance
-            </button>
+            <button class="btn btn-outline" onclick="closeDrawerDirect();">Close View</button>
           </div>
         `;
       }
@@ -1252,36 +1380,51 @@
       document.getElementById('trip-drawer').classList.add('open');
     }
 
-    // Interactive Action Handlers
-    function executeHrAction(action) {
+    let selectedAdminRoute = 'MANAGER';
+    function selectRoute(route) {
+      selectedAdminRoute = route;
+      if (route === 'MANAGER') {
+        document.getElementById('opt-route-mgr').classList.add('selected');
+        document.getElementById('opt-route-emp').classList.remove('selected');
+      } else {
+        document.getElementById('opt-route-emp').classList.add('selected');
+        document.getElementById('opt-route-mgr').classList.remove('selected');
+      }
+    }
+
+    // Action Handlers
+    function executeManagerAction(action) {
       closeDrawerDirect();
-      if (action === 'APPROVE_STAGE2') {
-        document.getElementById('status-hr-tokyo').innerHTML = 'Cleared by HR';
-        showToast('✓ HR Audit Approved! Travel Clearance Granted and forwarded to Admin.');
-      } else if (action === 'REVISE_STAGE2') {
-        const notes = document.getElementById('hr-revision-notes')?.value || 'Please adjust flight timing.';
-        document.getElementById('status-hr-tokyo').innerHTML = 'Revision Requested';
+      if (action === 'APPROVE_TO_ADMIN') {
+        document.getElementById('status-mgr-tokyo').innerHTML = 'Approved to Admin';
+        showToast('✓ Manager Approved! Request forwarded to Admin Alexander Vance for Tier 2 clearance.');
+      } else if (action === 'RE_APPROVE_TO_ADMIN') {
+        document.getElementById('status-mgr-bangalore').innerHTML = 'Re-approved to Admin';
+        showToast('✓ Alterations Verified! Re-approved and forwarded to Admin.');
+      } else if (action === 'REVISE_TO_EMPLOYEE') {
+        const notes = document.getElementById('mgr-revision-notes')?.value || 'Please adjust expenses.';
+        document.getElementById('status-mgr-tokyo').innerHTML = 'Revision Sent to Employee';
         showToast('✓ Revision instructions dispatched to employee: "' + notes + '"');
-      } else if (action === 'APPROVE_STAGE1') {
-        document.getElementById('status-hr-bangalore').innerHTML = 'Intent Cleared';
-        showToast('✓ HR Intent Verified! Forwarded to Admin for Budget Cap Allocation.');
-      } else if (action === 'REVISE_STAGE1') {
-        document.getElementById('status-hr-bangalore').innerHTML = 'Intent Revision Sent';
-        showToast('✓ Modification requested! Sent back to employee for adjustment.');
       } else if (action === 'REJECT') {
-        showToast('Request rejected by HR.');
+        showToast('Request rejected by Manager.');
       }
     }
 
     function executeAdminAction(action) {
       closeDrawerDirect();
-      if (action === 'APPROVE_CAP') {
-        const cap = document.getElementById('admin-cap-val')?.value || '2000.00';
-        showToast(`✓ Budget Cap of $${cap} Locked! Employee has been authorized to submit itemized bookings.`);
-      } else if (action === 'REVISE') {
-        showToast('✓ Revision instructions dispatched to employee by Admin.');
+      if (action === 'APPROVE_CLEARANCE') {
+        showToast('✓ Admin Travel Clearance Granted! Jane Doe has been authorized for booking.');
+      } else if (action === 'SETTLE_PAYOUT') {
+        showToast('✓ Reimbursement payment of ₹1,02,500.00 authorized & settled for Sarah Jenkins.');
+      } else if (action === 'DISPATCH_REVISION') {
+        const notes = document.getElementById('admin-revision-notes')?.value || 'Please scale budget.';
+        if (selectedAdminRoute === 'MANAGER') {
+          showToast('✓ Revision sent to Manager Marcus Brody to coordinate alteration with employee.');
+        } else {
+          showToast('✓ Direct revision note sent to employee (submission will return to Manager first).');
+        }
       } else if (action === 'REJECT') {
-        showToast('Request rejected by Admin.');
+        showToast('Request permanently rejected by Admin.');
       }
     }
 
