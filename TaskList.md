@@ -44,7 +44,7 @@ Any agent or contributor modifying this codebase **must** adhere to these strict
 
 | Day | Date | Category | Key Milestones | Est. Hours | Status |
 | :---: | :---: | :--- | :--- | :---: | :---: |
-| **Day 1** | **09/11/2026** | **Database & Backend Foundation** | Tasks 1, 2, 3: PostgreSQL Schema Migration & Seed Data, TypeScript Domain Contracts & FSM, Relational Repository Layer | **8.0 Hours** | **In Progress** |
+| **Day 1** | **09/11/2026** | **Database & Backend Foundation** | Tasks 1, 2, 3: PostgreSQL Schema Migration & Seed Data, TypeScript Domain Contracts & FSM, Relational Repository Layer | **8.0 Hours** | **Completed** |
 | **Day 2** | **10/11/2026** | **Backend Logic & Frontend State** | Tasks 4, 5, 6: Travel Service Layer & Governance Rules, Express 5 Controllers & Route Guards, Frontend State Context & API Client | **8.0 Hours** | **Pending** |
 | **Day 3** | **11/11/2026** | **Portals, Governance & E2E Verification** | Tasks 7, 8, 9: Employee Portal UI & Uploader, Manager Queue & Admin Governance Drawers, 100% E2E Automated Verification | **8.0 Hours** | **Pending** |
 | **Total** | | | **Complete Production-Ready 2-Tier Governance System** | **24.0 Hours** | |
@@ -79,16 +79,16 @@ Any agent or contributor modifying this codebase **must** adhere to these strict
   - [x] Implement state machine transition logic and permission boundaries (`ALLOWED_TRANSITIONS`, `validateStatusTransition`, `canEmployeeModify`).
   - [x] Run unit test suite `npm run test:fsm` and verify 47/47 tests pass.
 
-- [ ] **Task 3: Relational Repository Layer** (Est: 3.0 Hours)
-  - [ ] Create repository test `server/tests/travel-repo.test.ts` for database CRUD, transactions, and audit events.
-  - [ ] Implement `server/src/modules/travel/repositories/travel.repository.ts`:
+- [x] **Task 3: Relational Repository Layer** (Est: 3.0 Hours) — ✅ COMPLETED
+  - [x] Create repository test `server/tests/travel-repo.test.ts` for database CRUD, transactions, and audit events.
+  - [x] Implement `server/src/features/travel/travel.repository.ts` & `server/src/modules/travel/repositories/travel.repository.ts`:
     - `createRequestWithExpenses()` (atomic transaction inserting request + expenses + timeline event).
     - `findById()`, `findScopedRequests()` (role-based: Employee sees own, Manager sees direct reports, Admin sees all).
     - `updateStatusWithTimeline()` (atomic status change with immutable timeline audit log).
     - `updateExpenses()` (for employee modification upon revision).
     - `getDepartmentBudget()`, `updateBudgetUtilization()`.
-  - [ ] Run repository test and verify passes.
-  - [ ] Git commit: `feat(travel): implement travel relational repository with atomic transactions`.
+  - [x] Run repository test `npm run test:repo` and verify 29/29 tests pass.
+  - [x] Git commit: `feat(travel): implement travel relational repository with atomic transactions`.
 
 ---
 
