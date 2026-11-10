@@ -9,17 +9,24 @@ export const signInSchema = z.object({
   password: z
     .string()
     .min(1, 'Password is required'),
+  remember: z.boolean().optional(),
 });
 
 export type SignInInput = z.infer<typeof signInSchema>;
+
+export const NAME_REGEX = /^[\p{L}][\p{L}\s'.-]{1,99}$/u;
 
 export const signUpSchema = z
   .object({
     name: z
       .string()
       .trim()
-      .min(1, 'Please provide your full name')
-      .max(100, 'Name cannot exceed 100 characters'),
+      .min(2, 'Name must be at least 2 characters long')
+      .max(100, 'Name cannot exceed 100 characters')
+      .regex(
+        NAME_REGEX,
+        'Name can only contain letters, spaces, hyphens, and apostrophes'
+      ),
     email: z
       .string()
       .trim()

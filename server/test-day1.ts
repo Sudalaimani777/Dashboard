@@ -103,6 +103,21 @@ async function runTests() {
     return res.status === 400;
   });
 
+  // Test 4b: Validation rejects special characters in name (e.g., @@@@@@@@@@)
+  await assertTest('POST /api/auth/signup (Special characters in name) -> Returns 400 Bad Request', async () => {
+    const res = await fetch(`${baseUrl}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: '@@@@@@@@@@',
+        email: `special_${Date.now()}@readventure.com`,
+        password: 'Password123!',
+      }),
+    });
+    const json = await res.json();
+    return res.status === 400 && json.message?.includes('letters, spaces, hyphens, and apostrophes');
+  });
+
   // Test 5: Signin with valid credentials & sets HttpOnly cookie
   await assertTest('POST /api/auth/signin -> Signin successfully & returns HttpOnly cookie', async () => {
     const res = await fetch(`${baseUrl}/auth/signin`, {
