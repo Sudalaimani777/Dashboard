@@ -1088,17 +1088,18 @@ git commit -m "feat(travel): implement frontend travel types, INR formatters, an
 
 ---
 
-### Task 7: Frontend Warm Storycraft UI — Employee Portal & New Request Modal
+### Task 7: TripFlow Landing Page & Employee Travel Portal UI
 
 **Files:**
+- Modify: `client/src/features/landing/LandingPage.tsx` and landing components (revamp from legacy book app to TripFlow platform)
 - Create: `client/src/features/travel/components/ExpenseLineItemTable.tsx`
 - Create: `client/src/features/travel/components/NewTravelRequestModal.tsx`
 - Create: `client/src/features/travel/pages/EmployeeTravelPage.tsx`
-- Modify: `client/src/routes/index.tsx`
+- Modify: `client/src/routes/AppRoutes.tsx`
 
 **Interfaces:**
 - Consumes: `TravelContext`, Warm Storycraft CSS tokens
-- Produces: `/travel/employee` portal page with KPI summary cards, requests table, and "+ New Travel Request" modal.
+- Produces: Public TripFlow landing page and Employee portal page with KPI summary cards, requests table, and "+ New Travel Request" modal.
 
 - [ ] **Step 1: Implement ExpenseLineItemTable.tsx**
 
@@ -1133,18 +1134,19 @@ git commit -m "feat(travel): build Employee Portal and New Travel Request modal 
 
 ---
 
-### Task 8: Frontend Manager Queue & Admin Governance Drawers
+### Task 8: Dynamic Role-Governed Dashboard, Manager Queue & Admin Governance Hub
 
 **Files:**
+- Modify: `client/src/features/dashboard/DashboardPage.tsx` (replace legacy Book dashboard with dynamic role router based on `user.role`, eliminating prototype switcher)
 - Create: `client/src/features/travel/components/ManagerAuditDrawer.tsx`
 - Create: `client/src/features/travel/components/AdminGovernanceDrawer.tsx`
 - Create: `client/src/features/travel/pages/ManagerQueuePage.tsx`
 - Create: `client/src/features/travel/pages/AdminGovernancePage.tsx`
-- Modify: `client/src/routes/index.tsx`
+- Modify: `client/src/routes/AppRoutes.tsx`
 
 **Interfaces:**
-- Consumes: `TravelContext`, `travelApi.ts`
-- Produces: `/travel/manager` and `/travel/admin` views with interactive decision action drawers.
+- Consumes: `TravelContext`, `useAuth`, `travelApi.ts`
+- Produces: Strictly role-governed `/dashboard` rendering `EmployeeTravelPage`, `ManagerQueuePage`, or `AdminGovernancePage` based on backend session. Real-world RBAC with zero fake role switcher pills.
 
 - [ ] **Step 1: Implement ManagerAuditDrawer.tsx**
 

@@ -59,11 +59,12 @@ Comprehensive REST API documentation for the **TripFlow** Corporate Travel & Exp
 | `POST` | `/travel/requests` | `EMPLOYEE` | Create new travel request with upfront itemized expenses & proof URLs |
 | `GET` | `/travel/requests` | All Roles | Fetch role-scoped requests (Employee: own; Manager: team; Admin: all) |
 | `GET` | `/travel/requests/:id` | All Roles | Fetch full request details, itemized expenses, and timeline audit ledger |
-| `PUT` | `/travel/requests/:id/submit` | `EMPLOYEE` | Submit a draft request for Tier 1 Manager review |
-| `POST` | `/travel/requests/:id/manager-review` | `MANAGER` | Tier 1 review: `APPROVE_AND_FORWARD` or `REQUEST_REVISION` |
-| `POST` | `/travel/requests/:id/manager-forward-revision` | `MANAGER` | Forward Admin revision instructions to Employee with enriched guidance |
-| `POST` | `/travel/requests/:id/admin-review` | `ADMIN` | Tier 2 review: `APPROVE`, `SETTLE`, `REJECT`, or `REQUEST_REVISION` (Route A or B) |
-| `POST` | `/travel/requests/:id/resubmit` | `EMPLOYEE` | Resubmit altered request (always returns to Manager for re-verification) |
+| `GET` | `/travel/manager-queue` | `MANAGER`, `ADMIN` | Fetch requests pending Tier 1 Manager audit (Manager: team + unassigned; Admin: org-wide) |
+| `GET` | `/travel/admin-queue` | `ADMIN` | Fetch requests pending Tier 2 Admin executive clearance or payout settlement |
+| `POST` | `/travel/requests/:id/manager-review` | `MANAGER`, `ADMIN` | Tier 1 review: `APPROVE_AND_FORWARD` (or `APPROVE`), `REQUEST_REVISION` (or `REVISE`), or `REJECT` |
+| `POST` | `/travel/requests/:id/admin-review` | `ADMIN` | Tier 2 review: `APPROVE` / `SETTLE`, `REQUEST_REVISION` (Route A or B), or `REJECT` |
+| `POST` | `/travel/requests/:id/resubmit` | `EMPLOYEE` | Resubmit altered request (strictly returns to Manager for re-verification) |
+| `POST` | `/travel/requests/:id/cancel` | `EMPLOYEE` | Cancel an active travel request |
 | `GET` | `/travel/budgets` | `MANAGER`, `ADMIN` | Fetch department budget headroom and utilization in INR (`₹`) |
 
 ---
@@ -184,13 +185,90 @@ Retrieves travel requests filtered by the caller's role:
 
 ---
 
-### 3. Tier 1 Line Manager Review
+### 3. Fetch Manager Audit Queue
 
-Manager evaluates travel necessity and expense proofs. They can either approve & forward to Admin, or send modification instructions to the Employee.
+Retrieves all requests waiting for Tier 1 Line Manager audit (`PENDING_MANAGER_REVIEW`).
+- **Managers**: Automatically scoped to their direct reports (`users.manager_id = manager.id`) plus any unassigned employee requests (`tr.manager_id IS NULL AND u.manager_id IS NULL`).
+- **Admins**: Have full organization-wide visibility into all pending manager reviews.
+
+* **URL**: `/travel/manager-queue`
+* **Method**: `GET`
+* **Access**: Authenticated (`MANAGER`, `ADMIN`)
+* **Headers**: `Authorization: Bearer <token>` or `Cookie: token=...`
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "message": "Manager review queue fetched",
+  "data": [
+    {
+      "id": "c1f7b82e-9d2a-4335-b35f-900eeae24b56",
+      "user_id": "e81d4f2e-b1a8-4c90-9ef2-1b1234567890",
+      "requester_name": "Arun Kumar",
+      "requester_email": "employee@corp.com",
+      "requester_department": "Engineering",
+      "travel_type": "UPCOMING",
+      "title": "Client Architecture Workshop - Singapore",
+      "origin": "Bangalore (BLR)",
+      "destination": "Singapore (SIN)",
+      "departure_date": "2026-11-20",
+      "return_date": "2026-11-24",
+      "total_expenses": 102500.00,
+      "currency": "INR",
+      "status": "PENDING_MANAGER_REVIEW",
+      "created_at": "2026-11-09T09:30:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### 4. Fetch Admin Governance Queue
+
+Retrieves all travel requests that have passed Tier 1 Manager audit and are pending Tier 2 Admin executive clearance (`APPROVED`) or disbursement settlement (`SETTLED`).
+
+* **URL**: `/travel/admin-queue`
+* **Method**: `GET`
+* **Access**: Authenticated (`ADMIN`)
+* **Headers**: `Authorization: Bearer <token>` or `Cookie: token=...`
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "message": "Admin governance queue fetched",
+  "data": [
+    {
+      "id": "c1f7b82e-9d2a-4335-b35f-900eeae24b56",
+      "user_id": "e81d4f2e-b1a8-4c90-9ef2-1b1234567890",
+      "requester_name": "Arun Kumar",
+      "requester_department": "Engineering",
+      "travel_type": "UPCOMING",
+      "title": "Client Architecture Workshop - Singapore",
+      "destination": "Singapore (SIN)",
+      "total_expenses": 102500.00,
+      "currency": "INR",
+      "status": "PENDING_ADMIN_APPROVAL",
+      "manager_remarks": "Validated client need. Approved within APAC allowance.",
+      "manager_reviewed_at": "2026-11-09T10:00:00.000Z",
+      "created_at": "2026-11-09T09:30:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### 5. Tier 1 Line Manager Review
+
+Manager evaluates travel necessity and expense proofs. They can either approve & forward to Admin, request revisions from the employee, or reject.
+- Supports both `APPROVE_AND_FORWARD` (or `APPROVE`) and `REQUEST_REVISION` (or `REVISE`).
 
 * **URL**: `/travel/requests/:id/manager-review`
 * **Method**: `POST`
-* **Access**: Authenticated (`MANAGER`)
+* **Access**: Authenticated (`MANAGER`, `ADMIN`)
 * **Headers**: `Content-Type: application/json`
 
 #### Request Payload: Approve & Forward
@@ -213,7 +291,7 @@ Manager evaluates travel necessity and expense proofs. They can either approve &
 ```json
 {
   "success": true,
-  "message": "Request approved and escalated to Admin",
+  "message": "Manager review action recorded",
   "data": {
     "id": "c1f7b82e-9d2a-4335-b35f-900eeae24b56",
     "status": "PENDING_ADMIN_APPROVAL",
@@ -224,9 +302,11 @@ Manager evaluates travel necessity and expense proofs. They can either approve &
 
 ---
 
-### 4. Tier 2 Admin Governance Review
+### 6. Tier 2 Admin Governance Review
 
-Admin audits budget allocations and compliance. They can grant final clearance, authorize reimbursement payout, reject, or request revisions.
+Admin audits departmental budget allocations and compliance. They can grant final clearance (`APPROVED`), authorize reimbursement payout (`SETTLED`), reject (`REJECTED`), or dispatch revision requests via Dual-Route routing:
+- **Route A (`revision_target: 'MANAGER'`):** Routes back to the Manager for renegotiation. Status: `REVISION_REQUESTED_BY_ADMIN_TO_MANAGER`.
+- **Route B (`revision_target: 'EMPLOYEE'`):** Directs back to the Employee for receipts/proofs. Status: `REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE`.
 
 * **URL**: `/travel/requests/:id/admin-review`
 * **Method**: `POST`
@@ -245,11 +325,11 @@ Admin audits budget allocations and compliance. They can grant final clearance, 
 #### Action B: Reimbursement Settlement (Already Travelled)
 ```json
 {
-  "action": "SETTLE",
-  "remarks": "Tax invoices audited and approved. Payment scheduled for next payroll disbursement."
+  "action": "APPROVE",
+  "remarks": "Tax invoices audited and approved. Payment scheduled for disbursement."
 }
 ```
-*Resulting Status*: `SETTLED`
+*Resulting Status*: `SETTLED` (automatically resolved based on `travel_type: 'ALREADY_TRAVELLED'`)
 
 #### Action C: Request Revision via Route A (Via Manager)
 ```json
@@ -273,7 +353,7 @@ Admin audits budget allocations and compliance. They can grant final clearance, 
 
 ---
 
-### 5. Resubmit Revised Travel Request
+### 7. Resubmit Revised Travel Request
 
 When an employee modifies their request after receiving instructions (from either Manager or Admin), they resubmit using this endpoint.
 
@@ -287,8 +367,6 @@ When an employee modifies their request after receiving instructions (from eithe
 #### Request Payload
 ```json
 {
-  "departure_date": "2026-11-20",
-  "return_date": "2026-11-24",
   "updated_expenses": [
     {
       "category": "HOTEL",
@@ -307,7 +385,7 @@ When an employee modifies their request after receiving instructions (from eithe
 ```json
 {
   "success": true,
-  "message": "Revised request resubmitted to Manager for re-verification",
+  "message": "Travel request resubmitted for manager re-verification",
   "data": {
     "id": "c1f7b82e-9d2a-4335-b35f-900eeae24b56",
     "status": "PENDING_MANAGER_REVIEW",
@@ -319,18 +397,53 @@ When an employee modifies their request after receiving instructions (from eithe
 
 ---
 
-### 6. Department Budget Headroom
+### 8. Cancel Travel Request
+
+Allows the requester to cancel a request before final clearance or settlement.
+
+* **URL**: `/travel/requests/:id/cancel`
+* **Method**: `POST`
+* **Access**: Authenticated (`EMPLOYEE`)
+* **Headers**: `Content-Type: application/json`
+
+#### Request Payload
+```json
+{
+  "remarks": "Client workshop postponed to next quarter."
+}
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "message": "Travel request cancelled successfully",
+  "data": {
+    "id": "c1f7b82e-9d2a-4335-b35f-900eeae24b56",
+    "status": "CANCELLED"
+  }
+}
+```
+
+---
+
+### 9. Department Budget Headroom
 
 Retrieves real-time departmental budget utilization vs fiscal allocations in Indian Rupees (`₹`).
 
 * **URL**: `/travel/budgets`
 * **Method**: `GET`
 * **Access**: Authenticated (`MANAGER`, `ADMIN`)
+* **Query Parameters**:
+  - `department` (optional, defaults to requester's department or `'Engineering'`)
+  - `year` (optional, defaults to `2026`)
+  - `quarter` (optional, defaults to `'Q4'`)
 
 #### Success Response (`200 OK`)
 ```json
 {
   "success": true,
+  "message": "Department budget fetched successfully",
   "data": {
     "department": "Engineering",
     "fiscal_year": 2026,

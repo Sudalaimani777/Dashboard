@@ -316,3 +316,22 @@ Migrations are executed in sequential order by `server/src/shared/db/migrate.ts`
 cd server
 npm run migrate
 ```
+
+---
+
+## 👥 Seed Roles & Hierarchy Reference
+
+For local development, automated testing, and Postman API auditing, standard test accounts and budget records are configured:
+
+| Role | Email | Password | Department | Reporting Line |
+| :--- | :--- | :--- | :--- | :--- |
+| `EMPLOYEE` | `employee@corp.com` | `Password123!` | Engineering | Reports to `manager@corp.com` (`users.manager_id`) |
+| `MANAGER` | `manager@corp.com` | `Password123!` | Engineering | Line manager for Engineering team |
+| `ADMIN` | `admin@corp.com` | `Password123!` | Executive | Organization-wide governance & budget clearance |
+
+### Department Initial Budget Seed
+* **Department**: `Engineering`
+* **Fiscal Period**: `2026 Q4`
+* **Total Allocation**: `₹35,00,000.00` (`NUMERIC(14, 2)`)
+* **Utilized Amount**: `₹0.00` (auto-incremented on Admin approvals)
+* **Headroom Formula**: `available_headroom = total_allocation - utilized_amount`

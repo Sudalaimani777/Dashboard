@@ -339,6 +339,16 @@ The UI strictly adheres to **Warm Storycraft** (`client/docs/DESIGN_SYSTEM.md`):
 4. **Reference Mockup**:
    * Main workspace mockup: [`docs/mockups/tripflow-full-mockup.html`](file:///c:/Users/SudalaimaniKannan/Documents/Codings/TripFlow/docs/mockups/tripflow-full-mockup.html).
 
+5. **Real-World Dynamic Role-Based Rendering (No Prototype Role Switchers)**:
+   * The prototype role switcher pill found in `tripflow-full-mockup.html` was created strictly as a static demo gadget to preview all three screens for mentor review.
+   * In the production application, the UI is **strictly and dynamically rendered according to the authenticated user's verified role (`user.role`)** from `/api/auth/me`.
+   * Mock/prototype role switcher pills in the navbar are strictly banned in production code. The topbar renders user identity: `[Name | Department | Role Tag]`.
+   * The `/dashboard` workspace dynamically routes:
+     - `EMPLOYEE` $\rightarrow$ Employee Travel Portal (`EmployeeTravelPage`).
+     - `MANAGER` $\rightarrow$ Line Manager Audit Queue (`ManagerQueuePage`) + personal travel tab.
+     - `ADMIN` $\rightarrow$ Executive Governance Hub (`AdminGovernancePage`).
+   * Unauthorized page access or API calls are blocked with `403 Forbidden`.
+
 ---
 
 ## 8. Verification & Test Plan
