@@ -94,14 +94,14 @@ Any agent or contributor modifying this codebase **must** adhere to these strict
 
 ### ⚙️ Day 2: Backend Logic & Frontend State (10/11/2026) — 8.0 Hours
 
-- [ ] **Task 4: Travel Service Layer & Governance Rules** (Est: 3.0 Hours)
-  - [ ] Create service test `server/tests/travel-service.test.ts`.
-  - [ ] Implement `server/src/modules/travel/services/travel.service.ts`:
-    - `submitNewRequest()`, `managerReview()`, `adminReview()`, `resubmitRequest()`.
+- [x] **Task 4: Travel Service Layer & Governance Rules** (Est: 3.0 Hours) — ✅ COMPLETED
+  - [x] Create service test `server/tests/travel-service.test.ts`.
+  - [x] Implement `server/src/features/travel/travel.service.ts` & `server/src/modules/travel/services/travel.service.ts`:
+    - `createRequest()`, `managerReview()`, `adminReview()`, `employeeResubmit()`, `cancelRequest()`.
     - Strict enforcement: Admin revision Route A & Route B both transition to `PENDING_MANAGER_REVIEW` upon resubmission.
-    - Department budget headroom checks before Admin approval.
-  - [ ] Verify test suite passes.
-  - [ ] Git commit: `feat(travel): implement travel governance service and revision invariants`.
+    - Department budget headroom checks before Admin approval (with forceOverride option).
+  - [x] Verify test suite passes (10/10 tests pass).
+  - [x] Git commit: `feat(travel): implement travel governance service and revision invariants (Task 4)`.
 
 - [ ] **Task 5: Express 5 Controllers, Role-Based Route Guards & Endpoints** (Est: 2.5 Hours)
   - [ ] Create API route integration test `server/tests/travel-api.test.ts`.

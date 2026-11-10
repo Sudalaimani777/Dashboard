@@ -599,14 +599,20 @@ export class TravelRepository {
       id: row.id,
       department: row.department,
       fiscal_year: row.fiscal_year,
+      fiscalYear: row.fiscal_year,
       fiscal_quarter: row.fiscal_quarter,
+      fiscalQuarter: row.fiscal_quarter,
       total_allocation: total,
+      totalAllocation: total,
       utilized_amount: utilized,
+      utilizedAmount: utilized,
       available_headroom: Math.round(headroom * 100) / 100,
+      availableHeadroom: Math.round(headroom * 100) / 100,
       utilization_percentage: Math.round(pct * 100) / 100,
+      utilizationPercentage: Math.round(pct * 100) / 100,
       created_at: row.created_at,
       updated_at: row.updated_at
-    };
+    } as any;
   }
 }
 
