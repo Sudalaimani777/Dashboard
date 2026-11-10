@@ -30,3 +30,98 @@ body {
   background-color: #F7F4EE;
   color: #2B231D;
 }
+
+@keyframes appear {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes appear-zoom {
+  0% {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-appear {
+  animation: appear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-appear-zoom {
+  animation: appear-zoom 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-wave {
+  animation: wave 18s linear infinite;
+}
+
+
+
+
+/* Bjork / AppSignIn Theme Variables (Adapted to Warm Storycraft) */
+:root {
+  --bjork-bg: #F7F4EE;
+  --bjork-surface: #FFFFFF;
+  --bjork-surface-muted: rgba(250, 248, 245, 0.94);
+  --bjork-surface-hover: #F5EFE3;
+  --bjork-surface-active: #EFE7D8;
+  --bjork-panel: #FAF8F5;
+  --bjork-menu: rgba(255, 255, 255, 0.98);
+  --bjork-field: #FFFFFF;
+  --bjork-field-muted: rgba(248, 242, 231, 0.82);
+  --bjork-field-inset: rgba(239, 231, 216, 0.72);
+  --bjork-error-bg: #FFF0E8;
+  --bjork-text: #2B231D;
+  --bjork-text-strong: rgba(43, 35, 29, 0.95);
+  --bjork-text-medium: rgba(43, 35, 29, 0.75);
+  --bjork-text-muted: rgba(43, 35, 29, 0.58);
+  --bjork-text-soft: rgba(43, 35, 29, 0.44);
+  --bjork-text-faint: rgba(43, 35, 29, 0.22);
+  --bjork-inverted-text: #FFF8F0;
+  --bjork-border: #E8DFD3;
+  --bjork-border-muted: #F2EBE0;
+  --bjork-border-strong: #D8CDBE;
+  --bjork-thumb: #A49B8E;
+  --bjork-track: #DED6CA;
+  --bjork-accent: #8A582B;
+  --bjork-accent-hover: #754820;
+  --bjork-accent-soft: rgba(138, 88, 43, 0.12);
+  --bjork-accent-muted: rgba(138, 88, 43, 0.22);
+  --bjork-accent-foreground: #FAF8F5;
+  --bjork-shadow-surface: inset 0 7px 14px rgba(88, 72, 49, 0.045), inset 0 0.5px 0.5px rgba(255, 255, 255, 0.92), inset 1px 0 0 rgba(88, 72, 49, 0.026), inset -1px 0 0 rgba(255, 255, 255, 0.68), 0 14px 22px -9px rgba(66, 52, 33, 0.11);
+  --bjork-shadow-soft: inset 0 1px 0 rgba(88, 72, 49, 0.045), inset 0 0.5px 0.5px rgba(255, 255, 255, 0.86);
+  --bjork-shadow-panel: inset 0 1px 0 rgba(88, 72, 49, 0.04), inset 1px 0 0 rgba(88, 72, 49, 0.024), inset -1px 0 0 rgba(255, 255, 255, 0.64), 0 18px 38px -30px rgba(66, 52, 33, 0.2);
+  --bjork-shadow-menu: inset 0 1px 0 rgba(88, 72, 49, 0.04), inset 0 12px 24px rgba(88, 72, 49, 0.022), inset 1px 0 0 rgba(88, 72, 49, 0.024), inset -1px 0 0 rgba(255, 255, 255, 0.62), 0 22px 44px -26px rgba(66, 52, 33, 0.22);
+  --bjork-shadow-inset: inset 0 1px 10px rgba(88, 72, 49, 0.12), inset 0 0.5px 0.5px rgba(255, 255, 255, 0.72);
+  --bjork-ring-offset: #F7F4EE;
+
+  /* Block Kit Functional Accents */
+  --blk-error: #DC2626;
+  --blk-error-soft: rgba(254, 242, 242, 0.9);
+  --blk-warning: #D97706;
+  --blk-success: #16A34A;
+  --blk-success-soft: rgba(240, 253, 244, 0.9);
+  --blk-accent-ink: #8A582B;
+  --blk-accent-fill: #8A582B;
+  --blk-accent-fill-ink: #FFFFFF;
+  --blk-chart-ghost: rgba(138, 88, 43, 0.25);
+}

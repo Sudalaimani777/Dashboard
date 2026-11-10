@@ -55,6 +55,15 @@ export class AuthService {
       throw new Error('Name must be at least 2 characters long');
     }
 
+    if (name.length > 100) {
+      throw new Error('Name cannot exceed 100 characters');
+    }
+
+    const nameRegex = /^[\p{L}][\p{L}\s'.-]{1,99}$/u;
+    if (!nameRegex.test(name)) {
+      throw new Error('Name can only contain letters, spaces, hyphens, and apostrophes');
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
       throw new Error('Please provide a valid email address');

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BookOpen, LogOut } from 'lucide-react';
 import { Button } from '../../../shared/components/ui/button';
+import { getSafeInitial } from '../utils/avatar';
 
 interface DashboardTopbarProps {
   activeTab: 'library' | 'goal' | 'notes';
@@ -17,7 +18,7 @@ export const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
   userEmail,
   onSignout,
 }) => {
-  const initial = (userName || userEmail || 'R')[0].toUpperCase();
+  const initial = getSafeInitial(userName, userEmail);
 
   return (
     <header className="w-full border-b border-[#E8DFD3] bg-[#FFFFFF] sticky top-0 z-20">

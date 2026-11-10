@@ -1,62 +1,46 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Alert,
-  AlertDescription,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  Label,
-  PasswordInput,
-} from '../../../shared/components/ui';
-import { resetPasswordSchema } from '../schemas/auth.schema';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertCircle, ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
+import { resetPasswordSchema, type ResetPasswordInput } from '../schemas/auth.schema';
 import { authApi } from '../services/auth.api';
+import { AuthLayout } from './AuthLayout';
+import { PasswordStrengthMeter } from './PasswordStrengthMeter';
 
 export const ResetPasswordCard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token')?.trim() || '';
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirmPassword?: string }>({});
   const [isSuccess, setIsSuccess] = useState(false);
   const [isTokenExpired, setIsTokenExpired] = useState(false);
 
-  // Missing or empty token URL Guard
   const isMissingToken = !token;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<ResetPasswordInput>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
+    mode: 'onTouched',
+  });
+
+  const passwordValue = watch('password');
+
+  const onSubmit = async (data: ResetPasswordInput) => {
     setErrorMessage(null);
-    setFieldErrors({});
-
-    const validation = resetPasswordSchema.safeParse({ password, confirmPassword });
-    if (!validation.success) {
-      const errors: { password?: string; confirmPassword?: string } = {};
-      for (const issue of validation.error.issues) {
-        const field = issue.path[0] as 'password' | 'confirmPassword';
-        if (!errors[field]) {
-          errors[field] = issue.message;
-        }
-      }
-      setFieldErrors(errors);
-      return;
-    }
-
-    setIsLoading(true);
     try {
-      await authApi.resetPassword(token, validation.data.password);
+      await authApi.resetPassword(token, data.password);
       setIsSuccess(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to reset password.';
-      // Check if the backend reported an expired/invalid token
       if (
         msg.toLowerCase().includes('expired') ||
         msg.toLowerCase().includes('invalid') ||
@@ -66,214 +50,194 @@ export const ResetPasswordCard: React.FC = () => {
       } else {
         setErrorMessage(msg);
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handlePasswordChange = (val: string) => {
-    setPassword(val);
-    if (fieldErrors.password) {
-      setFieldErrors((prev) => ({ ...prev, password: undefined }));
-    }
-    if (errorMessage) setErrorMessage(null);
-  };
+  // State: Missing or Expired Token
+  if (isMissingToken || isTokenExpired) {
+    return (
+      <AuthLayout
+        showBrandPanel={false}
+        title="Invalid or expired link"
+        subtitle="This password recovery token is no longer valid."
+      >
+        <div className="space-y-5 text-left">
+          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-900 shadow-xs">
+            <AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-600" />
+            <div className="space-y-1">
+              <p className="font-semibold text-amber-950">
+                {isMissingToken ? 'Recovery token missing' : 'Recovery token expired'}
+              </p>
+              <p className="text-amber-800 leading-relaxed">
+                Password recovery links are single-use and expire within 1 hour for security. Please request a new recovery link.
+              </p>
+            </div>
+          </div>
 
-  const handleConfirmPasswordChange = (val: string) => {
-    setConfirmPassword(val);
-    if (fieldErrors.confirmPassword) {
-      setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
-    }
-    if (errorMessage) setErrorMessage(null);
-  };
+          <div className="space-y-2 pt-2">
+            <Link
+              to="/forgot-password"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#2B231D] text-white text-xs font-semibold hover:bg-[#3D332B] transition-colors shadow-xs"
+            >
+              Request a new link
+            </Link>
+            <Link
+              to="/signin"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-[#E8DFD3] bg-white text-xs font-semibold text-[#2B231D] hover:bg-[#FAF8F5] transition-colors shadow-xs"
+            >
+              <ArrowLeft className="size-4" />
+              <span>Back to sign in</span>
+            </Link>
+          </div>
+        </div>
+      </AuthLayout>
+    );
+  }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F7F4EE] px-4 py-12">
-      <Card className="w-full max-w-md bg-[#FFFFFF] border-[#E8DFD3] shadow-md shadow-[#8A582B]/5 rounded-2xl">
-        <CardHeader className="text-center pb-6">
-          <Link
-            to="/"
-            className="inline-block mb-3 text-sm font-semibold tracking-wide text-[#8A582B] hover:text-[#754820] transition-colors"
+  // State: Password successfully reset
+  if (isSuccess) {
+    return (
+      <AuthLayout
+        showBrandPanel={false}
+        title="Password updated"
+        subtitle="Your credentials have been securely updated."
+      >
+        <div className="space-y-5 text-left">
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-900 shadow-xs">
+            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+            <div className="space-y-1">
+              <p className="font-semibold text-emerald-950">
+                Password reset successfully
+              </p>
+              <p className="text-emerald-800 leading-relaxed">
+                You can now sign in to your TripFlow corporate governance portal using your new password.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/signin')}
+            className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#2B231D] text-white text-xs font-semibold hover:bg-[#3D332B] transition-colors shadow-xs"
           >
-            Readventure
+            <span>Proceed to sign in</span>
+          </button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  // State: Active Reset Form
+  return (
+    <AuthLayout
+      showBrandPanel={false}
+      title="Set a new password"
+      subtitle="Ensure your new password meets corporate compliance criteria."
+      error={errorMessage}
+      onClearError={() => setErrorMessage(null)}
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left" noValidate>
+        {/* New Password */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="reset-password"
+            className="block text-xs font-semibold text-[#2B231D]"
+          >
+            New password
+          </label>
+          <div className="relative">
+            <input
+              id="reset-password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="Enter at least 8 characters"
+              className={`w-full h-11 pl-3.5 pr-10 rounded-xl border bg-white text-sm text-[#2B231D] placeholder:text-[#A59B90] transition-colors focus:outline-none focus:ring-2 ${
+                errors.password
+                  ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
+                  : 'border-[#E8DFD3] hover:border-[#D4C4B5] focus:border-[#8A582B] focus:ring-[#8A582B]/15'
+              }`}
+              {...register('password')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#756F68] hover:text-[#2B231D]"
+            >
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
+          <PasswordStrengthMeter password={passwordValue} />
+          {errors.password && (
+            <p className="text-xs text-red-600 font-medium">{errors.password.message}</p>
+          )}
+        </div>
+
+        {/* Confirm Password */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="reset-confirm-password"
+            className="block text-xs font-semibold text-[#2B231D]"
+          >
+            Confirm new password
+          </label>
+          <div className="relative">
+            <input
+              id="reset-confirm-password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="Re-enter your new password"
+              className={`w-full h-11 pl-3.5 pr-10 rounded-xl border bg-white text-sm text-[#2B231D] placeholder:text-[#A59B90] transition-colors focus:outline-none focus:ring-2 ${
+                errors.confirmPassword
+                  ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
+                  : 'border-[#E8DFD3] hover:border-[#D4C4B5] focus:border-[#8A582B] focus:ring-[#8A582B]/15'
+              }`}
+              {...register('confirmPassword')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#756F68] hover:text-[#2B231D]"
+            >
+              {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
+          {errors.confirmPassword && (
+            <p className="text-xs text-red-600 font-medium">{errors.confirmPassword.message}</p>
+          )}
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#D95A2B] hover:bg-[#C24E22] text-white font-semibold text-sm transition-all duration-150 shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              <span>Updating password...</span>
+            </>
+          ) : (
+            <>
+              <KeyRound className="size-4" />
+              <span>Update password</span>
+            </>
+          )}
+        </button>
+
+        {/* Return to Sign in */}
+        <div className="pt-2 text-center">
+          <Link
+            to="/signin"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#8A582B] hover:text-[#754820] hover:underline"
+          >
+            <ArrowLeft className="size-3.5" />
+            <span>Return to sign in</span>
           </Link>
-
-          {isMissingToken ? (
-            <>
-              <CardTitle className="text-2xl font-bold text-[#2B231D]">
-                Reset link missing or invalid
-              </CardTitle>
-              <CardDescription className="text-sm text-[#756F68] mt-1">
-                This password reset link is invalid or incomplete.
-              </CardDescription>
-            </>
-          ) : isTokenExpired ? (
-            <>
-              <CardTitle className="text-2xl font-bold text-[#2B231D]">
-                Reset link expired
-              </CardTitle>
-              <CardDescription className="text-sm text-[#756F68] mt-1">
-                This recovery link has expired or has already been used.
-              </CardDescription>
-            </>
-          ) : isSuccess ? (
-            <>
-              <CardTitle className="text-2xl font-bold text-[#2B231D]">
-                Password updated
-              </CardTitle>
-              <CardDescription className="text-sm text-[#756F68] mt-1">
-                Your credentials have been securely updated.
-              </CardDescription>
-            </>
-          ) : (
-            <>
-              <CardTitle className="text-2xl font-bold text-[#2B231D]">
-                Set new password
-              </CardTitle>
-              <CardDescription className="text-sm text-[#756F68] mt-1">
-                Enter your new password below. It must be at least 8 characters.
-              </CardDescription>
-            </>
-          )}
-        </CardHeader>
-
-        <CardContent>
-          {isMissingToken ? (
-            /* Guard State: Missing Token */
-            <div className="space-y-6">
-              <div className="rounded-xl border border-[#E8DFD3] bg-[#FAF8F5] p-5 text-left">
-                <p className="text-sm text-[#2B231D] leading-relaxed">
-                  No recovery token was detected in the URL. If you copied this link from an email, ensure the entire URL was pasted into your browser bar.
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                className="w-full"
-                onClick={() => navigate('/forgot-password')}
-              >
-                Request a new link
-              </Button>
-            </div>
-          ) : isTokenExpired ? (
-            /* Expired / Consumed Token State */
-            <div className="space-y-6">
-              <div className="rounded-xl border border-[#E8DFD3] bg-[#FAF8F5] p-5 text-left">
-                <p className="text-sm text-[#2B231D] leading-relaxed">
-                  Password reset links are valid for one hour and can only be used once. Please request a fresh link to reset your password.
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                className="w-full"
-                onClick={() => navigate('/forgot-password')}
-              >
-                Request a new link
-              </Button>
-            </div>
-          ) : isSuccess ? (
-            /* Success State */
-            <div className="space-y-6">
-              <div className="rounded-xl border border-[#E8DFD3] bg-[#FAF8F5] p-5 text-left">
-                <p className="text-sm text-[#2B231D] leading-relaxed">
-                  Your password has been changed. You can now sign in to your Readventure library with your new password.
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                className="w-full"
-                onClick={() => navigate('/signin')}
-              >
-                Sign in to Readventure
-              </Button>
-            </div>
-          ) : (
-            /* Active Form State */
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              {errorMessage && (
-                <Alert>
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="password">New password</Label>
-                <PasswordInput
-                  id="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => handlePasswordChange(e.target.value)}
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                  error={!!fieldErrors.password}
-                  autoFocus
-                  required
-                />
-                {fieldErrors.password ? (
-                  <p className="text-xs text-[#9E2A2B] font-medium mt-1">
-                    {fieldErrors.password}
-                  </p>
-                ) : (
-                  <p className="text-xs text-[#756F68] mt-1">
-                    Minimum 8 characters.
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="confirmPassword">Confirm new password</Label>
-                <PasswordInput
-                  id="confirmPassword"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => handleConfirmPasswordChange(e.target.value)}
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                  error={!!fieldErrors.confirmPassword}
-                  required
-                />
-                {fieldErrors.confirmPassword && (
-                  <p className="text-xs text-[#9E2A2B] font-medium mt-1">
-                    {fieldErrors.confirmPassword}
-                  </p>
-                )}
-              </div>
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                className="w-full mt-2"
-                isLoading={isLoading}
-              >
-                Update password
-              </Button>
-            </form>
-          )}
-        </CardContent>
-
-        {!isSuccess && !isMissingToken && !isTokenExpired && (
-          <CardFooter className="justify-center border-t border-[#E8DFD3]/60 pt-4">
-            <p className="text-xs text-[#756F68]">
-              Remembered your credentials?{' '}
-              <Link
-                to="/signin"
-                className="font-semibold text-[#8A582B] hover:text-[#754820] cursor-pointer"
-              >
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
-        )}
-      </Card>
-    </div>
+        </div>
+      </form>
+    </AuthLayout>
   );
 };
