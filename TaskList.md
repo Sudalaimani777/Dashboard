@@ -37,6 +37,14 @@ Any agent or contributor modifying this codebase **must** adhere to these strict
 6. **Warm Storycraft Design System**:
    - Canvas `#F7F4EE`, Ink `#2B231D`, Accent `#8A582B`, Border `#E8DFD3`.
    - **Zero colored circular status dots (`●`)**: Statuses must be displayed using clean typographic badges.
+7. **Strict Dynamic Role-Governed Dashboard (No Prototype Switchers)**:
+   - The dashboard dynamically renders views strictly based on the authenticated user's database role (`user.role` from `/api/auth/me`):
+     - `EMPLOYEE` $\rightarrow$ Employee Travel Portal (`EmployeeTravelPage`).
+     - `MANAGER` $\rightarrow$ Line Manager Audit Queue (`ManagerQueuePage`) + personal travel tab.
+     - `ADMIN` $\rightarrow$ Executive Governance Hub (`AdminGovernancePage`).
+   - Mock/prototype role switcher pills in the navigation bar are strictly banned in production code. Real users cannot toggle roles.
+   - The topbar displays only the authenticated user's name, department, and typographic role badge.
+   - Unauthorized route or API access strictly yields `403 Forbidden`.
 
 ---
 
@@ -45,7 +53,7 @@ Any agent or contributor modifying this codebase **must** adhere to these strict
 | Day | Date | Category | Key Milestones | Est. Hours | Status |
 | :---: | :---: | :--- | :--- | :---: | :---: |
 | **Day 1** | **09/11/2026** | **Database & Backend Foundation** | Tasks 1, 2, 3: PostgreSQL Schema Migration & Seed Data, TypeScript Domain Contracts & FSM, Relational Repository Layer | **8.0 Hours** | **Completed** |
-| **Day 2** | **10/11/2026** | **Backend Logic & Frontend State** | Tasks 4, 5, 6: Travel Service Layer & Governance Rules, Express 5 Controllers & Route Guards, Frontend State Context & API Client | **8.0 Hours** | **Pending** |
+| **Day 2** | **10/11/2026** | **Backend Logic & Frontend State** | Tasks 4, 5, 6: Travel Service Layer & Governance Rules, Express 5 Controllers & Route Guards, Frontend State Context & API Client | **8.0 Hours** | **Completed** |
 | **Day 3** | **11/11/2026** | **Portals, Governance & E2E Verification** | Tasks 7, 8, 9: Employee Portal UI & Uploader, Manager Queue & Admin Governance Drawers, 100% E2E Automated Verification | **8.0 Hours** | **Pending** |
 | **Total** | | | **Complete Production-Ready 2-Tier Governance System** | **24.0 Hours** | |
 
@@ -103,51 +111,54 @@ Any agent or contributor modifying this codebase **must** adhere to these strict
   - [x] Verify test suite passes (10/10 tests pass).
   - [x] Git commit: `feat(travel): implement travel governance service and revision invariants (Task 4)`.
 
-- [ ] **Task 5: Express 5 Controllers, Role-Based Route Guards & Endpoints** (Est: 2.5 Hours)
-  - [ ] Create API route integration test `server/tests/travel-api.test.ts`.
-  - [ ] Implement role authorization middleware in `server/src/shared/middleware/role.middleware.ts` (`requireRole(['MANAGER', 'ADMIN'])`).
-  - [ ] Implement `server/src/modules/travel/controllers/travel.controller.ts`.
-  - [ ] Register routes in `server/src/modules/travel/routes/travel.routes.ts`:
+- [x] **Task 5: Express 5 Controllers, Role-Based Route Guards & Endpoints** (Est: 2.5 Hours) — ✅ COMPLETED
+  - [x] Create API route integration test `server/tests/travel-api.test.ts`.
+  - [x] Implement role authorization middleware in `server/src/shared/middleware/role.middleware.ts` (`requireRole(['MANAGER', 'ADMIN'])`).
+  - [x] Implement `server/src/features/travel/travel.controller.ts` & `server/src/modules/travel/controllers/travel.controller.ts`.
+  - [x] Register routes in `server/src/features/travel/travel.routes.ts` & `server/src/modules/travel/routes/travel.routes.ts`:
     - `POST /api/travel/requests`
     - `GET /api/travel/requests` & `GET /api/travel/requests/:id`
     - `POST /api/travel/requests/:id/manager-review`
     - `POST /api/travel/requests/:id/admin-review`
     - `POST /api/travel/requests/:id/resubmit`
     - `GET /api/travel/budgets`
-  - [ ] Mount travel router in `server/src/app.ts`.
-  - [ ] Run test suite and verify all API endpoints return proper status codes and error envelopes.
-  - [ ] Git commit: `feat(travel): add travel REST API controllers, role guards, and endpoints`.
+  - [x] Mount travel router in `server/src/app.ts`.
+  - [x] Run test suite and verify all API endpoints return proper status codes and error envelopes (11/11 tests pass).
+  - [x] Git commit: `feat(travel): add travel REST API controllers, role guards, and endpoints (Task 5)`.
 
-- [ ] **Task 6: Frontend Travel State & API Client** (Est: 2.5 Hours)
-  - [ ] Implement Axios API service in `client/src/services/travelApi.ts`.
-  - [ ] Implement `client/src/types/travel.ts` mirroring backend contracts.
-  - [ ] Implement Indian Rupee currency formatter utilities (`client/src/utils/currency.ts`) using `Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' })`.
-  - [ ] Implement React context `client/src/context/TravelContext.tsx`.
-  - [ ] Create test `client/tests/currency.test.ts` verifying `₹` and tabular formatting.
-  - [ ] Git commit: `feat(client): implement travel API client, state context, and INR currency helpers`.
+- [x] **Task 6: Frontend Travel State & API Client** (Est: 2.5 Hours) — ✅ COMPLETED
+  - [x] Implement Axios API service in `client/src/features/travel/services/travel.api.ts` & `client/src/services/travelApi.ts`.
+  - [x] Implement `client/src/features/travel/types/travel.types.ts` & `client/src/types/travel.ts` mirroring backend domain contracts.
+  - [x] Implement Indian Rupee currency formatter utilities (`client/src/features/travel/utils/currency.ts` & `client/src/utils/currency.ts`) using `Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' })`.
+  - [x] Implement React context & hook in `client/src/features/travel/context/TravelContext.tsx` & `useTravel.ts`.
+  - [x] Create test `client/tests/currency.test.ts` verifying `₹`, Lakhs/Crores, and monospace tabular formatting (5/5 tests pass).
+  - [x] Verify frontend build passes cleanly (`npm run build` completed with 0 errors).
+  - [x] Git commit: `feat(client): implement travel API client, state context, and INR currency helpers (Task 6)`.
 
 ---
 
 ### 🎨 Day 3: Portals, Governance & E2E Verification (11/11/2026) — 8.0 Hours
 
-- [ ] **Task 7: Employee Travel Portal UI & Request Modal** (Est: 3.0 Hours)
+- [ ] **Task 7: TripFlow Landing Page & Employee Travel Portal UI** (Est: 3.0 Hours)
+  - [ ] Revamp Landing Page (`client/src/features/landing/LandingPage.tsx` and child components) from legacy reading app to **TripFlow Corporate Travel Platform**.
   - [ ] Implement `client/src/features/travel/components/EmployeeTravelPage.tsx`.
   - [ ] Build `NewTravelRequestModal.tsx` supporting:
     - Case 1: Already Travelled (Actual payment expenses + tax invoice receipt upload/URL).
     - Case 2: Upcoming Travel (Estimated expenses + quotation screenshot upload/URL).
   - [ ] Build itemized expense table with live sum in Indian Rupees (`₹`).
   - [ ] Build `RevisionInstructionsBanner.tsx` and resubmit dialog returning requests to Manager.
-  - [ ] Git commit: `feat(client): add employee travel portal, upfront expense modal, and revision handling`.
+  - [ ] Git commit: `feat(client): revamp landing page and add employee travel portal with expense modal`.
 
-- [ ] **Task 8: Manager Queue & Admin Governance Drawers** (Est: 3.0 Hours)
+- [ ] **Task 8: Dynamic Role-Governed Dashboard, Manager Queue & Admin Governance Hub** (Est: 3.0 Hours)
+  - [ ] Replace legacy Book dashboard (`client/src/features/dashboard/DashboardPage.tsx`) with dynamic role-based router rendering views according to authenticated `user.role` (no prototype switcher).
   - [ ] Implement Tier 1 Line Manager Queue: `client/src/features/travel/components/ManagerQueuePage.tsx`.
     - Proof inspector drawer, approve & forward button, revision instruction composer.
   - [ ] Implement Tier 2 Admin Governance Hub: `client/src/features/travel/components/AdminGovernancePage.tsx`.
     - Department quarterly budget meters (`₹35,00,000.00` pool).
     - Dual-route revision dispatch modal (Route A: via Manager, Route B: direct to Employee).
     - Payout settlement drawer for Case 1 reimbursement disbursement.
-  - [ ] Mount routes `/travel/employee`, `/travel/manager`, `/travel/admin` with role guards in `App.tsx`.
-  - [ ] Git commit: `feat(client): add manager audit queue, admin governance hub, and review drawers`.
+  - [ ] Mount routes `/travel/employee`, `/travel/manager`, `/travel/admin` with role guards in `AppRoutes.tsx`.
+  - [ ] Git commit: `feat(client): implement dynamic role dashboard, manager audit queue, and admin governance hub`.
 
 - [ ] **Task 9: Full End-to-End Automated Integration Verification & Design Audit** (Est: 2.0 Hours)
   - [ ] Write full E2E lifecycle test `server/test-travel-e2e.ts`:

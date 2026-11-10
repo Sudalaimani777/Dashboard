@@ -95,7 +95,7 @@ export class TravelService {
       emergencyContactName: normalizedValidation.emergency_contact_name,
       emergencyContactPhone: normalizedValidation.emergency_contact_phone,
       supportingDocUrl: normalizedValidation.supporting_doc_url,
-      expenses: normalizedValidation.expenses.map((e) => ({
+      expenses: normalizedValidation.expenses.map((e: any) => ({
         category: e.category,
         merchant: e.merchant,
         amount: e.amount,
@@ -270,12 +270,14 @@ export class TravelService {
             ? (budget as any).availableHeadroom
             : Number(budget.total_allocation) - Number(budget.utilized_amount);
 
-        if (headroom < request.totalExpenses && !options.forceOverride) {
+        const totalExpenses = Number(request.totalExpenses ?? request.total_expenses ?? 0);
+
+        if (headroom < totalExpenses && !options.forceOverride) {
           throw new Error(
-            `Department budget exceeded: insufficient headroom for approval (Available: ₹${headroom}, Required: ₹${request.totalExpenses}). Provide forceOverride: true to bypass.`
+            `Department budget exceeded: insufficient headroom for approval (Available: ₹${headroom}, Required: ₹${totalExpenses}). Provide forceOverride: true to bypass.`
           );
         }
-        await this.repo.updateBudgetUtilization(dept, year, quarter, request.totalExpenses);
+        await this.repo.updateBudgetUtilization(dept, year, quarter, totalExpenses);
       }
     } else if (normalizedAction === 'REQUEST_REVISION') {
       if (revisionTarget === 'MANAGER') {

@@ -269,7 +269,7 @@ export class TravelRepository {
 
     if (managerId) {
       params.push(managerId);
-      sql += ` AND (tr.manager_id = $1 OR u.manager_id = $1)`;
+      sql += ` AND (tr.manager_id = $1 OR u.manager_id = $1 OR (tr.manager_id IS NULL AND u.manager_id IS NULL))`;
     }
 
     sql += ' ORDER BY tr.created_at ASC';
