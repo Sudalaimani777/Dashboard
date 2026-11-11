@@ -8,7 +8,7 @@ export const ProtectedRoute: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F7F4EE]">
-        <div className="text-sm font-medium text-[#756F68]">Loading your library...</div>
+        <div className="text-sm font-medium text-[#756F68]">Loading TripFlow workspace...</div>
       </div>
     );
   }
