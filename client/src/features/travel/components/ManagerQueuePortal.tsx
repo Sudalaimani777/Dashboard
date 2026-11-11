@@ -1,262 +1,119 @@
-import React, { useEffect, useState } from 'react';
-import { ShieldCheck, RefreshCw, AlertCircle, CheckCircle, Plane, ReceiptText } from 'lucide-react';
+import React, { useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { useTravel } from '../hooks/useTravel';
-import { TravelStatusBadge } from './TravelStatusBadge';
-import { ManagerAuditDrawer } from './ManagerAuditDrawer';
+import { TravelRequestsTable } from './tables/TravelRequestsTable';
+import { TravelMetricsGrid } from './shared/TravelMetricsGrid';
 import { formatINR } from '../utils/currency';
-import type { TravelRequest } from '../types/travel.types';
-import type { User } from '../../auth/types/auth.types';
 
 export interface ManagerQueuePortalProps {
-  user: User;
+  activeTab?: string;
 }
 
-export const ManagerQueuePortal: React.FC<ManagerQueuePortalProps> = ({ user }) => {
-  const { managerQueue, isLoading, error, loadManagerQueue, reviewAsManager } = useTravel();
-
-  const [selectedRequest, setSelectedRequest] = useState<TravelRequest | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [successBanner, setSuccessBanner] = useState<string | null>(null);
+export const ManagerQueuePortal: React.FC<ManagerQueuePortalProps> = ({ activeTab = 'present' }) => {
+  const navigate = useNavigate();
+  const { managerQueue, requests, loadManagerQueue, loadRequests } = useTravel();
 
   useEffect(() => {
     loadManagerQueue();
-  }, [loadManagerQueue]);
+    loadRequests();
+  }, [loadManagerQueue, loadRequests]);
 
-  const handleOpenAudit = (req: TravelRequest) => {
-    setSelectedRequest(req);
-    setIsDrawerOpen(true);
-    setSuccessBanner(null);
-  };
+  const pendingRequests = useMemo(
+    () => managerQueue.filter((r) => ['SUBMITTED', 'PENDING_MANAGER_REVIEW'].includes(r.status)),
+    [managerQueue]
+  );
 
-  const handleApprove = async (id: string, remarks?: string) => {
-    await reviewAsManager(id, {
-      action: 'APPROVE',
-      remarks: remarks || 'Line Manager audit approved. Forwarded for Tier 2 executive clearance.',
-    });
-    setSuccessBanner(`Request #${id.slice(0, 8)} approved and forwarded to Admin clearance.`);
-    await loadManagerQueue();
-  };
+  const resubmittedRequests = useMemo(
+    () => managerQueue.filter((r) => r.status === 'PENDING_MANAGER_REVIEW' && (r.timeline?.length || 0) > 1),
+    [managerQueue]
+  );
 
-  const handleRequestRevision = async (id: string, remarks: string) => {
-    await reviewAsManager(id, {
-      action: 'REQUEST_REVISION',
-      remarks,
-    });
-    setSuccessBanner(`Request #${id.slice(0, 8)} returned to employee with revision instructions.`);
-    await loadManagerQueue();
-  };
-
-  const totalAuditAmount = managerQueue.reduce(
-    (sum, r) => sum + (Number(r.totalExpenses) || 0),
-    0
+  const queueTotal = useMemo(
+    () => pendingRequests.reduce((sum, r) => sum + (Number(r.totalExpenses) || 0), 0),
+    [pendingRequests]
   );
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#F7F4EE] text-[#2B231D] py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#E8DFD3] pb-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-[#2B231D]">
-                Line Manager Audit Queue
-              </h1>
-              <span className="rounded-md border border-[#8A582B]/30 bg-[#8A582B]/10 px-2 py-0.5 text-[10px] font-bold text-[#8A582B]">
-                Tier 1 Audit
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-[#756F68]">
-              Logged in as <span className="font-semibold text-[#2B231D]">{user.name}</span> ({user.department}). Audit direct reports' corporate travel requests and proof receipts.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => loadManagerQueue()}
-              disabled={isLoading}
-              className="flex items-center gap-1.5 rounded-xl border border-[#E8DFD3] bg-white px-3.5 py-2 text-xs font-semibold text-[#756F68] hover:bg-[#F7F4EE] transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>Refresh Queue</span>
-            </button>
-          </div>
+    <div className="p-8 max-w-6xl mx-auto flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-[#2B231D] tracking-tight">
+            {activeTab === 'personal'
+              ? 'My Personal Travel'
+              : activeTab === 'revisions'
+              ? 'Resubmitted Team Requests'
+              : activeTab === 'past'
+              ? 'Past Team Approvals History'
+              : 'Line Manager Audit Queue'}
+          </h1>
+          <p className="text-xs text-[#756F68]">
+            {activeTab === 'personal'
+              ? 'Manage your own corporate trips as an Engineering team member.'
+              : 'Tier 1 operational necessity and expense audit of direct reports.'}
+          </p>
         </div>
 
-        {/* Success Notice */}
-        {successBanner ? (
-          <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-800 text-left">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="size-4 shrink-0 text-emerald-600" />
-              <span className="font-medium">{successBanner}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSuccessBanner(null)}
-              className="text-emerald-700 hover:text-emerald-900 cursor-pointer"
-            >
-              ✕
-            </button>
-          </div>
-        ) : null}
-
-        {/* Error Notice */}
-        {error ? (
-          <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700 text-left">
-            <AlertCircle className="size-4 shrink-0 text-red-600" />
-            <span>{error}</span>
-          </div>
-        ) : null}
-
-        {/* Metrics Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-[#E8DFD3] bg-white p-4 shadow-xs text-left">
-            <span className="text-[11px] font-semibold text-[#756F68] uppercase tracking-wider">
-              Pending Audit Items
-            </span>
-            <p className="mt-1 text-2xl font-bold font-mono text-amber-700">
-              {managerQueue.length}
-            </p>
-            <p className="text-[10px] text-[#A59B90] mt-0.5">Awaiting Tier 1 verification</p>
-          </div>
-
-          <div className="rounded-2xl border border-[#E8DFD3] bg-white p-4 shadow-xs text-left">
-            <span className="text-[11px] font-semibold text-[#756F68] uppercase tracking-wider">
-              Queue Value
-            </span>
-            <p className="mt-1 text-2xl font-bold font-mono tabular-nums text-[#2B231D]">
-              {formatINR(totalAuditAmount)}
-            </p>
-            <p className="text-[10px] text-[#A59B90] mt-0.5">Total claimed expenditure</p>
-          </div>
-
-          <div className="rounded-2xl border border-[#E8DFD3] bg-white p-4 shadow-xs text-left">
-            <span className="text-[11px] font-semibold text-[#756F68] uppercase tracking-wider">
-              Manager SLA Standard
-            </span>
-            <p className="mt-1 text-2xl font-bold text-[#8A582B]">
-              48 Hours
-            </p>
-            <p className="text-[10px] text-[#A59B90] mt-0.5">Corporate audit compliance SLA</p>
-          </div>
-        </div>
-
-        {/* Audit Queue Table */}
-        <div className="rounded-2xl border border-[#E8DFD3] bg-white shadow-xs overflow-hidden text-left">
-          <div className="border-b border-[#E8DFD3] p-4 bg-[#FAF8F5] flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#2B231D]">
-              Direct Reports' Travel Requests ({managerQueue.length})
-            </h2>
-            <span className="text-[11px] text-[#756F68]">
-              Verify receipts & quotes before executive clearance
-            </span>
-          </div>
-
-          {managerQueue.length === 0 ? (
-            <div className="py-16 text-center">
-              <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 mb-3">
-                <ShieldCheck className="size-6" />
-              </div>
-              <h3 className="text-sm font-bold text-[#2B231D]">All caught up!</h3>
-              <p className="mt-1 text-xs text-[#756F68] max-w-sm mx-auto">
-                No travel requests are currently pending your audit. When direct reports submit or resubmit requests, they will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-[#E8DFD3] bg-[#FAF8F5] text-[#756F68]">
-                  <tr>
-                    <th className="py-3 px-4 font-semibold">Requester</th>
-                    <th className="py-3 px-4 font-semibold">Trip Title</th>
-                    <th className="py-3 px-4 font-semibold">Type</th>
-                    <th className="py-3 px-4 font-semibold">Destination & Dates</th>
-                    <th className="py-3 px-4 font-semibold text-right">Claimed (₹)</th>
-                    <th className="py-3 px-4 font-semibold">Status</th>
-                    <th className="py-3 px-4 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E8DFD3]">
-                  {managerQueue.map((req) => (
-                    <tr key={req.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <span className="font-bold text-[#2B231D] block">
-                          {req.requesterName || 'Employee'}
-                        </span>
-                        <span className="text-[11px] text-[#756F68] block">
-                          {req.requesterDepartment || req.projectCode}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <span className="font-semibold text-[#2B231D] block">
-                          {req.title}
-                        </span>
-                        <span className="font-mono text-[10px] text-[#A59B90]">
-                          #{req.id.slice(0, 8)}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1 rounded-md border border-[#E8DFD3] bg-[#F7F4EE] px-2 py-0.5 text-[10px] font-semibold text-[#8A582B]">
-                          {req.travelType === 'UPCOMING' ? (
-                            <>
-                              <Plane className="size-3" />
-                              <span>Upcoming</span>
-                            </>
-                          ) : (
-                            <>
-                              <ReceiptText className="size-3" />
-                              <span>Reimbursement</span>
-                            </>
-                          )}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <p className="text-[#2B231D] font-medium">{req.origin} → {req.destination}</p>
-                        <p className="text-[10px] text-[#756F68]">
-                          {req.departureDate ? req.departureDate.split('T')[0] : ''} to {req.returnDate ? req.returnDate.split('T')[0] : ''}
-                        </p>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right font-mono font-bold tabular-nums text-[#2B231D] whitespace-nowrap">
-                        {formatINR(req.totalExpenses)}
-                      </td>
-
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <TravelStatusBadge status={req.status} size="sm" />
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenAudit(req)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#8A582B] px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#754820] transition-colors cursor-pointer"
-                        >
-                          Audit & Review
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {activeTab === 'personal' && (
+          <button
+            type="button"
+            onClick={() => navigate('/travel/new')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#8A582B] hover:bg-[#754820] text-white text-xs font-semibold shadow-xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> + Submit My Travel
+          </button>
+        )}
       </div>
 
-      {/* Slide-over Audit Drawer */}
-      <ManagerAuditDrawer
-        request={selectedRequest}
-        isOpen={isDrawerOpen}
-        onClose={() => {
-          setIsDrawerOpen(false);
-          setSelectedRequest(null);
-        }}
-        onApprove={handleApprove}
-        onRequestRevision={handleRequestRevision}
-      />
+      {activeTab === 'present' && (
+        <>
+          <TravelMetricsGrid
+            metrics={[
+              { label: 'Pending Audit', value: pendingRequests.length, subtext: 'Direct reports awaiting review' },
+              { label: 'Total Queue Value', value: formatINR(queueTotal), isCurrency: true, subtext: 'Estimated commitments' },
+            ]}
+          />
+          <TravelRequestsTable
+            title="Direct Reports Awaiting Initial Audit"
+            requests={pendingRequests}
+            showRequester
+            actionLabel="Audit Proofs"
+            onAction={(req) => navigate(`/travel/audit/${req.id}`)}
+            emptyMessage="All direct report submissions are up to date."
+          />
+        </>
+      )}
+
+      {activeTab === 'revisions' && (
+        <TravelRequestsTable
+          title="Resubmitted Requests for Re-Audit"
+          requests={resubmittedRequests}
+          showRequester
+          actionLabel="Re-Audit"
+          onAction={(req) => navigate(`/travel/audit/${req.id}`)}
+          emptyMessage="No resubmitted requests currently waiting for re-verification."
+        />
+      )}
+
+      {activeTab === 'past' && (
+        <TravelRequestsTable
+          title="Historical Team Approvals Archive"
+          requests={managerQueue.filter((r) => ['APPROVED', 'SETTLED', 'REJECTED'].includes(r.status))}
+          showRequester
+          onAction={(req) => navigate(`/travel/audit/${req.id}`)}
+          emptyMessage="No historical team approvals recorded."
+        />
+      )}
+
+      {activeTab === 'personal' && (
+        <TravelRequestsTable
+          title="My Personal Travel Requests"
+          requests={requests}
+          actionLabel="Inspect"
+          onAction={(req) => navigate(`/travel/requests/${req.id}`)}
+          emptyMessage="You have not submitted any personal travel requests."
+        />
+      )}
     </div>
   );
 };
