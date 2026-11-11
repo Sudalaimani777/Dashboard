@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, Plus, Trash2, Loader2, ShieldAlert, AlertCircle } from 'lucide-react';
+import { X, Plus, Trash2, Loader2, ShieldAlert } from 'lucide-react';
 import { formatINR } from '../utils/currency';
 import type { TravelRequest, ResubmitRequestInput } from '../types/travel.types';
 
@@ -40,56 +40,31 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
+  const { register, control, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(resubmitSchema),
-    values: request
-      ? {
-          remarks: 'Updated itemized expenses and attached fresh receipt proof.',
-          departureDate: request.departureDate ? request.departureDate.split('T')[0] : '',
-          returnDate: request.returnDate ? request.returnDate.split('T')[0] : '',
-          supportingDocUrl: request.supportingDocUrl || '',
-          expenses: request.expenses && request.expenses.length > 0
-            ? request.expenses.map((e) => ({
-                category: e.category,
-                merchant: e.merchant,
-                amount: e.amount,
-                expenseDate: e.expenseDate ? e.expenseDate.split('T')[0] : '',
-                receiptImageUrl: e.receiptImageUrl || '',
-                notes: e.notes || '',
-              }))
-            : [
-                {
-                  category: 'FLIGHT',
-                  merchant: 'Airline',
-                  amount: 10000,
-                  expenseDate: new Date().toISOString().split('T')[0],
-                  receiptImageUrl: '',
-                  notes: '',
-                },
-              ],
-        }
-      : undefined,
+    values: request ? {
+      remarks: 'Updated itemized expenses and attached fresh receipt proof.',
+      departureDate: request.departureDate ? request.departureDate.split('T')[0] : '',
+      returnDate: request.returnDate ? request.returnDate.split('T')[0] : '',
+      supportingDocUrl: request.supportingDocUrl || '',
+      expenses: request.expenses?.map((e) => ({
+        category: e.category,
+        merchant: e.merchant,
+        amount: e.amount,
+        expenseDate: e.expenseDate ? e.expenseDate.split('T')[0] : '',
+        receiptImageUrl: e.receiptImageUrl || '',
+        notes: e.notes || '',
+      })) || [{ category: 'FLIGHT', merchant: 'Airline', amount: 10000, expenseDate: new Date().toISOString().split('T')[0], receiptImageUrl: '', notes: '' }],
+    } : undefined,
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'expenses',
-  });
-
+  const { fields, append, remove } = useFieldArray({ control, name: 'expenses' });
   const watchedExpenses = watch('expenses') || [];
-  const totalAmount = watchedExpenses.reduce(
-    (sum, exp) => sum + (Number(exp?.amount) || 0),
-    0
-  );
+  const totalAmount = watchedExpenses.reduce((sum, exp) => sum + (Number(exp?.amount) || 0), 0);
+
+  if (!isOpen || !request) return null;
 
   const handleFormSubmit = async (values: FormValues) => {
-    if (!request) return;
     setError(null);
     try {
       await onSubmit(request.id, {
@@ -98,201 +73,77 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
         departureDate: values.departureDate,
         returnDate: values.returnDate,
         supportingDocUrl: values.supportingDocUrl,
-        expenses: values.expenses.map((e) => ({
-          ...e,
-          receiptImageUrl: e.receiptImageUrl || null,
-          notes: e.notes || null,
-        })),
+        expenses: values.expenses.map((e) => ({ ...e, amount: Number(e.amount) })),
       });
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to resubmit request');
+      setError(err?.message || 'Failed to resubmit request');
     }
   };
 
-  if (!isOpen || !request) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2B231D]/40 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-[#E8DFD3] bg-white p-6 sm:p-8 shadow-xl my-8 max-h-[90vh] overflow-y-auto text-left">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#E8DFD3] pb-4">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-[#2B231D]">
-              Revise & Resubmit Request
-            </h2>
-            <p className="text-xs text-[#756F68] mt-0.5">
-              Trip #{request.id.slice(0, 8)}: {request.title}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-[#756F68] hover:bg-[#F7F4EE] transition-colors cursor-pointer"
-          >
-            <X className="size-5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+      <div className="bg-white rounded-2xl border border-[#E8DFD3] max-w-xl w-full p-6 max-h-[90vh] overflow-y-auto flex flex-col gap-4 shadow-xl">
+        <div className="flex justify-between items-center border-b border-[#E8DFD3] pb-3">
+          <h2 className="text-base font-bold text-[#2B231D]">Fix & Resubmit Travel Request</h2>
+          <button type="button" onClick={onClose} className="p-1 rounded-md text-[#A0988E] hover:text-[#2B231D]">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Auditor Remarks Callout */}
-        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/90 p-4 space-y-1 text-xs">
-          <div className="flex items-center gap-1.5 font-bold text-rose-800">
-            <ShieldAlert className="size-4" />
-            <span>Auditor Revision Instructions</span>
-          </div>
-          <p className="text-rose-700 leading-relaxed">
-            "{request.adminRemarks || request.managerRemarks || 'Please verify expense lines and submit updated receipts.'}"
-          </p>
-          <p className="text-[10px] text-rose-600 font-medium pt-1">
-            * Note: Resubmissions always return directly to your Line Manager for re-audit before progressing.
-          </p>
+        {error && <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg">{error}</div>}
+
+        <div className="p-3 bg-[#FEF9E7] border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-[#B9770E]">
+          <ShieldAlert className="w-4 h-4 shrink-0" />
+          <span>Resubmission returns directly to your Line Manager for re-audit.</span>
         </div>
 
-        {error ? (
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-            <AlertCircle className="size-4 shrink-0 text-red-600" />
-            <span>{error}</span>
-          </div>
-        ) : null}
-
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="mt-5 space-y-4" noValidate>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-[#2B231D]">Response Remarks / Notes</label>
-            <textarea
-              rows={2}
-              placeholder="Explain how you addressed the auditor's revision notes..."
-              className="w-full p-2.5 rounded-xl border border-[#E8DFD3] text-xs text-[#2B231D] focus:border-[#8A582B] outline-none"
-              {...register('remarks')}
-            />
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold">Describe Alterations Made</label>
+            <textarea {...register('remarks')} rows={2} className="p-2.5 rounded-xl border border-[#E8DFD3] text-xs" />
             {errors.remarks && <p className="text-[11px] text-red-600">{errors.remarks.message}</p>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#2B231D]">Departure Date</label>
-              <input
-                type="date"
-                className="w-full h-9 px-2.5 rounded-xl border border-[#E8DFD3] text-xs text-[#2B231D] focus:border-[#8A582B] outline-none"
-                {...register('departureDate')}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#2B231D]">Return Date</label>
-              <input
-                type="date"
-                className="w-full h-9 px-2.5 rounded-xl border border-[#E8DFD3] text-xs text-[#2B231D] focus:border-[#8A582B] outline-none"
-                {...register('returnDate')}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-[#2B231D]">Updated Proof Document URL</label>
-            <input
-              type="url"
-              placeholder="https://..."
-              className="w-full h-9 px-2.5 rounded-xl border border-[#E8DFD3] text-xs text-[#2B231D] focus:border-[#8A582B] outline-none"
-              {...register('supportingDocUrl')}
-            />
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold">Updated Proof URL</label>
+            <input type="url" {...register('supportingDocUrl')} className="p-2.5 rounded-xl border border-[#E8DFD3] text-xs" />
             {errors.supportingDocUrl && <p className="text-[11px] text-red-600">{errors.supportingDocUrl.message}</p>}
           </div>
 
-          {/* Itemized Expenses Adjustment */}
-          <div className="border-t border-[#E8DFD3] pt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-[#2B231D]">Adjust Itemized Expenses</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold">Itemized Expenses (Total: {formatINR(totalAmount)})</span>
               <button
                 type="button"
-                onClick={() =>
-                  append({
-                    category: 'MISC',
-                    merchant: '',
-                    amount: 1000,
-                    expenseDate: new Date().toISOString().split('T')[0],
-                    receiptImageUrl: '',
-                    notes: '',
-                  })
-                }
-                className="flex items-center gap-1 text-[11px] font-semibold text-[#8A582B] hover:underline cursor-pointer"
+                onClick={() => append({ category: 'MISC', merchant: '', amount: 1000, expenseDate: new Date().toISOString().split('T')[0] })}
+                className="flex items-center gap-1 text-xs text-[#8A582B] font-semibold"
               >
-                <Plus className="size-3" />
-                Add Item
+                <Plus className="w-3.5 h-3.5" /> Add
               </button>
             </div>
-
-            <div className="space-y-2">
-              {fields.map((field, idx) => (
-                <div
-                  key={field.id}
-                  className="grid grid-cols-12 gap-2 items-center rounded-lg border border-[#E8DFD3] bg-[#FAF8F5] p-2 text-xs"
-                >
-                  <div className="col-span-4">
-                    <select
-                      className="w-full h-8 px-2 rounded-md border border-[#E8DFD3] bg-white text-xs outline-none"
-                      {...register(`expenses.${idx}.category` as const)}
-                    >
-                      <option value="FLIGHT">Flight</option>
-                      <option value="HOTEL">Hotel</option>
-                      <option value="MEALS_PER_DIEM">Meals</option>
-                      <option value="TRANSIT">Transit</option>
-                      <option value="MISC">Misc</option>
-                    </select>
-                  </div>
-                  <div className="col-span-4">
-                    <input
-                      type="text"
-                      placeholder="Merchant"
-                      className="w-full h-8 px-2 rounded-md border border-[#E8DFD3] bg-white text-xs outline-none"
-                      {...register(`expenses.${idx}.merchant` as const)}
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    <input
-                      type="number"
-                      placeholder="Amount"
-                      className="w-full h-8 px-2 rounded-md border border-[#E8DFD3] bg-white text-xs font-mono tabular-nums outline-none"
-                      {...register(`expenses.${idx}.amount` as const, { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    {fields.length > 1 ? (
-                      <button
-                        type="button"
-                        onClick={() => remove(idx)}
-                        className="text-stone-400 hover:text-red-600 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 flex items-center justify-between rounded-xl bg-[#F7F4EE] px-3.5 py-2.5 text-xs">
-              <span className="font-semibold text-[#756F68]">Total Revised Amount:</span>
-              <span className="font-bold font-mono tabular-nums text-[#2B231D]">
-                {formatINR(totalAmount)}
-              </span>
-            </div>
+            {fields.map((f, i) => (
+              <div key={f.id} className="grid grid-cols-12 gap-2 items-center bg-[#FAF8F5] p-2 rounded-lg border border-[#E8DFD3] text-xs">
+                <select {...register(`expenses.${i}.category`)} className="col-span-3 p-1.5 bg-white border border-[#E8DFD3] rounded">
+                  <option value="FLIGHT">Flight</option>
+                  <option value="HOTEL">Hotel</option>
+                  <option value="MEALS_PER_DIEM">Meals</option>
+                  <option value="TRANSIT">Transit</option>
+                  <option value="MISC">Misc</option>
+                </select>
+                <input {...register(`expenses.${i}.merchant`)} placeholder="Merchant" className="col-span-4 p-1.5 bg-white border border-[#E8DFD3] rounded" />
+                <input {...register(`expenses.${i}.amount`, { valueAsNumber: true })} type="number" placeholder="₹" className="col-span-4 p-1.5 bg-white border border-[#E8DFD3] rounded font-mono tabular-nums" />
+                <button type="button" onClick={() => remove(i)} disabled={fields.length === 1} className="col-span-1 text-red-500 disabled:opacity-30">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-[#E8DFD3] pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="rounded-xl border border-[#E8DFD3] px-4 py-2 text-xs font-semibold text-[#756F68] hover:bg-[#F7F4EE] transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-1.5 rounded-xl bg-[#8A582B] px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#754820] transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              {isSubmitting ? <Loader2 className="size-3.5 animate-spin" /> : null}
-              Resubmit to Line Manager
+          <div className="flex justify-end gap-3 pt-3 border-t border-[#E8DFD3]">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-xl text-xs">Cancel</button>
+            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-5 py-2 bg-[#8A582B] text-white rounded-xl text-xs font-semibold">
+              {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Resubmit to Manager
             </button>
           </div>
         </form>

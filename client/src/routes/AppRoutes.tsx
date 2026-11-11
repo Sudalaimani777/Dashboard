@@ -5,6 +5,11 @@ import { ResetPasswordCard } from '../features/auth/components/ResetPasswordCard
 import { SignInCard } from '../features/auth/components/SignInCard';
 import { SignUpCard } from '../features/auth/components/SignUpCard';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
+import { DashboardLayout } from '../features/travel/layout/DashboardLayout';
+import { NewTravelRequestPage } from '../features/travel/pages/NewTravelRequestPage';
+import { ManagerAuditPage } from '../features/travel/pages/ManagerAuditPage';
+import { AdminClearancePage } from '../features/travel/pages/AdminClearancePage';
+import { TravelDetailPage } from '../features/travel/pages/TravelDetailPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
 export const AppRoutes: React.FC = () => {
@@ -17,12 +22,18 @@ export const AppRoutes: React.FC = () => {
         <Route path="/forgot-password" element={<ForgotPasswordCard />} />
         <Route path="/reset-password" element={<ResetPasswordCard />} />
 
-        {/* Protected Dynamic Role Dashboard */}
+        {/* Protected Dynamic Role Dashboard & Full-Page Workstations */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/travel/new" element={<NewTravelRequestPage />} />
+            <Route path="/travel/requests/:id" element={<TravelDetailPage />} />
+            <Route path="/travel/audit/:id" element={<ManagerAuditPage />} />
+            <Route path="/travel/clearance/:id" element={<AdminClearancePage />} />
+          </Route>
         </Route>
 
-        {/* Default Entry & Fallbacks: Direct to Dynamic Dashboard (which redirects unauthenticated users to /signin) */}
+        {/* Default Entry & Fallbacks: Direct to Dynamic Dashboard */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

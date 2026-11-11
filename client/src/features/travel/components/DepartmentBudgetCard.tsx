@@ -25,8 +25,8 @@ export const DepartmentBudgetCard: React.FC<DepartmentBudgetCardProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[#E8DFD3] pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-[#756F68]">
-              {departmentName} · FY2026 Q4
+            <span className="text-xs font-medium text-[#756F68]">
+              {departmentName}
             </span>
             <span className="rounded-md border border-[#8A582B]/30 bg-[#8A582B]/10 px-2 py-0.5 text-[10px] font-bold text-[#8A582B]">
               Pooled Allocation

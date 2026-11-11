@@ -174,6 +174,17 @@ Any agent or contributor modifying this codebase **must** adhere to these strict
   - [x] Audit frontend UI against Warm Storycraft criteria (zero circular dots `●`, canvas `#F7F4EE`, monospace tabular numerals).
   - [x] Verify frontend build passes cleanly (`npm run build` completed with 0 errors).
 
+- [x] **Task 10: Dynamic Role Sidebar, Full-Page Workstations & Component Decomposition** (Est: 4.0 Hours) — ✅ COMPLETED
+  - [x] Persistent shell `<DashboardLayout />` hosting dynamic role-governed navigation `<DynamicRoleSidebar />` (`EMPLOYEE`, `MANAGER`, `ADMIN`).
+  - [x] Full-page workstations replacing cramped modals/drawers:
+    - `/travel/new`: Full-page submission with live INR calculation and itemized breakdown.
+    - `/travel/audit/:id`: Manager audit workstation with dual-split view and proof inspector.
+    - `/travel/clearance/:id`: Executive Admin clearance workstation with budget impact meter and dual-route revision dispatch.
+    - `/travel/requests/:id`: Travel detail workstation with audit timeline log.
+    - `/travel/budgets`: Department budgets page.
+  - [x] Component refactoring: Decomposed monolithic 300+ line components into clean single-responsibility units (<100–120 lines each) adhering strictly to `/react-best-practices`.
+  - [x] Unit, E2E, and build verification: 100% passed.
+
 
 ---
 
