@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TripFlow — Dynamic Role Sidebar Mockup (Employee, Manager, Admin)</title>
+  <!-- Google Fonts: Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Warm Storycraft Design Tokens */
+    :root {
+      --bg-canvas: #F7F4EE;
+      --surface-pure: #FFFFFF;
+      --surface-muted: #FAF8F5;
+      --border-hairline: #E8DFD3;
+      --border-subtle: #DCD3C5;
+      --accent-primary: #8A582B;
+      --accent-hover: #754820;
+      --accent-subtle: #F5EBE1;
+      --text-ink: #2B231D;
+      --text-sub: #756F68;
+      --text-muted: #A0988E;
+      --status-success: #2E7D32;
+      --status-success-bg: #F1F8F1;
+      --status-warning: #B9770E;
+      --status-warning-bg: #FEF9E7;
+      --status-danger: #9E2A2B;
+      --status-danger-bg: #FDF2F2;
+      --font-body: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-ink);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Prototype Role Selector Bar (For Mockup Verification) */
+    .prototype-bar {
+      background: var(--text-ink);
+      color: #FFF;
+      padding: 0.5rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .prototype-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+      color: #E8DFD3;
+    }
+    .role-pills {
+      display: flex;
+      gap: 0.4rem;
+      background: rgba(255,255,255,0.1);
+      padding: 3px;
+      border-radius: 9999px;
+    }
+    .role-pill {
+      background: transparent;
+      border: none;
+      color: #DCD3C5;
+      padding: 0.35rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .role-pill:hover {
+      color: #FFF;
+      background: rgba(255,255,255,0.15);
+    }
+    .role-pill.active {
+      background: #FFF;
+      color: var(--text-ink);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* Main Application Shell */
+    .app-shell {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 42px);
+      overflow: hidden;
+    }
+
+    /* Sidebar Layout */
+    .sidebar {
+      width: 260px;
+      background: var(--surface-pure);
+      border-right: 1px solid var(--border-hairline);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: width 0.2s ease;
+      z-index: 40;
+    }
+    .sidebar.collapsed {
+      width: 72px;
+    }
+
+    /* Sidebar Header */
+    .sidebar-header {
+      padding: 1.25rem 1.25rem 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      overflow: hidden;
+    }
+    .brand-badge {
+      width: 36px;
+      height: 36px;
+      background: var(--text-ink);
+      color: #FFF;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+      letter-spacing: -0.5px;
+    }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .brand-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-ink);
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .collapse-btn {
+      background: transparent;
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-sub);
+      transition: all 0.15s ease;
+    }
+    .collapse-btn:hover {
+      background: var(--surface-muted);
+      color: var(--text-ink);
+    }
+
+    /* Role Indicator Tag inside Sidebar */
+    .sidebar-role-indicator {
+      padding: 0.85rem 1.25rem 0.5rem 1.25rem;
+    }
+    .role-badge-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.675rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--accent-subtle);
+      color: var(--accent-primary);
+      border: 1px solid var(--border-hairline);
+    }
+    .sidebar.collapsed .role-badge-chip,
+    .sidebar.collapsed .brand-text {
+      display: none;
+    }
+
+    /* Sidebar Navigation Links */
+    .sidebar-nav {
+      flex: 1;
+      padding: 0.75rem 0.75rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .nav-section-title {
+      font-size: 0.675rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding: 0.6rem 0.6rem 0.3rem 0.6rem;
+    }
+    .sidebar.collapsed .nav-section-title {
+      display: none;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0.75rem;
+      border-radius: 8px;
+      color: var(--text-sub);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .nav-item:hover {
+      background: var(--surface-muted);
+      color: var(--text-ink);
+    }
+    .nav-item.active {
+      background: var(--accent-subtle);
+      color: var(--accent-primary);
+      font-weight: 600;
+    }
+    .nav-item-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .nav-item-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sidebar.collapsed .nav-item-label {
+      display: none;
+    }
+    .sidebar.collapsed .nav-item {
+      justify-content: center;
+      padding: 0.65rem 0;
+    }
+    .nav-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.1rem 0.45rem;
+      border-radius: 9999px;
+      background: var(--status-warning-bg);
+      color: var(--status-warning);
+      border: 1px solid rgba(185, 119, 14, 0.25);
+    }
+    .nav-badge.danger {
+      background: var(--status-danger-bg);
+      color: var(--status-danger);
+      border-color: rgba(158, 42, 43, 0.25);
+    }
+    .sidebar.collapsed .nav-badge {
+      display: none;
+    }
+
+    /* Sidebar Footer (User Account) */
+    .sidebar-footer {
+      border-top: 1px solid var(--border-hairline);
+      padding: 1rem;
+      background: var(--surface-pure);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      overflow: hidden;
+    }
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .user-meta {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      white-space: nowrap;
+      line-height: 1.25;
+    }
+    .user-name {
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: var(--text-ink);
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .user-dept {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+    .signout-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .signout-btn:hover {
+      background: var(--status-danger-bg);
+      color: var(--status-danger);
+    }
+    .sidebar.collapsed .user-meta,
+    .sidebar.collapsed .signout-btn {
+      display: none;
+    }
+
+    /* Main Content View Area */
+    .main-viewport {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg-canvas);
+      padding: 2rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* View Header */
+    .view-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .view-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .view-breadcrumb {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .view-title {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      letter-spacing: -0.02em;
+    }
+    .view-desc {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    /* Button Styles */
+    .btn-cta {
+      background: var(--accent-primary);
+      color: #FFF;
+      border: none;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-cta:hover {
+      background: var(--accent-hover);
+    }
+    .btn-secondary {
+      background: var(--surface-pure);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-ink);
+      padding: 0.65rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s ease;
+    }
+    .btn-secondary:hover {
+      background: var(--surface-muted);
+    }
+
+    /* Metric Cards */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1.25rem;
+    }
+    .metric-card {
+      background: var(--surface-pure);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .metric-label {
+      font-size: 0.775rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .metric-value {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--text-ink);
+      font-family: var(--font-mono);
+      letter-spacing: -0.02em;
+    }
+    .metric-sub {
+      font-size: 0.725rem;
+      color: var(--text-muted);
+    }
+
+    /* Revision Alert Banner */
+    .alert-banner {
+      background: var(--status-warning-bg);
+      border: 1px solid rgba(185, 119, 14, 0.3);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .alert-left {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .alert-icon {
+      color: var(--status-warning);
+    }
+    .alert-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-ink);
+    }
+    .alert-desc {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+    .btn-alert-action {
+      background: var(--status-warning);
+      color: #FFF;
+      border: none;
+      padding: 0.45rem 0.95rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* Content Data Table Card */
+    .table-card {
+      background: var(--surface-pure);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .table-header {
+      padding: 1.15rem 1.5rem;
+      border-bottom: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .table-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-ink);
+    }
+    .table-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th {
+      background: var(--surface-muted);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.725rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-sub);
+      border-bottom: 1px solid var(--border-hairline);
+    }
+    td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-hairline);
+      font-size: 0.85rem;
+      color: var(--text-ink);
+      vertical-align: middle;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover td {
+      background-color: #FCFAF7;
+    }
+
+    /* Typographic Badges (Strict Zero Circular Dots Invariant) */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.725rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .badge-pending {
+      background: #FFF8E1;
+      color: #B78103;
+      border-color: #FFE082;
+    }
+    .badge-approved {
+      background: #E8F5E9;
+      color: #2E7D32;
+      border-color: #A5D6A7;
+    }
+    .badge-settled {
+      background: #E0F2FE;
+      color: #0369A1;
+      border-color: #BAE6FD;
+    }
+    .badge-revision {
+      background: #FEF3C7;
+      color: #D97706;
+      border-color: #FDE68A;
+    }
+    .badge-type {
+      background: var(--surface-muted);
+      color: var(--text-sub);
+      border-color: var(--border-hairline);
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    /* Currency Monospace Formatting */
+    .currency-mono {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Budget Progress Meter */
+    .budget-card-standalone {
+      background: var(--surface-pure);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-hairline);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--accent-primary);
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+    }
+
+    /* Empty State */
+    .empty-state {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+    }
+    .empty-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    /* Action Links */
+    .action-link {
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .action-link:hover {
+      text-decoration: underline;
+    }
+
+    /* SVGs helper */
+    svg {
+      display: inline-block;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Prototype Switcher Bar (For Verification across all 3 roles) -->
+  <div class="prototype-bar">
+    <div class="prototype-label">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      <span>TripFlow Role-Aware Sidebar Preview</span>
+    </div>
+    <div class="role-pills">
+      <button class="role-pill active" onclick="switchRole('EMPLOYEE')">
+        <span>🧑‍💼 Employee View</span>
+      </button>
+      <button class="role-pill" onclick="switchRole('MANAGER')">
+        <span>👨‍💼 Line Manager View</span>
+      </button>
+      <button class="role-pill" onclick="switchRole('ADMIN')">
+        <span>🏛️ Corporate Admin View</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- App Shell: Sidebar + Dynamic Main Area -->
+  <div class="app-shell">
+
+    <!-- DYNAMIC ROLE SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      
+      <!-- Brand & Header -->
+      <div class="sidebar-header">
+        <div class="brand-wrap">
+          <div class="brand-badge">TF</div>
+          <div class="brand-text">
+            <span class="brand-name">TripFlow</span>
+            <span class="brand-sub">Governance</span>
+          </div>
+        </div>
+        <button class="collapse-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+      </div>
+
+      <!-- Current Role Chip -->
+      <div class="sidebar-role-indicator">
+        <span class="role-badge-chip" id="sidebar-role-chip">
+          Role: Employee
+        </span>
+      </div>
+
+      <!-- Navigation Links Container (Dynamically rendered based on active role) -->
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Rendered via JS -->
+      </nav>
+
+      <!-- Sidebar User Profile Footer -->
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar" id="user-avatar">AS</div>
+          <div class="user-meta">
+            <span class="user-name" id="user-name">Aarav Sharma</span>
+            <span class="user-dept" id="user-dept">Engineering • Employee</span>
+          </div>
+        </div>
+        <button class="signout-btn" title="Sign Out" onclick="alert('Signed out!')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- DYNAMIC MAIN CONTENT VIEWPORT -->
+    <main class="main-viewport" id="main-viewport">
+      <!-- Rendered via JS -->
+    </main>
+
+  </div>
+
+  <!-- JAVASCRIPT: Dynamic Role Switching & View Rendering -->
+  <script>
+    // State
+    let currentRole = 'EMPLOYEE';
+    let currentTab = 'present';
+    let isCollapsed = false;
+
+    // Navigation configs by role
+    const NAV_CONFIGS = {
+      EMPLOYEE: {
+        roleLabel: 'Employee',
+        chip: 'Role: Employee',
+        user: { name: 'Aarav Sharma', initials: 'AS', dept: 'Engineering • Requester' },
+        items: [
+          { id: 'present', label: 'Present Requests', icon: 'plane', count: null, desc: 'Active & In-flight Travel Requests' },
+          { id: 'revisions', label: 'Revised Requests', icon: 'alert', count: 1, countType: 'danger', desc: 'Alterations Required by Reviewer' },
+          { id: 'past', label: 'Past Requests', icon: 'archive', count: null, desc: 'Settled Reimbursements & Approved Trips' }
+        ]
+      },
+      MANAGER: {
+        roleLabel: 'Line Manager',
+        chip: 'Role: Line Manager',
+        user: { name: 'Corporate Manager', initials: 'CM', dept: 'Engineering • Tier 1 Auditor' },
+        items: [
+          { id: 'present', label: 'Present Requests (Queue)', icon: 'inbox', count: 2, countType: 'warning', desc: 'Direct Reports Pending Initial Audit' },
+          { id: 'revisions', label: 'Revised Requests', icon: 'refresh', count: 1, countType: 'danger', desc: 'Resubmissions Awaiting Re-verification' },
+          { id: 'past', label: 'Past Team History', icon: 'users', count: null, desc: 'Approved, Settled & Forwarded Team Trips' },
+          { id: 'personal', label: 'My Personal Travel', icon: 'user-plane', count: null, desc: "Manager's Own Travel & Expense Claims" }
+        ]
+      },
+      ADMIN: {
+        roleLabel: 'Corporate Admin',
+        chip: 'Role: Corporate Admin',
+        user: { name: 'Corporate Admin', initials: 'CA', dept: 'Executive • Tier 2 Governance' },
+        items: [
+          { id: 'present', label: 'Present Requests (Clearance)', icon: 'shield', count: 1, countType: 'warning', desc: 'Manager-Approved Requests Pending Clearance' },
+          { id: 'revisions', label: 'Revised Requests (Dispatched)', icon: 'route', count: null, desc: 'Alterations Routed via Manager or Direct to Employee' },
+          { id: 'past', label: 'Past Master Archive', icon: 'file-text', count: null, desc: 'Company-Wide Travel & Payout History' },
+          { id: 'budgets', label: 'Department Budgets', icon: 'pie', count: null, desc: '₹35,00,000.00 Allocation & Utilization Gauge' }
+        ]
+      }
+    };
+
+    // SVGs helper
+    function getIconSvg(icon) {
+      switch (icon) {
+        case 'plane':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>`;
+        case 'alert':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+        case 'archive':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`;
+        case 'inbox':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>`;
+        case 'refresh':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>`;
+        case 'users':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`;
+        case 'user-plane':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M19 8l3-2-3-2v4z"/></svg>`;
+        case 'shield':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+        case 'route':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 000-7h-11a3.5 3.5 0 010-7H15"/><circle cx="18" cy="5" r="3"/></svg>`;
+        case 'file-text':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+        case 'pie':
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/></svg>`;
+        default:
+          return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+      }
+    }
+
+    // Role switcher handler
+    function switchRole(role) {
+      currentRole = role;
+      currentTab = 'present';
+      
+      // Update prototype pills
+      document.querySelectorAll('.role-pill').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.innerText.toUpperCase().includes(role)) {
+          btn.classList.add('active');
+        }
+      });
+
+      renderSidebar();
+      renderContent();
+    }
+
+    // Tab switcher handler
+    function switchTab(tabId) {
+      currentTab = tabId;
+      renderSidebar();
+      renderContent();
+    }
+
+    // Toggle collapse
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      isCollapsed = !isCollapsed;
+      sb.classList.toggle('collapsed', isCollapsed);
+    }
+
+    // Render Sidebar based on active role & active tab
+    function renderSidebar() {
+      const config = NAV_CONFIGS[currentRole];
+      
+      // Update role chip and user profile
+      document.getElementById('sidebar-role-chip').innerText = config.chip;
+      document.getElementById('user-avatar').innerText = config.user.initials;
+      document.getElementById('user-name').innerText = config.user.name;
+      document.getElementById('user-dept').innerText = config.user.dept;
+
+      // Render navigation items
+      const nav = document.getElementById('sidebar-nav');
+      let html = `<div class="nav-section-title">Navigation</div>`;
+
+      config.items.forEach(item => {
+        const isActive = item.id === currentTab;
+        const badgeHtml = item.count ? `<span class="nav-badge ${item.countType || ''}">${item.count}</span>` : '';
+
+        html += `
+          <div class="nav-item ${isActive ? 'active' : ''}" onclick="switchTab('${item.id}')">
+            <div class="nav-item-left">
+              <span class="nav-item-icon">${getIconSvg(item.icon)}</span>
+              <span class="nav-item-label">${item.label}</span>
+            </div>
+            ${badgeHtml}
+          </div>
+        `;
+      });
+
+      nav.innerHTML = html;
+    }
+
+    // Render Main View Content based on role and tab
+    function renderContent() {
+      const container = document.getElementById('main-viewport');
+      
+      if (currentRole === 'EMPLOYEE') {
+        renderEmployeeView(container);
+      } else if (currentRole === 'MANAGER') {
+        renderManagerView(container);
+      } else if (currentRole === 'ADMIN') {
+        renderAdminView(container);
+      }
+    }
+
+    // --- 1. EMPLOYEE VIEWS ---
+    function renderEmployeeView(container) {
+      if (currentTab === 'present') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Employee Portal / Present Requests</div>
+              <h1 class="view-title">Active & In-Review Trips</h1>
+              <p class="view-desc">Monitor your upcoming travel authorizations and pending reimbursement reviews.</p>
+            </div>
+            <button class="btn-cta" onclick="alert('Opens New Travel Request Modal (Case 1 Reimbursement or Case 2 Upcoming)')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              + New Travel Request
+            </button>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-label">Active / In Review</span>
+              <span class="metric-value">2</span>
+              <span class="metric-sub">1 reimbursement, 1 upcoming</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Approved Trips</span>
+              <span class="metric-value">1</span>
+              <span class="metric-sub">Cleared by Corporate Admin</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Total Expenditure</span>
+              <span class="metric-value currency-mono">₹1,76,000.00</span>
+              <span class="metric-sub">Indian Rupees (INR)</span>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Present Travel Requests</span>
+              <span class="table-count">2 Requests Active</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Request Details</th>
+                  <th>Type</th>
+                  <th>Dates</th>
+                  <th>Destination</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>#926b8b15 — Tokyo Engineering Summit</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted)">Code: ENG-TOK-26</div>
+                  </td>
+                  <td><span class="status-badge badge-type">Upcoming</span></td>
+                  <td>Nov 24 – Nov 29, 2026</td>
+                  <td>Tokyo, Japan</td>
+                  <td class="currency-mono">₹1,00,000.00</td>
+                  <td><span class="status-badge badge-pending">Pending Manager Review</span></td>
+                  <td><a class="action-link" onclick="alert('Viewing details drawer')">Inspect</a></td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>#cc47961e — Global Tech Conclave</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted)">Code: RND-CONC-26</div>
+                  </td>
+                  <td><span class="status-badge badge-type">Upcoming</span></td>
+                  <td>Dec 02 – Dec 06, 2026</td>
+                  <td>Singapore</td>
+                  <td class="currency-mono">₹76,000.00</td>
+                  <td><span class="status-badge badge-approved">Approved</span></td>
+                  <td><a class="action-link" onclick="alert('Viewing details drawer')">Inspect</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentTab === 'revisions') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Employee Portal / Action Center</div>
+              <h1 class="view-title">Requests Requiring Revision</h1>
+              <p class="view-desc">Review feedback comments and resubmit updated invoices or quotations.</p>
+            </div>
+          </div>
+
+          <div class="alert-banner">
+            <div class="alert-left">
+              <div class="alert-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div>
+                <div class="alert-title">1 Request Needs Your Immediate Attention</div>
+                <div class="alert-desc">Reviewer requested downgraded flight quotes. Resubmitting will return strictly to your Line Manager.</div>
+              </div>
+            </div>
+            <button class="btn-alert-action" onclick="alert('Opening Resubmit Modal with prefilled expenses & comments')">Fix & Resubmit Now</button>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Revision Requests</span>
+              <span class="table-count">1 Item</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Request Title</th>
+                  <th>Type</th>
+                  <th>Reviewer Feedback</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>#713be25f — APAC Cloud Architecture Summit</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted)">Project: CLOUD-APAC-26</div>
+                  </td>
+                  <td><span class="status-badge badge-type">Upcoming</span></td>
+                  <td style="max-width: 280px; color:var(--status-danger)">
+                    <em>"Please re-quote Singapore Airlines flight to economy class or attach downgraded quotation."</em>
+                  </td>
+                  <td class="currency-mono">₹96,000.00</td>
+                  <td><span class="status-badge badge-revision">Revision Required (Admin)</span></td>
+                  <td><button class="btn-cta" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="alert('Opening Resubmit Modal')">Resubmit</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentTab === 'past') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Employee Portal / Past History</div>
+              <h1 class="view-title">Completed & Settled Trips</h1>
+              <p class="view-desc">Historical archive of disbursed reimbursements and concluded corporate travel.</p>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Past Travel Ledger</span>
+              <span class="table-count">1 Record</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Trip Title</th>
+                  <th>Type</th>
+                  <th>Travel Dates</th>
+                  <th>Reimbursed Amount</th>
+                  <th>Settlement Date</th>
+                  <th>Status</th>
+                  <th>Receipts</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>#d4637a25 — Delhi Client Incident Retrospective</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted)">Paid via Corporate NEFT</div>
+                  </td>
+                  <td><span class="status-badge badge-type">Already Travelled</span></td>
+                  <td>Oct 12 – Oct 14, 2026</td>
+                  <td class="currency-mono" style="color:var(--status-success)">₹16,350.00</td>
+                  <td>Oct 18, 2026</td>
+                  <td><span class="status-badge badge-settled">Settled (Paid)</span></td>
+                  <td><a class="action-link" onclick="alert('Viewing Tax Invoice PDF')">Tax Invoice ↗</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+    }
+
+    // --- 2. MANAGER VIEWS ---
+    function renderManagerView(container) {
+      if (currentTab === 'present') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Line Manager Portal / Present Queue</div>
+              <h1 class="view-title">Team Audit Queue</h1>
+              <p class="view-desc">Tier 1 operational audit of travel necessity, dates, project codes, and itemized receipts.</p>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-label">Pending Your Audit</span>
+              <span class="metric-value">2</span>
+              <span class="metric-sub">Direct reports waiting for review</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Queue Total (INR)</span>
+              <span class="metric-value currency-mono">₹1,24,000.00</span>
+              <span class="metric-sub">Estimated and incurred value</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Direct Reports</span>
+              <span class="metric-value">6</span>
+              <span class="metric-sub">Engineering team members</span>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Direct Reports Pending Initial Review</span>
+              <span class="table-count">2 Requests</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Request Title</th>
+                  <th>Type</th>
+                  <th>Destination</th>
+                  <th>Total (INR)</th>
+                  <th>Status</th>
+                  <th>Audit Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>Aarav Sharma</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted)">aarav.sharma@corp.com</div>
+                  </td>
+                  <td>Tokyo Engineering Summit 2026</td>
+                  <td><span class="status-badge badge-type">Upcoming</span></td>
+                  <td>Tokyo, Japan</td>
+                  <td class="currency-mono">₹1,00,000.00</td>
+                  <td><span class="status-badge badge-pending">Pending Manager Review</span></td>
+                  <td>
+                    <button class="btn-cta" style="padding: 0.35rem 0.85rem; font-size: 0.75rem;" onclick="alert('Opening Proof Inspector Drawer: Approve & Forward or Request Changes')">Audit Proofs</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>Sudalaimani Kannan</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted)">sudalaimani05112003@gmail.com</div>
+                  </td>
+                  <td>Client Architecture Workshop</td>
+                  <td><span class="status-badge badge-type">Upcoming</span></td>
+                  <td>Bengaluru, India</td>
+                  <td class="currency-mono">₹24,000.00</td>
+                  <td><span class="status-badge badge-pending">Pending Manager Review</span></td>
+                  <td>
+                    <button class="btn-cta" style="padding: 0.35rem 0.85rem; font-size: 0.75rem;" onclick="alert('Opening Proof Inspector Drawer')">Audit Proofs</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentTab === 'revisions') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Line Manager Portal / Re-Audit</div>
+              <h1 class="view-title">Resubmitted Requests Awaiting Re-verification</h1>
+              <p class="view-desc">Upholds the Non-Negotiable Invariant: employee resubmissions strictly return to Line Manager first.</p>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Resubmitted Direct Report Requests</span>
+              <span class="table-count">1 Request</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Trip Title</th>
+                  <th>Revision Context</th>
+                  <th>Resubmitted Total</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>Aarav Sharma</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted)">aarav.sharma@corp.com</div>
+                  </td>
+                  <td>APAC Cloud Architecture Summit</td>
+                  <td>
+                    <div style="font-size:0.8rem;">Employee attached revised economy flight quote: <em>"Downgraded flight to Indigo ₹22,000."</em></div>
+                  </td>
+                  <td class="currency-mono">₹76,000.00</td>
+                  <td><span class="status-badge badge-revision">Pending Manager Review</span></td>
+                  <td>
+                    <button class="btn-cta" style="padding: 0.35rem 0.85rem; font-size: 0.75rem;" onclick="alert('Re-auditing altered expenses before approving & forwarding to Admin')">Re-Audit</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentTab === 'past') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Line Manager Portal / Past Team History</div>
+              <h1 class="view-title">Team Travel Approval History</h1>
+              <p class="view-desc">Archive of all team requests forwarded, approved, or settled across past fiscal quarters.</p>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Forwarded & Approved Team Travel</span>
+              <span class="table-count">3 Records</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Trip Title</th>
+                  <th>Destination</th>
+                  <th>Approved Spend</th>
+                  <th>Cleared At</th>
+                  <th>Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Employee Bob</td>
+                  <td>Mumbai Tech Summit Reimbursement</td>
+                  <td>Mumbai</td>
+                  <td class="currency-mono">₹52,000.00</td>
+                  <td>Nov 11, 2026</td>
+                  <td><span class="status-badge badge-settled">Settled (Paid)</span></td>
+                </tr>
+                <tr>
+                  <td>Employee Bob</td>
+                  <td>Tokyo Q1 Partner Integration</td>
+                  <td>Tokyo</td>
+                  <td class="currency-mono">₹1,45,000.00</td>
+                  <td>Nov 11, 2026</td>
+                  <td><span class="status-badge badge-approved">Approved</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentTab === 'personal') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Line Manager Portal / Personal Travel</div>
+              <h1 class="view-title">My Personal Travel & Expense Claims</h1>
+              <p class="view-desc">Submit and manage your own corporate trips as an employee of Engineering.</p>
+            </div>
+            <button class="btn-cta" onclick="alert('Opens New Travel Request Modal for Manager personal travel')">
+              + Submit My Travel
+            </button>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">My Travel Requests</span>
+              <span class="table-count">0 Active</span>
+            </div>
+            <div class="empty-state">
+              <div class="empty-title">You have no active personal travel requests</div>
+              <p style="font-size:0.8rem">Click "+ Submit My Travel" above to request pre-trip clearance or submit incurred expenses.</p>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // --- 3. ADMIN VIEWS ---
+    function renderAdminView(container) {
+      if (currentTab === 'present') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Corporate Governance / Executive Queue</div>
+              <h1 class="view-title">Clearance & Settlement Hub</h1>
+              <p class="view-desc">Tier 2 executive authorization: Grant pre-trip clearance or settle reimbursement payouts.</p>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-label">Pending Clearance</span>
+              <span class="metric-value">1</span>
+              <span class="metric-sub">Manager-approved requests</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Quarterly Headroom</span>
+              <span class="metric-value currency-mono">₹22,56,150.00</span>
+              <span class="metric-sub">Remaining out of ₹35L allocation</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Disbursed This Quarter</span>
+              <span class="metric-value currency-mono">₹12,43,850.00</span>
+              <span class="metric-sub">35.5% utilized</span>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Requests Awaiting Executive Action</span>
+              <span class="table-count">1 Item</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Requester</th>
+                  <th>Trip Title</th>
+                  <th>Type</th>
+                  <th>Manager Verification</th>
+                  <th>Amount (INR)</th>
+                  <th>Executive Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>Aarav Sharma</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted)">Engineering • Mgr: Corporate Manager</div>
+                  </td>
+                  <td>Tokyo Engineering Architecture Summit 2026</td>
+                  <td><span class="status-badge badge-type">Upcoming</span></td>
+                  <td>
+                    <span style="color:var(--status-success); font-weight:600; font-size:0.8rem">✓ Verified by Manager</span>
+                    <div style="font-size:0.7rem; color:var(--text-muted)">"Necessity validated for Q4 expansion"</div>
+                  </td>
+                  <td class="currency-mono">₹1,00,000.00</td>
+                  <td>
+                    <div style="display:flex; gap:0.4rem;">
+                      <button class="btn-cta" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; background:var(--status-success)" onclick="alert('Granting clearance: Status transitions to APPROVED')">Grant Clearance</button>
+                      <button class="btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" onclick="alert('Opening Dual Route Revision Modal: Route A (via Manager) or Route B (direct to Employee)')">Request Alterations</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentTab === 'revisions') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Corporate Governance / Alterations</div>
+              <h1 class="view-title">Dispatched Revision Tracking</h1>
+              <p class="view-desc">Monitor requests where alterations were requested via Route A (via Manager) or Route B (direct to Employee).</p>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Active Dispatched Revisions</span>
+              <span class="table-count">1 Request</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Trip Title</th>
+                  <th>Dispatch Route</th>
+                  <th>Admin Instructions</th>
+                  <th>Current State</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Aarav Sharma</td>
+                  <td>APAC Cloud Architecture Summit</td>
+                  <td><span class="status-badge badge-type">Route B (Direct to Employee)</span></td>
+                  <td style="font-size:0.8rem; color:var(--text-sub)">"Downgrade flight to economy class or supply alternate quote."</td>
+                  <td><span class="status-badge badge-revision">Awaiting Employee Resubmission</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentTab === 'past') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Corporate Governance / Master Archive</div>
+              <h1 class="view-title">Company-Wide Travel Ledger</h1>
+              <p class="view-desc">Central audit log of all settled disbursements and approved travel across all corporate departments.</p>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Master Ledger</span>
+              <span class="table-count">4 Records</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Department</th>
+                  <th>Trip Title</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Disbursement Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Service Emp</td>
+                  <td>Engineering</td>
+                  <td>Delhi Client Retrospective</td>
+                  <td><span class="status-badge badge-type">Reimbursement</span></td>
+                  <td class="currency-mono">₹16,350.00</td>
+                  <td><span class="status-badge badge-settled">Settled (Paid)</span></td>
+                  <td>Oct 18, 2026</td>
+                </tr>
+                <tr>
+                  <td>Employee Bob</td>
+                  <td>Engineering</td>
+                  <td>Tokyo Q1 Partner Integration</td>
+                  <td><span class="status-badge badge-type">Upcoming</span></td>
+                  <td class="currency-mono">₹1,45,000.00</td>
+                  <td><span class="status-badge badge-approved">Approved</span></td>
+                  <td>Nov 11, 2026</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else if (currentTab === 'budgets') {
+        container.innerHTML = `
+          <div class="view-header">
+            <div class="view-title-wrap">
+              <div class="view-breadcrumb">Corporate Governance / Budgets</div>
+              <h1 class="view-title">Department Quarterly Budgets</h1>
+              <p class="view-desc">Real-time financial gauge of pooled allocations, cumulative expenditures, and remaining headroom.</p>
+            </div>
+          </div>
+
+          <div class="budget-card-standalone">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <h3 style="font-size:1.15rem; font-weight:700;">Engineering Department — Q4 2026</h3>
+                <p style="font-size:0.8rem; color:var(--text-muted)">Fiscal Quarter: Oct 01, 2026 – Dec 31, 2026</p>
+              </div>
+              <span class="status-badge badge-approved">Budget Healthy</span>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem; font-size:0.85rem;">
+                <span style="color:var(--text-sub)">Total Utilized: <strong class="currency-mono">₹12,43,850.00</strong></span>
+                <span style="color:var(--text-sub)">Available Headroom: <strong class="currency-mono" style="color:var(--status-success)">₹22,56,150.00</strong></span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-bar" style="width: 35.5%;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:0.35rem; font-size:0.75rem; color:var(--text-muted)">
+                <span>0% Utilized</span>
+                <span>35.5% Allocated</span>
+                <span>₹35,00,000.00 Total Pool</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card" style="margin-top:1.5rem;">
+            <div class="table-header">
+              <span class="table-title">Department Allocation Breakdown</span>
+              <span class="table-count">2 Departments</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>Fiscal Period</th>
+                  <th>Total Allocation</th>
+                  <th>Utilized Spend</th>
+                  <th>Remaining Headroom</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Engineering</strong></td>
+                  <td>2026 Q4</td>
+                  <td class="currency-mono">₹35,00,000.00</td>
+                  <td class="currency-mono">₹12,43,850.00</td>
+                  <td class="currency-mono" style="color:var(--status-success); font-weight:700;">₹22,56,150.00</td>
+                  <td><span class="status-badge badge-approved">Active & Open</span></td>
+                </tr>
+                <tr>
+                  <td><strong>BudgetTestDept</strong></td>
+                  <td>2026 Q4</td>
+                  <td class="currency-mono">₹50,000.00</td>
+                  <td class="currency-mono" style="color:var(--status-danger)">₹65,000.00</td>
+                  <td class="currency-mono" style="color:var(--status-danger); font-weight:700;">-₹15,000.00</td>
+                  <td><span class="status-badge" style="background:#FEE2E2; color:#991B1B">Over Budget Warning</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+    }
+
+    // Initialize
+    renderSidebar();
+    renderContent();
+  </script>
+</body>
+</html>

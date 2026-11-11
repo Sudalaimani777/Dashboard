@@ -15,7 +15,9 @@
     "test:api": "tsx tests/travel-api.test.ts",
     "test": "tsx test-day1.ts",
     "test:day2": "tsx test-day2-backend.ts",
-    "test:e2e": "tsx test-e2e-full-flow.ts"
+    "test:e2e": "tsx test-e2e-full-flow.ts",
+    "db:reset": "tsx reset-db.ts",
+    "set-role": "tsx set-role.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

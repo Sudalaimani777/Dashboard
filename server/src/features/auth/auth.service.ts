@@ -30,6 +30,9 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role || 'EMPLOYEE',
+      department: user.department || 'Engineering',
+      manager_id: user.manager_id || null,
       created_at: user.created_at,
       updated_at: user.updated_at,
     };
@@ -39,6 +42,8 @@ export class AuthService {
     const payload: JwtPayload = {
       userId: user.id,
       email: user.email,
+      role: user.role || 'EMPLOYEE',
+      department: user.department || 'Engineering',
     };
 
     return jwt.sign(payload, config.jwt.secret as jwt.Secret, {
