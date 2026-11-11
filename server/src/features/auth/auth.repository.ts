@@ -13,7 +13,7 @@ export interface IAuthRepository {
 export class AuthRepository implements IAuthRepository {
   async findByEmail(email: string): Promise<User | null> {
     const res = await query(
-      `SELECT id, name, email, password_hash, reset_token, reset_token_expires_at, created_at, updated_at
+      `SELECT id, name, email, password_hash, role, department, manager_id, reset_token, reset_token_expires_at, created_at, updated_at
        FROM users
        WHERE LOWER(email) = LOWER($1)
        LIMIT 1`,
@@ -25,7 +25,7 @@ export class AuthRepository implements IAuthRepository {
 
   async findById(id: string): Promise<User | null> {
     const res = await query(
-      `SELECT id, name, email, password_hash, reset_token, reset_token_expires_at, created_at, updated_at
+      `SELECT id, name, email, password_hash, role, department, manager_id, reset_token, reset_token_expires_at, created_at, updated_at
        FROM users
        WHERE id = $1
        LIMIT 1`,
@@ -39,7 +39,7 @@ export class AuthRepository implements IAuthRepository {
     const res = await query(
       `INSERT INTO users (name, email, password_hash)
        VALUES ($1, LOWER($2), $3)
-       RETURNING id, name, email, password_hash, reset_token, reset_token_expires_at, created_at, updated_at`,
+       RETURNING id, name, email, password_hash, role, department, manager_id, reset_token, reset_token_expires_at, created_at, updated_at`,
       [name, email, passwordHash]
     );
 

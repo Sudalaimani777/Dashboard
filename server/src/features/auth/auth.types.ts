@@ -3,6 +3,9 @@ export interface User {
   name: string;
   email: string;
   password_hash: string;
+  role: 'EMPLOYEE' | 'MANAGER' | 'ADMIN';
+  department: string;
+  manager_id?: string | null;
   reset_token?: string | null;
   reset_token_expires_at?: Date | null;
   created_at: Date;
