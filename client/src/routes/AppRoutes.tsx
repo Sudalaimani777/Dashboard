@@ -11,7 +11,6 @@ function lazyNamed<T extends Record<string, React.ComponentType<any>>, K extends
 }
 
 const SignInCard = lazyNamed(() => import('../features/auth/components/SignInCard'), 'SignInCard');
-const SignUpCard = lazyNamed(() => import('../features/auth/components/SignUpCard'), 'SignUpCard');
 const ForgotPasswordCard = lazyNamed(
   () => import('../features/auth/components/ForgotPasswordCard'),
   'ForgotPasswordCard',
@@ -37,6 +36,7 @@ const AdminClearancePage = lazyNamed(
   'AdminClearancePage',
 );
 const TravelDetailPage = lazyNamed(() => import('../features/travel/pages/TravelDetailPage'), 'TravelDetailPage');
+const NewUserPage = lazyNamed(() => import('../features/users/pages/NewUserPage'), 'NewUserPage');
 
 const RouteLoadingFallback: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center bg-[#F7F4EE]">
@@ -60,7 +60,7 @@ export const AppRoutes: React.FC = () => {
         <Routes>
           {/* Onboarding & Authentication */}
           <Route path="/signin" element={<SignInCard />} />
-          <Route path="/signup" element={<SignUpCard />} />
+          <Route path="/signup" element={<Navigate to="/signin" replace />} />
           <Route path="/forgot-password" element={<ForgotPasswordCard />} />
           <Route path="/reset-password" element={<ResetPasswordCard />} />
 
@@ -73,6 +73,7 @@ export const AppRoutes: React.FC = () => {
               <Route path="/travel/requests/:id/edit" element={<ResubmitTravelRequestPage />} />
               <Route path="/travel/audit/:id" element={<ManagerAuditPage />} />
               <Route path="/travel/clearance/:id" element={<AdminClearancePage />} />
+              <Route path="/admin/users/new" element={<NewUserPage />} />
             </Route>
           </Route>
 

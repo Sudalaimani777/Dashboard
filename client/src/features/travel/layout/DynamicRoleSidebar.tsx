@@ -45,6 +45,7 @@ export function getRoleNavItems(role: string): NavItemConfig[] {
         { id: 'revisions', label: 'Revised Requests', icon: GitFork },
         { id: 'past', label: 'Past Requests', icon: Archive },
         { id: 'budgets', label: 'Department Budgets', icon: PieChart },
+        { id: 'users', label: 'Team & Access', icon: Users },
       ];
     case 'EMPLOYEE':
     default:

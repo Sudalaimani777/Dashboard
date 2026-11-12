@@ -4,6 +4,7 @@ import express from 'express';
 import { config } from './config/env.js';
 import { authRoutes } from './features/auth/auth.routes.js';
 import { travelRoutes } from './features/travel/travel.routes.js';
+import { usersRoutes } from './features/users/users.routes.js';
 import { pool } from './shared/db/pool.js';
 import { errorHandler } from './shared/middleware/error.middleware.js';
 
@@ -48,6 +49,7 @@ app.get('/api/health', async (_req, res) => {
 // Feature Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/travel', travelRoutes);
+app.use('/api/users', usersRoutes);
 
 // Centralized error handler
 app.use(errorHandler);

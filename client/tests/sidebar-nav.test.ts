@@ -31,13 +31,14 @@ async function run() {
 
   // 3. Admin Navigation Items
   const admItems = getRoleNavItems('ADMIN');
-  assert.equal(admItems.length, 4, 'Admin should have 4 navigation items');
+  assert.equal(admItems.length, 5, 'Admin should have 5 navigation items');
   assert.deepEqual(
     admItems.map((i: NavItemConfig) => i.id),
-    ['present', 'revisions', 'past', 'budgets']
+    ['present', 'revisions', 'past', 'budgets', 'users']
   );
   assert.equal(admItems[0].label, 'Clearance Queue');
   assert.equal(admItems[3].label, 'Department Budgets');
+  assert.equal(admItems[4].label, 'Team & Access');
 
   console.log('✅ ALL DYNAMIC ROLE SIDEBAR NAVIGATION TESTS PASSED!');
 }

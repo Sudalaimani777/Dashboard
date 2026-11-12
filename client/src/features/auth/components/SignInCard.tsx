@@ -44,7 +44,6 @@ export const SignInCard: React.FC = () => {
 
   return (
     <AuthLayout
-      mode="sign-in"
       title="Sign in"
       subtitle="Access your travel requests, team approvals, and budgets."
       error={localError || authError}
@@ -90,7 +89,7 @@ export const SignInCard: React.FC = () => {
               {...register('remember')}
             />
             <span className="text-xs font-medium text-ink">
-              Keep me signed in for 30 days
+              I agree to the Terms &amp; Conditions.
             </span>
           </label>
         </div>

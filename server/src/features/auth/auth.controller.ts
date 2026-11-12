@@ -16,24 +16,12 @@ const getCookieOptions = (): CookieOptions => ({
 export class AuthController {
   constructor(private service: AuthService = authService) {}
 
-  signup = async (req: Request, res: Response) => {
-    try {
-      const { name, email, password } = req.body;
-      const result = await this.service.signup({ name, email, password });
-
-      // Registration creates the user account without automatically issuing an active session cookie.
-      // The user must explicitly sign in on /signin with their credentials to access the dashboard.
-      return sendSuccess(
-        res,
-        { user: result.user },
-        'User registered successfully. Please sign in with your credentials.',
-        201
-      );
-    } catch (err) {
-      const message = (err as Error).message;
-      const statusCode = message.includes('already exists') ? 409 : 400;
-      return sendError(res, message, statusCode);
-    }
+  signup = async (_req: Request, res: Response) => {
+    return sendError(
+      res,
+      'Self-registration is disabled. Please contact your administrator.',
+      403
+    );
   };
 
   signin = async (req: Request, res: Response) => {
