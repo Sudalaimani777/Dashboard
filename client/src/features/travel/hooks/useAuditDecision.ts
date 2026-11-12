@@ -48,12 +48,16 @@ export function useAuditDecision(requestId: string, returnTab = 'present') {
     }
   };
 
-  const adminClearance = async (action: 'APPROVE' | 'SETTLE', remarks: string) => {
+  const adminClearance = async (
+    action: 'APPROVE' | 'SETTLE',
+    remarks: string,
+    forceOverride = false
+  ) => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await reviewAsAdmin(requestId, { action, remarks });
-      navigate('/dashboard?tab=present');
+      await reviewAsAdmin(requestId, { action, remarks, forceOverride });
+      navigate(`/dashboard?tab=${returnTab}`);
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Clearance action failed');
     } finally {
@@ -66,9 +70,22 @@ export function useAuditDecision(requestId: string, returnTab = 'present') {
     setError(null);
     try {
       await reviewAsAdmin(requestId, { action: 'REQUEST_REVISION', revisionTarget, remarks });
-      navigate('/dashboard?tab=present');
+      navigate(`/dashboard?tab=${returnTab}`);
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Revision dispatch failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const adminReject = async (remarks: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await reviewAsAdmin(requestId, { action: 'REJECT', remarks });
+      navigate(`/dashboard?tab=${returnTab}`);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Rejection failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -82,5 +99,6 @@ export function useAuditDecision(requestId: string, returnTab = 'present') {
     managerReject,
     adminClearance,
     adminRevision,
+    adminReject,
   };
 }

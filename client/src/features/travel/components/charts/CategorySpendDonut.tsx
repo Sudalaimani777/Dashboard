@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { TrendingUp, Plane, Building2, Car, UtensilsCrossed, HelpCircle } from 'lucide-react';
 import {
   PieChart,
   Pie,
@@ -21,27 +20,21 @@ import {
   type ChartConfig,
 } from '../../../../shared/components/ui/chart';
 import { formatINR, formatINRCompact } from '../../utils/currency';
-import type { DepartmentBudget } from '../../types/travel.types';
+import { EXPENSE_CATEGORY_META } from '../../utils/travelAnalytics';
+import type { DepartmentBudget, ExpenseCategory } from '../../types/travel.types';
 
 export interface CategorySpendDonutProps {
   budget: DepartmentBudget | null;
 }
 
-const CATEGORY_META: Record<string, { label: string; color: string; icon: React.FC<{ className?: string }> }> = {
-  FLIGHT: { label: 'Airfare & Flights', color: '#8A582B', icon: Plane },
-  HOTEL: { label: 'Accommodations', color: '#0284c7', icon: Building2 },
-  TRANSIT: { label: 'Ground Transit', color: '#7c3aed', icon: Car },
-  MEALS_PER_DIEM: { label: 'Meals & Per Diem', color: '#d97706', icon: UtensilsCrossed },
-  MISC: { label: 'Incidental / Misc', color: '#64748b', icon: HelpCircle },
-};
-
 export const CategorySpendDonut: React.FC<CategorySpendDonutProps> = ({ budget }) => {
-  const rawBreakdown = budget?.categoryBreakdown || [];
+  const categoryBreakdown = budget?.categoryBreakdown;
 
   const chartData = useMemo(() => {
-    if (rawBreakdown.length > 0) {
-      return rawBreakdown.map((item) => {
-        const meta = CATEGORY_META[item.category] || { label: item.category, color: '#8A582B', icon: HelpCircle };
+    if (categoryBreakdown && categoryBreakdown.length > 0) {
+      return categoryBreakdown.map((item) => {
+        const meta =
+          EXPENSE_CATEGORY_META[item.category as ExpenseCategory] || EXPENSE_CATEGORY_META.MISC;
         return {
           categoryKey: item.category,
           label: meta.label,
@@ -55,15 +48,25 @@ export const CategorySpendDonut: React.FC<CategorySpendDonutProps> = ({ budget }
     const utilized = budget?.utilizedAmount || 0;
     if (utilized > 0) {
       return [
-        { categoryKey: 'FLIGHT', label: 'Airfare & Flights', value: Math.round(utilized * 0.736), fill: '#8A582B' },
-        { categoryKey: 'HOTEL', label: 'Accommodations', value: Math.round(utilized * 0.264), fill: '#0284c7' },
+        {
+          categoryKey: 'FLIGHT',
+          label: EXPENSE_CATEGORY_META.FLIGHT.label,
+          value: Math.round(utilized * 0.736),
+          fill: EXPENSE_CATEGORY_META.FLIGHT.color,
+        },
+        {
+          categoryKey: 'HOTEL',
+          label: EXPENSE_CATEGORY_META.HOTEL.label,
+          value: Math.round(utilized * 0.264),
+          fill: EXPENSE_CATEGORY_META.HOTEL.color,
+        },
       ];
     }
 
     return [
       { categoryKey: 'UNSPENT', label: 'Uncommitted', value: 1, fill: '#E8DFD3' }
     ];
-  }, [rawBreakdown, budget?.utilizedAmount]);
+  }, [categoryBreakdown, budget?.utilizedAmount]);
 
   const totalSpend = useMemo(() => {
     return chartData.reduce((acc, curr) => acc + (curr.categoryKey !== 'UNSPENT' ? curr.value : 0), 0);
@@ -90,10 +93,10 @@ export const CategorySpendDonut: React.FC<CategorySpendDonutProps> = ({ budget }
 
   return (
     <Card className="flex flex-col bg-surface border border-border-warm rounded-xl shadow-xs">
-      <CardHeader className="items-center pb-2">
-        <CardTitle className="text-base font-bold text-ink">Expense Category Breakdown</CardTitle>
+      <CardHeader className="items-start border-b border-border-warm pb-3">
+        <CardTitle className="text-sm font-semibold text-ink">Disbursement Mix by Category</CardTitle>
         <CardDescription className="text-xs text-muted">
-          Itemized disbursements by expense class
+          Itemized approved vouchers by expense class
         </CardDescription>
       </CardHeader>
 
@@ -167,19 +170,18 @@ export const CategorySpendDonut: React.FC<CategorySpendDonutProps> = ({ budget }
         </div>
       </CardContent>
 
-      <CardFooter className="flex-col gap-1.5 text-xs pt-3">
-        <div className="flex items-center gap-1.5 leading-none font-semibold text-ink">
+      <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t border-border-warm/60">
+        <div className="leading-none font-semibold text-ink">
           {topCategory ? (
-            <>
-              <span>{topCategory.label} leads with {topCategory.pct}% of disbursements</span>
-              <TrendingUp className="size-3.5 text-primary shrink-0" />
-            </>
+            <span>
+              {topCategory.label} accounts for {topCategory.pct}% of period disbursements
+            </span>
           ) : (
             <span>No disbursements recorded yet this quarter</span>
           )}
         </div>
         <div className="leading-none text-muted text-[11px]">
-          Aggregated across all approved team travel vouchers
+          Summed across approved and settled vouchers
         </div>
       </CardFooter>
     </Card>

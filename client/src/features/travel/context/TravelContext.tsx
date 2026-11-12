@@ -8,6 +8,8 @@ import type {
   AdminReviewInput,
   ResubmitRequestInput,
   DepartmentBudget,
+  DepartmentBudgetOverview,
+  UpsertBudgetInput,
   TravelStatus,
 } from '../types/travel.types';
 
@@ -19,6 +21,7 @@ export interface TravelContextType {
   managerQueue: TravelRequest[];
   adminQueue: TravelRequest[];
   budget: DepartmentBudget | null;
+  budgetOverview: DepartmentBudgetOverview | null;
   isLoading: boolean;
   isRefreshing: boolean;
   lastSyncedAt: Date | null;
@@ -30,6 +33,8 @@ export interface TravelContextType {
   loadManagerQueue: () => Promise<void>;
   loadAdminQueue: () => Promise<void>;
   loadBudget: (department?: string, year?: number, quarter?: string) => Promise<void>;
+  loadBudgetOverview: (year?: number, quarter?: string) => Promise<void>;
+  saveBudgetAllocation: (input: UpsertBudgetInput) => Promise<DepartmentBudget>;
   refresh: (scope?: RefreshScope, id?: string) => Promise<void>;
   createRequest: (input: CreateTravelRequestInput) => Promise<TravelRequest>;
   reviewAsManager: (id: string, input: ManagerReviewInput) => Promise<TravelRequest>;
@@ -46,6 +51,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [managerQueue, setManagerQueue] = useState<TravelRequest[]>([]);
   const [adminQueue, setAdminQueue] = useState<TravelRequest[]>([]);
   const [budget, setBudget] = useState<DepartmentBudget | null>(null);
+  const [budgetOverview, setBudgetOverview] = useState<DepartmentBudgetOverview | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
@@ -117,9 +123,32 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const data = await travelApi.getDepartmentBudget(department, year, quarter);
       setBudget(data);
     } catch (err: any) {
-      // Non-fatal if budget not configured yet
+      // Clear previous department/quarter state when unallocated
+      setBudget(null);
       console.warn('Could not load department budget:', err.message);
     }
+  }, []);
+
+  const loadBudgetOverview = useCallback(async (year?: number, quarter?: string) => {
+    try {
+      const data = await travelApi.getAllBudgets(year, quarter);
+      setBudgetOverview(data);
+    } catch (err: any) {
+      console.warn('Could not load department budget overview:', err.message);
+    }
+  }, []);
+
+  const saveBudgetAllocation = useCallback(async (input: UpsertBudgetInput) => {
+    setError(null);
+    const saved = await travelApi.upsertBudget(input);
+    const [freshBudget, freshOverview] = await Promise.all([
+      travelApi.getDepartmentBudget(input.department, input.fiscalYear, input.fiscalQuarter).catch(() => saved),
+      travelApi.getAllBudgets().catch(() => null),
+    ]);
+    setBudget(freshBudget);
+    if (freshOverview) setBudgetOverview(freshOverview);
+    setLastSyncedAt(new Date());
+    return saved;
   }, []);
 
   const refresh = useCallback(async (scope: RefreshScope = 'ALL', id?: string) => {
@@ -185,6 +214,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const updated = await travelApi.submitManagerReview(id, input);
       setManagerQueue((prev) => prev.filter((r) => r.id !== id));
+      setAdminQueue((prev) => prev.map((r) => (r.id === id ? updated : r)));
       setRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
       if (selectedRequest?.id === id) {
         setSelectedRequest(updated);
@@ -258,16 +288,19 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [selectedRequest?.id]);
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const revalidateIfStale = () => {
       if (document.visibilityState === 'visible') {
-        // Automatically revalidate if older than 30 seconds
-        if (!lastSyncedAt || Date.now() - lastSyncedAt.getTime() > 30000) {
+        if (!lastSyncedAt || Date.now() - lastSyncedAt.getTime() > 10000) {
           refresh('ALL');
         }
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('visibilitychange', revalidateIfStale);
+    window.addEventListener('focus', revalidateIfStale);
+    return () => {
+      document.removeEventListener('visibilitychange', revalidateIfStale);
+      window.removeEventListener('focus', revalidateIfStale);
+    };
   }, [refresh, lastSyncedAt]);
 
   return (
@@ -278,6 +311,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         managerQueue,
         adminQueue,
         budget,
+        budgetOverview,
         isLoading,
         isRefreshing,
         lastSyncedAt,
@@ -288,6 +322,8 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         loadManagerQueue,
         loadAdminQueue,
         loadBudget,
+        loadBudgetOverview,
+        saveBudgetAllocation,
         refresh,
         createRequest,
         reviewAsManager,

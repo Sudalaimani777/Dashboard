@@ -23,7 +23,6 @@ import { useTravel } from '../hooks/useTravel';
 import { ProofInspectorViewer } from '../components/audit/ProofInspectorViewer';
 import { AuditTimelineLog } from '../components/audit/AuditTimelineLog';
 import { TravelStatusBadge } from '../components/TravelStatusBadge';
-import { RefreshButton } from '../components/shared/RefreshButton';
 import { RouteLabel } from '../components/shared/RouteLabel';
 import { TravelDetailSkeleton } from '../components/shared/TravelDetailSkeleton';
 import { InlineConfirmBar } from '../components/shared/InlineConfirmBar';
@@ -37,7 +36,7 @@ export const TravelDetailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const fromTab = searchParams.get('tab');
   const { user } = useAuth();
-  const { loadRequestDetails, cancelRequest, isRefreshing, lastSyncedAt } = useTravel();
+  const { loadRequestDetails, cancelRequest } = useTravel();
   const [request, setRequest] = useState<TravelRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -63,16 +62,6 @@ export const TravelDetailPage: React.FC = () => {
     }
     return { label: 'Back to Dashboard', path: '/dashboard' };
   }, [fromTab, user?.role]);
-
-  const handleRefresh = async () => {
-    if (!id) return;
-    try {
-      const data = await loadRequestDetails(id);
-      setRequest(data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const handleCancel = async () => {
     if (!id || !request) return;
@@ -196,11 +185,6 @@ export const TravelDetailPage: React.FC = () => {
               <Ban className="size-3.5" /> Cancel Request
             </button>
           )}
-          <RefreshButton
-            onRefresh={handleRefresh}
-            isRefreshing={isRefreshing}
-            lastSyncedAt={lastSyncedAt}
-          />
           <TravelStatusBadge status={request.status} />
           <span className="text-sm font-mono tabular-nums font-bold text-primary pl-1">
             {formatINR(request.totalExpenses)}

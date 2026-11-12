@@ -19,7 +19,6 @@ import { ManagerDecisionCard } from '../components/audit/ManagerDecisionCard';
 import { AuditTimelineLog } from '../components/audit/AuditTimelineLog';
 import { CategorySpendBreakdownCard } from '../components/employee/CategorySpendBreakdownCard';
 import { TravelStatusBadge } from '../components/TravelStatusBadge';
-import { RefreshButton } from '../components/shared/RefreshButton';
 import { RouteLabel } from '../components/shared/RouteLabel';
 import { TravelDetailSkeleton } from '../components/shared/TravelDetailSkeleton';
 import { formatINR } from '../utils/currency';
@@ -40,7 +39,7 @@ export const ManagerAuditPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const fromTab = searchParams.get('tab');
   const { user } = useAuth();
-  const { loadRequestDetails, isRefreshing, lastSyncedAt } = useTravel();
+  const { loadRequestDetails } = useTravel();
   const [request, setRequest] = useState<TravelRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -64,16 +63,6 @@ export const ManagerAuditPage: React.FC = () => {
       navigate(`/travel/requests/${request.id}?tab=${fromTab || 'past'}`, { replace: true });
     }
   }, [request, user?.id, navigate, fromTab]);
-
-  const handleRefresh = async () => {
-    if (!id) return;
-    try {
-      const data = await loadRequestDetails(id);
-      setRequest(data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   useEffect(() => {
     if (id) {
@@ -113,15 +102,13 @@ export const ManagerAuditPage: React.FC = () => {
           className="flex items-center gap-2 text-xs font-semibold text-muted hover:text-ink transition-colors cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           <ArrowLeft className="size-4" />
-          {fromTab === 'revisions' ? 'Back to Revised Requests' : 'Back to Team Audit Queue'}
+          {user?.role === 'ADMIN'
+            ? 'Back to Governance Hub'
+            : fromTab === 'revisions'
+            ? 'Back to Revised Requests'
+            : 'Back to Team Audit Queue'}
         </button>
         <div className="flex flex-wrap items-center gap-2.5">
-          <RefreshButton
-            onRefresh={handleRefresh}
-            isRefreshing={isRefreshing}
-            lastSyncedAt={lastSyncedAt}
-            showTimestamp={false}
-          />
           <TravelStatusBadge status={request.status} />
           <span className="text-sm font-mono tabular-nums font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-border-warm">
             {formatINR(request.totalExpenses)}

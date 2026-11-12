@@ -13,16 +13,16 @@ export const AuthModeSwitch: React.FC<AuthModeSwitchProps> = ({ currentMode }) =
     <div
       role="tablist"
       aria-label="Authentication mode"
-      className="inline-flex w-full max-w-[380px] items-center rounded-xl bg-[#EFEBE4] p-1 text-xs font-semibold"
+      className="inline-flex w-full max-w-[380px] items-center rounded-xl border border-border-warm bg-surface-subtle p-1 text-xs font-semibold"
     >
       <Link
         to="/signin"
         role="tab"
         aria-selected={isSignIn}
-        className={`flex-1 rounded-lg py-2 text-center transition-all duration-150 ${
+        className={`flex-1 rounded-lg py-2 text-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
           isSignIn
-            ? 'bg-white text-[#2B231D] shadow-xs font-bold'
-            : 'text-[#756F68] hover:text-[#2B231D]'
+            ? 'bg-surface text-ink shadow-xs font-bold'
+            : 'text-muted hover:text-ink'
         }`}
       >
         Sign in
@@ -31,10 +31,10 @@ export const AuthModeSwitch: React.FC<AuthModeSwitchProps> = ({ currentMode }) =
         to="/signup"
         role="tab"
         aria-selected={!isSignIn}
-        className={`flex-1 rounded-lg py-2 text-center transition-all duration-150 ${
+        className={`flex-1 rounded-lg py-2 text-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
           !isSignIn
-            ? 'bg-white text-[#2B231D] shadow-xs font-bold'
-            : 'text-[#756F68] hover:text-[#2B231D]'
+            ? 'bg-surface text-ink shadow-xs font-bold'
+            : 'text-muted hover:text-ink'
         }`}
       >
         Create account

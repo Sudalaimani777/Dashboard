@@ -20,31 +20,29 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({ pa
     'bg-red-400',
     'bg-red-500',
     'bg-amber-500',
-    'bg-[#8A582B]',
+    'bg-primary',
     'bg-emerald-600',
   ];
   const strengthLabels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
 
   return (
-    <div className="mt-2.5 space-y-2 rounded-xl border border-[#E8DFD3] bg-[#FAF8F5] p-3 text-left">
-      {/* Strength Bar */}
-      <div className="flex items-center justify-between text-[11px] font-semibold text-[#756F68]">
+    <div className="mt-2.5 space-y-2 rounded-xl border border-border-warm bg-surface-subtle p-3 text-left">
+      <div className="flex items-center justify-between text-[11px] font-semibold text-muted">
         <span>Password strength</span>
-        <span className="font-medium text-[#2B231D]">{strengthLabels[passedCount]}</span>
+        <span className="font-medium text-ink">{strengthLabels[passedCount]}</span>
       </div>
       <div className="grid grid-cols-4 gap-1.5">
         {[0, 1, 2, 3].map((idx) => (
           <div
             key={idx}
             className={`h-1.5 rounded-full transition-all duration-200 ${
-              idx < passedCount ? strengthColors[passedCount] : 'bg-[#E8DFD3]'
+              idx < passedCount ? strengthColors[passedCount] : 'bg-border-warm'
             }`}
           />
         ))}
       </div>
 
-      {/* Rules Checklist */}
-      <ul className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-[#756F68] sm:grid-cols-2">
+      <ul className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-muted sm:grid-cols-2">
         {RULES.map((rule) => {
           const passed = rule.test(password);
           return (
@@ -52,9 +50,9 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({ pa
               {passed ? (
                 <Check className="size-3.5 text-emerald-600" />
               ) : (
-                <X className="size-3.5 text-[#A59B90]" />
+                <X className="size-3.5 text-faint" />
               )}
-              <span className={passed ? 'text-[#2B231D] font-medium' : 'text-[#A59B90]'}>
+              <span className={passed ? 'text-ink font-medium' : 'text-faint'}>
                 {rule.label}
               </span>
             </li>

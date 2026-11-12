@@ -243,3 +243,39 @@ export function validateResubmitPayload(data: any): ValidationResult {
     errors: errors.length > 0 ? errors : undefined
   };
 }
+
+/**
+ * Validates Admin department quarterly budget allocation upsert payload.
+ */
+export function validateUpsertBudgetPayload(data: any): ValidationResult {
+  const errors: string[] = [];
+
+  if (!data || typeof data !== 'object') {
+    return { valid: false, errors: ['Request body must be a valid JSON object.'] };
+  }
+
+  const department = typeof data.department === 'string' ? data.department.trim() : '';
+  if (department.length < 2 || department.length > 100) {
+    errors.push('Department name must be between 2 and 100 characters.');
+  }
+
+  const fiscalYear = Number(data.fiscalYear ?? data.fiscal_year);
+  if (!Number.isInteger(fiscalYear) || fiscalYear < 2020 || fiscalYear > 2100) {
+    errors.push('Fiscal year must be a valid integer between 2020 and 2100.');
+  }
+
+  const fiscalQuarter = String(data.fiscalQuarter ?? data.fiscal_quarter ?? '').toUpperCase();
+  if (!['Q1', 'Q2', 'Q3', 'Q4'].includes(fiscalQuarter)) {
+    errors.push('Fiscal quarter must be one of Q1, Q2, Q3, or Q4.');
+  }
+
+  const totalAllocation = Number(data.totalAllocation ?? data.total_allocation);
+  if (!Number.isFinite(totalAllocation) || totalAllocation < 0) {
+    errors.push('Total allocation must be a non-negative number.');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors: errors.length > 0 ? errors : undefined
+  };
+}
