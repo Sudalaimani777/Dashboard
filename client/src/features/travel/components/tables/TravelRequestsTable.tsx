@@ -76,8 +76,18 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
                 </div>
 
                 {showRequester && (
-                  <div className="text-xs text-muted">
-                    Requester: <strong className="text-ink font-medium">{req.requesterName}</strong>
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                    <span>
+                      Requester: <strong className="text-ink font-medium">{req.requesterName}</strong>
+                    </span>
+                    {req.requesterRole === 'MANAGER' && (
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                        Manager
+                      </span>
+                    )}
+                    {req.requesterDepartment && (
+                      <span className="text-[10px] text-faint">• {req.requesterDepartment}</span>
+                    )}
                   </div>
                 )}
 

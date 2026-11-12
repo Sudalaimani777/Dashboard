@@ -8,6 +8,8 @@ import type {
   AdminReviewInput,
   ResubmitRequestInput,
   DepartmentBudget,
+  DepartmentBudgetOverview,
+  UpsertBudgetInput,
   TravelStatus,
 } from '../types/travel.types';
 
@@ -170,6 +172,36 @@ class TravelApiService {
       return res.data.data;
     } catch (err) {
       this.handleError(err, 'Failed to fetch department budget');
+    }
+  }
+
+  /**
+   * Lists all configured department budgets and known corporate departments (Admin).
+   */
+  async getAllBudgets(year?: number, quarter?: string): Promise<DepartmentBudgetOverview> {
+    try {
+      const params: Record<string, string | number> = {};
+      if (year) params.year = year;
+      if (quarter) params.quarter = quarter;
+      const res = await travelApiClient.get<ApiResponse<DepartmentBudgetOverview>>(
+        '/travel/budgets/overview',
+        { params }
+      );
+      return res.data.data;
+    } catch (err) {
+      this.handleError(err, 'Failed to fetch department budget overview');
+    }
+  }
+
+  /**
+   * Creates or updates a quarterly department budget allocation (Admin).
+   */
+  async upsertBudget(input: UpsertBudgetInput): Promise<DepartmentBudget> {
+    try {
+      const res = await travelApiClient.put<ApiResponse<DepartmentBudget>>('/travel/budgets', input);
+      return res.data.data;
+    } catch (err) {
+      this.handleError(err, 'Failed to save department budget allocation');
     }
   }
 }

@@ -45,8 +45,18 @@ export const TravelTableRow: React.FC<TravelTableRowProps> = ({
 
       {showRequester && (
         <td className="p-3.5 text-xs text-muted">
-          <span className="font-semibold text-ink">{request.requesterName}</span>
-          <div className="text-[10px] text-faint">{request.requesterEmail}</div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="font-semibold text-ink">{request.requesterName}</span>
+            {request.requesterRole === 'MANAGER' && (
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                Manager
+              </span>
+            )}
+          </div>
+          <div className="text-[10px] text-faint">
+            {request.requesterEmail}
+            {request.requesterDepartment ? ` • ${request.requesterDepartment}` : ''}
+          </div>
         </td>
       )}
 

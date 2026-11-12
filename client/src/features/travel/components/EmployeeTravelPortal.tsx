@@ -12,7 +12,6 @@ import {
 import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
 import { TravelMetricsGrid } from './shared/TravelMetricsGrid';
-import { RefreshButton } from './shared/RefreshButton';
 import { CategorySpendBreakdownCard } from './employee/CategorySpendBreakdownCard';
 import {
   DraftReadinessSummaryCard,
@@ -42,7 +41,7 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
 }) => {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
-  const { requests, loadRequests, refresh, isRefreshing, lastSyncedAt } = useTravel();
+  const { requests, loadRequests } = useTravel();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
   const [pastStatusFilter, setPastStatusFilter] = useState<PastStatusFilter>('ALL');
@@ -281,13 +280,6 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
               </button>
             ))}
           </div>
-
-          <RefreshButton
-            onRefresh={() => refresh('EMPLOYEE')}
-            isRefreshing={isRefreshing}
-            lastSyncedAt={lastSyncedAt}
-            showTimestamp={false}
-          />
         </div>
       </div>
 

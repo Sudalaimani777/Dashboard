@@ -167,6 +167,7 @@ export class TravelRepository {
         u.name AS requester_name,
         u.email AS requester_email,
         u.department AS requester_department,
+        u.role AS requester_role,
         mgr.name AS manager_name,
         adm.name AS admin_name
       FROM travel_requests tr
@@ -370,6 +371,7 @@ export class TravelRepository {
         u.name AS requester_name,
         u.email AS requester_email,
         u.department AS requester_department,
+        u.role AS requester_role,
         mgr.name AS manager_name
       FROM travel_requests tr
       JOIN users u ON tr.user_id = u.id
@@ -576,6 +578,14 @@ export class TravelRepository {
     await query(`UPDATE travel_requests SET ${sets.join(', ')} WHERE id = $${values.length}`, values);
   }
 
+  private getQuarterDateRange(fiscalYear: number, fiscalQuarter: string): { startDate: string; endDate: string } {
+    const q = fiscalQuarter.toUpperCase();
+    if (q === 'Q1') return { startDate: `${fiscalYear}-01-01`, endDate: `${fiscalYear}-03-31` };
+    if (q === 'Q2') return { startDate: `${fiscalYear}-04-01`, endDate: `${fiscalYear}-06-30` };
+    if (q === 'Q3') return { startDate: `${fiscalYear}-07-01`, endDate: `${fiscalYear}-09-30` };
+    return { startDate: `${fiscalYear}-10-01`, endDate: `${fiscalYear}-12-31` };
+  }
+
   /**
    * Fetches the department budget for the given fiscal year and quarter
    * with calculated available headroom and utilization percentage.
@@ -587,22 +597,26 @@ export class TravelRepository {
   ): Promise<DepartmentBudget | null> {
     const res = await query(
       `SELECT * FROM department_budgets 
-       WHERE department = $1 AND fiscal_year = $2 AND fiscal_quarter = $3`,
-      [department, fiscalYear, fiscalQuarter]
+       WHERE LOWER(department) = LOWER($1) AND fiscal_year = $2 AND fiscal_quarter = $3`,
+      [department, fiscalYear, fiscalQuarter.toUpperCase()]
     );
 
     if (res.rows.length === 0) return null;
     const budget = this.mapRowToBudget(res.rows[0]);
+    const { startDate, endDate } = this.getQuarterDateRange(fiscalYear, fiscalQuarter);
 
-    // Fetch actual category breakdown for this department's approved/settled trips
+    // Fetch actual category breakdown for this department's approved/settled trips in this quarter
     const catRes = await query(
       `SELECT te.category, SUM(te.amount) AS total
        FROM travel_expenses te
        JOIN travel_requests tr ON te.travel_request_id = tr.id
        JOIN users u ON tr.user_id = u.id
-       WHERE LOWER(u.department) = LOWER($1) AND tr.status IN ('APPROVED', 'SETTLED')
+       WHERE LOWER(u.department) = LOWER($1)
+         AND tr.status IN ('APPROVED', 'SETTLED')
+         AND tr.departure_date >= $2::date
+         AND tr.departure_date <= $3::date
        GROUP BY te.category`,
-      [department]
+      [department, startDate, endDate]
     );
 
     budget.categoryBreakdown = catRes.rows.map((r: any) => ({
@@ -611,6 +625,81 @@ export class TravelRepository {
     }));
 
     return budget;
+  }
+
+  /**
+   * Fetches all configured department budgets (optionally filtered by year/quarter)
+   * along with the distinct set of corporate departments.
+   */
+  async getAllDepartmentBudgets(filters?: {
+    year?: number;
+    quarter?: string;
+  }): Promise<{ budgets: DepartmentBudget[]; departments: string[] }> {
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (filters?.year) {
+      params.push(filters.year);
+      conditions.push(`fiscal_year = $${params.length}`);
+    }
+    if (filters?.quarter) {
+      params.push(filters.quarter.toUpperCase());
+      conditions.push(`fiscal_quarter = $${params.length}`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const [budgetsRes, deptRes] = await Promise.all([
+      query(
+        `SELECT * FROM department_budgets
+         ${whereClause}
+         ORDER BY fiscal_year DESC, fiscal_quarter DESC, department ASC`,
+        params
+      ),
+      query(
+        `SELECT DISTINCT department FROM (
+           SELECT department FROM department_budgets
+           UNION
+           SELECT department FROM users WHERE department IS NOT NULL AND TRIM(department) != ''
+         ) d
+         ORDER BY department ASC`
+      ),
+    ]);
+
+    return {
+      budgets: budgetsRes.rows.map((row: any) => this.mapRowToBudget(row)),
+      departments: deptRes.rows.map((row: any) => row.department),
+    };
+  }
+
+  /**
+   * Creates or updates a quarterly department budget allocation without resetting utilized_amount.
+   */
+  async upsertDepartmentBudget(input: {
+    department: string;
+    fiscalYear: number;
+    fiscalQuarter: string;
+    totalAllocation: number;
+  }): Promise<DepartmentBudget> {
+    const quarter = input.fiscalQuarter.toUpperCase();
+    // Preserve canonical department casing if an entry already exists case-insensitively
+    const existingRes = await query(
+      `SELECT department FROM department_budgets
+       WHERE LOWER(department) = LOWER($1) AND fiscal_year = $2 AND fiscal_quarter = $3
+       LIMIT 1`,
+      [input.department, input.fiscalYear, quarter]
+    );
+    const canonicalDepartment = existingRes.rows[0]?.department || input.department;
+
+    const res = await query(
+      `INSERT INTO department_budgets (department, fiscal_year, fiscal_quarter, total_allocation, utilized_amount)
+       VALUES ($1, $2, $3, $4, 0.00)
+       ON CONFLICT (department, fiscal_year, fiscal_quarter)
+       DO UPDATE SET total_allocation = EXCLUDED.total_allocation, updated_at = CURRENT_TIMESTAMP
+       RETURNING *`,
+      [canonicalDepartment, input.fiscalYear, quarter, input.totalAllocation]
+    );
+
+    return this.mapRowToBudget(res.rows[0]);
   }
 
   /**
@@ -692,6 +781,8 @@ export class TravelRepository {
       requesterEmail: row.requester_email,
       requester_department: row.requester_department,
       requesterDepartment: row.requester_department,
+      requester_role: row.requester_role,
+      requesterRole: row.requester_role,
       manager_name: row.manager_name,
       managerName: row.manager_name,
       admin_name: row.admin_name,

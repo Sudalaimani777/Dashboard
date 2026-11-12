@@ -283,6 +283,122 @@ async function runTravelApiTests() {
       return res.status === 200 && body.data?.department === 'Engineering' && body.data?.total_allocation > 0;
     });
 
+    // 12. GET /api/travel/budgets/overview -> 200 Admin / 403 Non-Admin
+    await assertApiTest('GET /api/travel/budgets/overview -> 200 for Admin & 403 for Manager', async () => {
+      const forbiddenRes = await fetch(`${baseUrl}/budgets/overview`, { headers: mgrHeaders });
+      if (forbiddenRes.status !== 403) return false;
+
+      const okRes = await fetch(`${baseUrl}/budgets/overview?year=2026&quarter=Q4`, { headers: admHeaders });
+      const okBody = await okRes.json();
+      return (
+        okRes.status === 200 &&
+        Array.isArray(okBody.data?.budgets) &&
+        Array.isArray(okBody.data?.departments) &&
+        okBody.data.budgets.some((b: any) => b.department === 'Engineering')
+      );
+    });
+
+    // 13. PUT /api/travel/budgets -> Upsert & RBAC & Validation
+    const testDept = `QA_${timestamp}`;
+    await assertApiTest('PUT /api/travel/budgets -> 403 non-admin, 400 invalid, 200 Admin upsert create+update', async () => {
+      const forbiddenRes = await fetch(`${baseUrl}/budgets`, {
+        method: 'PUT',
+        headers: mgrHeaders,
+        body: JSON.stringify({ department: testDept, fiscalYear: 2026, fiscalQuarter: 'Q3', totalAllocation: 900000 })
+      });
+      if (forbiddenRes.status !== 403) return false;
+
+      const invalidRes = await fetch(`${baseUrl}/budgets`, {
+        method: 'PUT',
+        headers: admHeaders,
+        body: JSON.stringify({ department: testDept, fiscalYear: 2026, fiscalQuarter: 'Q5', totalAllocation: -100 })
+      });
+      if (invalidRes.status !== 400) return false;
+
+      const createRes = await fetch(`${baseUrl}/budgets`, {
+        method: 'PUT',
+        headers: admHeaders,
+        body: JSON.stringify({ department: testDept, fiscalYear: 2026, fiscalQuarter: 'Q3', totalAllocation: 900000 })
+      });
+      const createBody = await createRes.json();
+      if (createRes.status !== 200 || Number(createBody.data?.totalAllocation) !== 900000) return false;
+
+      const updateRes = await fetch(`${baseUrl}/budgets`, {
+        method: 'PUT',
+        headers: admHeaders,
+        body: JSON.stringify({ department: testDept, fiscalYear: 2026, fiscalQuarter: 'Q3', totalAllocation: 1250000 })
+      });
+      const updateBody = await updateRes.json();
+      return updateRes.status === 200 && Number(updateBody.data?.totalAllocation) === 1250000;
+    });
+
+    // 14 & 15. Manager personal travel appears in Admin Queue with requesterRole='MANAGER' & Admin advances it
+    let mgrPersonalReqId = '';
+    await assertApiTest('Admin Queue exposes Manager personal PENDING_MANAGER_REVIEW with requesterRole & Admin advances', async () => {
+      const createRes = await fetch(`${baseUrl}/requests`, {
+        method: 'POST',
+        headers: mgrHeaders,
+        body: JSON.stringify({
+          travel_type: 'UPCOMING',
+          title: 'Manager Personal Summit',
+          purpose: 'Executive engineering leadership forum',
+          project_code: 'MGR-EXEC-1',
+          origin: 'Bengaluru',
+          destination: 'Hyderabad',
+          departure_date: '2026-11-28',
+          return_date: '2026-11-29',
+          emergency_contact_name: 'HR Desk',
+          emergency_contact_phone: '+919988776655',
+          expenses: [
+            { category: 'FLIGHT', merchant: 'Air India', amount: 11000, expense_date: '2026-11-28' }
+          ]
+        })
+      });
+      const created = await createRes.json();
+      mgrPersonalReqId = created.data?.id;
+      if (!mgrPersonalReqId) return false;
+
+      // Manager self-review must be blocked
+      const selfRes = await fetch(`${baseUrl}/requests/${mgrPersonalReqId}/manager-review`, {
+        method: 'POST',
+        headers: mgrHeaders,
+        body: JSON.stringify({ action: 'APPROVE', remarks: 'Trying self-approval' })
+      });
+      if (selfRes.status !== 400) return false;
+
+      // Admin queue must include it with requesterRole === 'MANAGER'
+      const queueRes = await fetch(`${baseUrl}/admin-queue`, { headers: admHeaders });
+      const queueBody = await queueRes.json();
+      const found = (queueBody.data || []).find((r: any) => r.id === mgrPersonalReqId);
+      if (!found || found.requesterRole !== 'MANAGER' || found.status !== 'PENDING_MANAGER_REVIEW') {
+        return false;
+      }
+
+      // Admin advances Tier 1 on Manager's personal request
+      const advanceRes = await fetch(`${baseUrl}/requests/${mgrPersonalReqId}/manager-review`, {
+        method: 'POST',
+        headers: admHeaders,
+        body: JSON.stringify({ action: 'APPROVE', remarks: 'Tier 1 cleared by Admin for Manager travel.' })
+      });
+      const advanceBody = await advanceRes.json();
+      return advanceRes.status === 200 && advanceBody.data?.status === 'PENDING_ADMIN_APPROVAL';
+    });
+
+    // 16. Admin REJECT transitions PENDING_ADMIN_APPROVAL -> REJECTED
+    await assertApiTest('POST /requests/:id/admin-review REJECT -> REJECTED', async () => {
+      if (!mgrPersonalReqId) return false;
+      const rejectRes = await fetch(`${baseUrl}/requests/${mgrPersonalReqId}/admin-review`, {
+        method: 'POST',
+        headers: admHeaders,
+        body: JSON.stringify({ action: 'REJECT', remarks: 'Out of policy window for summit.' })
+      });
+      const rejectBody = await rejectRes.json();
+      return rejectRes.status === 200 && rejectBody.data?.status === 'REJECTED';
+    });
+
+    // Clean up test budget row
+    await pool.query('DELETE FROM department_budgets WHERE department = $1', [testDept]);
+
     console.log('\n==========================================');
     console.log(`📊 Summary: ${passed}/${total} API Tests Passed`);
     console.log('==========================================\n');

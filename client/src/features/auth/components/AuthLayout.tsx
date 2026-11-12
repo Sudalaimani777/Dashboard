@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
+import { AlertCircle, X } from 'lucide-react';
 import { AuthModeSwitch } from './AuthModeSwitch';
-import { AlertCircle } from 'lucide-react';
 
 export interface AuthLayoutProps {
   children: React.ReactNode;
@@ -21,78 +22,73 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
   error,
   onClearError,
 }) => {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <div className="min-h-screen bg-[#F7F4EE] text-[#2B231D] flex flex-col justify-between px-4 py-8 sm:px-6">
-      {/* Centered TF Brand Logo */}
+    <div className="min-h-screen bg-canvas text-ink flex flex-col justify-between px-4 py-8 sm:px-6">
+      {/* Wordmark Header */}
       <header className="flex items-center justify-center mx-auto w-full max-w-[440px] pt-4 pb-6">
         <Link
           to="/signin"
           aria-label="TripFlow Home"
-          className="flex size-11 items-center justify-center rounded-2xl bg-[#2B231D] text-white font-bold text-sm shadow-sm ring-1 ring-[#8A582B]/20 transition-opacity hover:opacity-85"
+          className="inline-flex items-center gap-2.5 rounded-xl px-2 py-1 transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
-          TF
+          <span className="flex size-12 items-center justify-center rounded-lg bg-primary text-white font-bold text-md tracking-wide shadow-2xs">
+            TF
+          </span>
         </Link>
       </header>
 
-      {/* Centered Form Card Container */}
+      {/* Centered Form Container */}
       <main className="my-auto w-full max-w-[440px] mx-auto py-2">
-        {/* Mode Switch Tabs (Sign in / Create account) */}
         {mode ? (
-          <div className="mb-6 flex justify-center">
+          <div className="mb-5 flex justify-center">
             <AuthModeSwitch currentMode={mode} />
           </div>
         ) : null}
 
-        <div className="rounded-2xl border border-[#E8DFD3] bg-white p-6 sm:p-8 shadow-sm shadow-[#8A582B]/5 text-left">
-          {/* Title & Subtitle */}
-          <div className="mb-6 text-left">
-            <h1 className="text-2xl font-bold tracking-tight text-[#2B231D] sm:text-[26px]">
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="rounded-xl border border-border-warm bg-surface p-6 sm:p-8 shadow-xs text-left"
+        >
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[26px]">
               {title}
             </h1>
-            <p className="mt-1.5 text-xs sm:text-[13px] text-[#756F68] leading-relaxed">
+            <p className="mt-1.5 text-xs sm:text-[13px] text-muted leading-relaxed">
               {subtitle}
             </p>
           </div>
 
-          {/* Error Banner */}
           {error ? (
             <div
               role="alert"
-              className="mb-6 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50/80 p-3.5 text-xs text-red-700 shadow-xs"
+              className="mb-6 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50/80 p-3.5 text-xs text-destructive"
             >
-              <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-600" />
+              <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
               <div className="flex-1 font-medium">{error}</div>
               {onClearError ? (
                 <button
                   type="button"
                   onClick={onClearError}
                   aria-label="Dismiss error"
-                  className="text-red-500 hover:text-red-800 cursor-pointer"
+                  className="p-0.5 rounded-md text-destructive/80 hover:text-destructive cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
                 >
-                  ✕
+                  <X className="size-3.5" />
                 </button>
               ) : null}
             </div>
           ) : null}
 
-          {/* Active Content */}
           {children}
-        </div>
+        </motion.div>
       </main>
 
-      {/* Bottom Footer Notice */}
-      <footer className="pt-8 pb-4 text-center text-xs text-[#A59B90]">
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-          <span>TripFlow Governance © 2026</span>
-          <span>·</span>
-          <a href="#privacy" className="hover:text-[#2B231D] transition-colors">
-            Privacy Policy
-          </a>
-          <span>·</span>
-          <a href="#terms" className="hover:text-[#2B231D] transition-colors">
-            Terms of Service
-          </a>
-        </div>
+      {/* Footer */}
+      <footer className="pt-8 pb-4 text-center text-xs text-faint">
+        <span>TripFlow © 2026 · Corporate Travel &amp; Expense</span>
       </footer>
     </div>
   );

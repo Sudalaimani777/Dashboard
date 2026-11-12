@@ -81,6 +81,7 @@ export interface TravelRequest {
   requesterName?: string;
   requesterEmail?: string;
   requesterDepartment?: string;
+  requesterRole?: TravelRole;
   managerName?: string;
   adminName?: string;
   expenses?: TravelExpenseItem[];
@@ -148,6 +149,8 @@ export interface ResubmitRequestInput {
   }>;
 }
 
+export type FiscalQuarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
+
 export interface DepartmentBudget {
   id: string;
   department: string;
@@ -160,6 +163,18 @@ export interface DepartmentBudget {
   categoryBreakdown?: Array<{ category: string; total: number }>;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface UpsertBudgetInput {
+  department: string;
+  fiscalYear: number;
+  fiscalQuarter: FiscalQuarter;
+  totalAllocation: number;
+}
+
+export interface DepartmentBudgetOverview {
+  budgets: DepartmentBudget[];
+  departments: string[];
 }
 
 export interface ApiResponse<T = unknown> {

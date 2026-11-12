@@ -199,6 +199,40 @@ export class TravelController {
       return sendError(res, err.message, 500);
     }
   };
+
+  /**
+   * GET /api/travel/budgets/overview
+   * Lists all configured department budgets and known departments for executive oversight.
+   */
+  getBudgetOverview = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const year = req.query.year ? Number(req.query.year) : undefined;
+      const quarter = req.query.quarter ? String(req.query.quarter).toUpperCase() : undefined;
+
+      const overview = await this.service.getBudgetOverview(
+        year && Number.isInteger(year) ? year : undefined,
+        quarter && ['Q1', 'Q2', 'Q3', 'Q4'].includes(quarter) ? quarter : undefined
+      );
+
+      return sendSuccess(res, overview, 'Department budget overview fetched successfully');
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
+    }
+  };
+
+  /**
+   * PUT /api/travel/budgets
+   * Creates or updates a quarterly department travel budget allocation.
+   */
+  upsertDepartmentBudget = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const budget = await this.service.upsertDepartmentBudget(req.body);
+      return sendSuccess(res, budget, 'Department budget allocation saved successfully');
+    } catch (err: any) {
+      const status = err.message.includes('validation') ? 400 : 500;
+      return sendError(res, err.message, status);
+    }
+  };
 }
 
 export const travelController = new TravelController();

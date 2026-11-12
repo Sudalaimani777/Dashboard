@@ -86,6 +86,8 @@ export interface TravelRequest {
   requesterEmail?: string;
   requester_department?: string;
   requesterDepartment?: string;
+  requester_role?: TravelRole;
+  requesterRole?: TravelRole;
   manager_name?: string;
   managerName?: string;
   admin_name?: string;

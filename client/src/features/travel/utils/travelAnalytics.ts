@@ -1,4 +1,9 @@
-import type { ExpenseCategory, TravelExpenseItem, TravelRequest } from '../types/travel.types';
+import type {
+  ExpenseCategory,
+  FiscalQuarter,
+  TravelExpenseItem,
+  TravelRequest,
+} from '../types/travel.types';
 
 export interface CategorySummary {
   category: ExpenseCategory;
@@ -183,4 +188,22 @@ export function exportRequestsToCsv(requests: TravelRequest[], filename = 'trave
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Derives fiscal year and quarter (Q1-Q4) from an ISO date string, falling back to current date.
+ */
+export function getFiscalQuarterFromDate(dateStr?: string): {
+  year: number;
+  quarter: FiscalQuarter;
+} {
+  const parsed = dateStr ? new Date(dateStr) : new Date();
+  const safeDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  const year = safeDate.getFullYear();
+  const month = safeDate.getMonth() + 1;
+  let quarter: FiscalQuarter = 'Q4';
+  if (month >= 1 && month <= 3) quarter = 'Q1';
+  else if (month >= 4 && month <= 6) quarter = 'Q2';
+  else if (month >= 7 && month <= 9) quarter = 'Q3';
+  return { year, quarter };
 }

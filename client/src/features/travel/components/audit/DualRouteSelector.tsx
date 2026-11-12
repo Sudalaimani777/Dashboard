@@ -34,7 +34,7 @@ export const DualRouteSelector: React.FC<DualRouteSelectorProps> = ({ value, onC
               {value === 'MANAGER' && <span className="size-1.5 rounded-full bg-white" />}
             </span>
           </div>
-          <span className="text-[10px] text-muted mt-1.5 leading-relaxed">
+          <span className="text-[11px] text-muted mt-1.5 leading-relaxed">
             Manager coordinates revisions and assists employee.
           </span>
         </button>
@@ -58,17 +58,15 @@ export const DualRouteSelector: React.FC<DualRouteSelectorProps> = ({ value, onC
               {value === 'EMPLOYEE' && <span className="size-1.5 rounded-full bg-white" />}
             </span>
           </div>
-          <span className="text-[10px] text-muted mt-1.5 leading-relaxed">
+          <span className="text-[11px] text-muted mt-1.5 leading-relaxed">
             Employee updates expenses and proofs directly.
           </span>
         </button>
       </div>
 
-      <div className="p-2.5 bg-surface-subtle rounded-lg border border-border-warm flex items-center gap-2 text-[10px] text-muted">
-        <span>
-          <strong>Invariant:</strong> In both routes, resubmissions strictly return to the Line Manager first for re-verification.
-        </span>
-      </div>
+      <p className="text-[11px] text-muted leading-relaxed">
+        Resubmissions in either route return to the Line Manager first for re-verification.
+      </p>
     </div>
   );
 };

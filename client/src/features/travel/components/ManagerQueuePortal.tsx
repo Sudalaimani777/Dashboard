@@ -6,7 +6,6 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
 import { TravelMetricsGrid } from './shared/TravelMetricsGrid';
-import { RefreshButton } from './shared/RefreshButton';
 import { CategorySpendBreakdownCard } from './employee/CategorySpendBreakdownCard';
 import {
   DraftReadinessSummaryCard,
@@ -43,8 +42,7 @@ export const ManagerQueuePortal: React.FC<ManagerQueuePortalProps> = ({ activeTa
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const { user } = useAuth();
-  const { managerQueue, requests, loadManagerQueue, loadRequests, refresh, isRefreshing, lastSyncedAt } =
-    useTravel();
+  const { managerQueue, requests, loadManagerQueue, loadRequests } = useTravel();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<ManagerTypeFilter>('ALL');
@@ -243,13 +241,6 @@ export const ManagerQueuePortal: React.FC<ManagerQueuePortalProps> = ({ activeTa
               Reset
             </button>
           )}
-
-          <RefreshButton
-            onRefresh={() => refresh('MANAGER')}
-            isRefreshing={isRefreshing}
-            lastSyncedAt={lastSyncedAt}
-            showTimestamp={false}
-          />
 
           {activeTab === 'past' && historyRequests.length > 0 && (
             <button

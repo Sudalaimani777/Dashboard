@@ -45,18 +45,18 @@ export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({ budget
   const chartConfig = useMemo(() => ({
     utilized: {
       label: 'Utilized Spend',
-      color: isHeadroomLow ? '#d97706' : '#8A582B',
+      color: isHeadroomLow ? '#C2782D' : '#8A582B',
     },
     headroom: {
       label: 'Available Headroom',
-      color: '#059669',
+      color: '#3F624D',
     },
   }) satisfies ChartConfig, [isHeadroomLow]);
 
   return (
     <Card className="flex flex-col bg-surface border border-border-warm rounded-xl shadow-xs">
-      <CardHeader className="items-center pb-2">
-        <CardTitle className="text-base font-bold text-ink">Headroom Radial Gauge</CardTitle>
+      <CardHeader className="items-start border-b border-border-warm pb-3">
+        <CardTitle className="text-sm font-semibold text-ink">Quarterly Budget Headroom</CardTitle>
         <CardDescription className="text-xs text-muted">
           {budget?.department || 'Engineering'} • {budget?.fiscalQuarter || 'Q4'} {budget?.fiscalYear || 2026}
         </CardDescription>
@@ -129,17 +129,17 @@ export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({ budget
         </ChartContainer>
       </CardContent>
 
-      <CardFooter className="flex-col gap-1.5 text-xs pt-2">
+      <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t border-border-warm/60">
         <div className="flex items-center gap-1.5 leading-none font-semibold text-ink">
           {isHeadroomLow ? (
             <>
-              <AlertTriangle className="size-4 text-amber-600 shrink-0" />
-              <span className="text-amber-700">Headroom Low ({utilizationPercentage.toFixed(1)}% utilized)</span>
+              <AlertTriangle className="size-3.5 text-amber-700 shrink-0" />
+              <span className="text-amber-800">Headroom Low ({utilizationPercentage.toFixed(1)}% utilized)</span>
             </>
           ) : (
             <>
-              <span className="text-emerald-700">{(100 - utilizationPercentage).toFixed(1)}% Headroom Safe</span>
-              <TrendingUp className="size-3.5 text-emerald-600" />
+              <TrendingUp className="size-3.5 text-[#3F624D] shrink-0" />
+              <span className="text-[#3F624D]">{(100 - utilizationPercentage).toFixed(1)}% Headroom Available</span>
             </>
           )}
         </div>

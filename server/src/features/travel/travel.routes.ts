@@ -46,3 +46,5 @@ travelRoutes.get(
 
 // 4. Financial & Budget Headroom
 travelRoutes.get('/budgets', requireAuth, travelController.getDepartmentBudget);
+travelRoutes.get('/budgets/overview', requireAuth, requireRole(['ADMIN']), travelController.getBudgetOverview);
+travelRoutes.put('/budgets', requireAuth, requireRole(['ADMIN']), travelController.upsertDepartmentBudget);

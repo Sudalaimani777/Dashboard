@@ -6,6 +6,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Mail } from 'lucide-react';
 import { forgotPasswordSchema, type ForgotPasswordInput } from '../schemas/auth.schema';
 import { authApi } from '../services/auth.api';
 import { AuthLayout } from './AuthLayout';
+import { AuthField } from './AuthField';
 
 export const ForgotPasswordCard: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,17 +46,14 @@ export const ForgotPasswordCard: React.FC = () => {
   if (submittedEmail) {
     return (
       <AuthLayout
-        showBrandPanel={false}
         title="Check your inbox"
-        subtitle="Password recovery instructions have been dispatched."
+        subtitle="Password recovery instructions have been sent."
       >
         <div className="space-y-5 text-left">
-          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-900 shadow-xs">
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-900">
             <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
             <div className="space-y-1">
-              <p className="font-semibold text-emerald-950">
-                Recovery link dispatched
-              </p>
+              <p className="font-semibold text-emerald-950">Recovery link sent</p>
               <p className="text-emerald-800 leading-relaxed">
                 If an account exists for{' '}
                 <strong className="font-semibold text-emerald-950">{submittedEmail}</strong>,
@@ -68,13 +66,13 @@ export const ForgotPasswordCard: React.FC = () => {
             <button
               type="button"
               onClick={handleUseDifferentEmail}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-[#E8DFD3] bg-white text-xs font-semibold text-[#2B231D] hover:bg-[#FAF8F5] transition-colors shadow-xs"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-border-warm bg-surface text-xs font-semibold text-ink hover:bg-surface-subtle transition-colors cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               Use a different email
             </button>
             <Link
               to="/signin"
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#2B231D] text-white text-xs font-semibold hover:bg-[#3D332B] transition-colors shadow-xs"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-all shadow-xs active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               <ArrowLeft className="size-4" />
               <span>Back to sign in</span>
@@ -87,42 +85,26 @@ export const ForgotPasswordCard: React.FC = () => {
 
   return (
     <AuthLayout
-      showBrandPanel={false}
       title="Reset your password"
-      subtitle="Enter your corporate email address to receive password reset instructions."
+      subtitle="Enter your work email to receive a password reset link."
       error={errorMessage}
       onClearError={() => setErrorMessage(null)}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left" noValidate>
-        {/* Work Email */}
-        <div className="space-y-1.5">
-          <label htmlFor="forgot-email" className="block text-xs font-semibold text-[#2B231D]">
-            Work email
-          </label>
-          <div className="relative">
-            <input
-              id="forgot-email"
-              type="email"
-              autoComplete="email"
-              placeholder="ada@halden.co"
-              className={`w-full h-11 px-3.5 rounded-xl border bg-white text-sm text-[#2B231D] placeholder:text-[#A59B90] transition-colors focus:outline-none focus:ring-2 ${
-                errors.email
-                  ? 'border-red-400 focus:border-red-500 focus:ring-red-100'
-                  : 'border-[#E8DFD3] hover:border-[#D4C4B5] focus:border-[#8A582B] focus:ring-[#8A582B]/15'
-              }`}
-              {...register('email')}
-            />
-          </div>
-          {errors.email && (
-            <p className="text-xs text-red-600 font-medium">{errors.email.message}</p>
-          )}
-        </div>
+        <AuthField
+          id="forgot-email"
+          type="email"
+          label="Work email"
+          autoComplete="email"
+          placeholder="name@company.com"
+          error={errors.email?.message}
+          {...register('email')}
+        />
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-[#D95A2B] hover:bg-[#C24E22] text-white font-semibold text-sm transition-all duration-150 shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-sm transition-all duration-150 shadow-xs cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <>
@@ -137,11 +119,10 @@ export const ForgotPasswordCard: React.FC = () => {
           )}
         </button>
 
-        {/* Return to Sign in */}
         <div className="pt-2 text-center">
           <Link
             to="/signin"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#8A582B] hover:text-[#754820] hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover hover:underline rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           >
             <ArrowLeft className="size-3.5" />
             <span>Return to sign in</span>

@@ -13,7 +13,8 @@ import {
   validateCreateRequestPayload,
   validateManagerReviewPayload,
   validateAdminReviewPayload,
-  validateResubmitPayload
+  validateResubmitPayload,
+  validateUpsertBudgetPayload
 } from './travel.validation.js';
 
 export interface ManagerReviewOptions {
@@ -445,6 +446,43 @@ export class TravelService {
    */
   async getDepartmentBudget(department: string, year = 2026, quarter = 'Q4') {
     return this.repo.getDepartmentBudget(department, year, quarter);
+  }
+
+  /**
+   * Lists all configured department budgets and known corporate departments.
+   */
+  async getBudgetOverview(year?: number, quarter?: string) {
+    return this.repo.getAllDepartmentBudgets({ year, quarter });
+  }
+
+  /**
+   * Creates or updates a quarterly department travel budget allocation.
+   */
+  async upsertDepartmentBudget(input: {
+    department: string;
+    fiscalYear?: number;
+    fiscal_year?: number;
+    fiscalQuarter?: string;
+    fiscal_quarter?: string;
+    totalAllocation?: number;
+    total_allocation?: number;
+  }) {
+    const validation = validateUpsertBudgetPayload(input);
+    if (!validation.valid) {
+      throw new Error(`Budget validation failed: ${validation.errors?.join(', ')}`);
+    }
+
+    const department = input.department.trim();
+    const fiscalYear = Number(input.fiscalYear ?? input.fiscal_year);
+    const fiscalQuarter = String(input.fiscalQuarter ?? input.fiscal_quarter).toUpperCase();
+    const totalAllocation = Number(input.totalAllocation ?? input.total_allocation);
+
+    return this.repo.upsertDepartmentBudget({
+      department,
+      fiscalYear,
+      fiscalQuarter,
+      totalAllocation
+    });
   }
 
   private getFiscalQuarter(date: Date): string {
