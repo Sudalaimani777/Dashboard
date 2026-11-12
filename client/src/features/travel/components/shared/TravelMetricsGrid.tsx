@@ -63,7 +63,7 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
     <div className={`grid grid-cols-1 gap-4 ${gridCols}`}>
       {metrics.map((m, idx) => {
         const clickable = Boolean(m.onClick);
-        const cardClassName = `relative rounded-xl border p-4 flex flex-col justify-between gap-2.5 text-left transition-all ${
+        const cardClassName = `relative rounded-xl border p-4 flex flex-col gap-2.5 text-left transition-all ${
           m.isCurrency || m.tone === 'primary'
             ? 'border-primary/35 bg-surface shadow-xs'
             : m.tone === 'amber'
@@ -89,7 +89,7 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
               </div>
             </div>
 
-            <div className="w-full">
+            <div className="w-full my-auto">
               <span
                 className={`text-2xl font-bold tracking-tight block tabular-nums ${
                   m.isCurrency ? 'font-mono text-primary' : 'text-ink'

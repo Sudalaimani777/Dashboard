@@ -7,6 +7,7 @@ import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
 import { TravelMetricsGrid } from './shared/TravelMetricsGrid';
 import { DepartmentBudgetsPage } from '../pages/DepartmentBudgetsPage';
+import { AdminUsersPage } from '../../users/pages/AdminUsersPage';
 import { formatINR } from '../utils/currency';
 import { exportRequestsToCsv } from '../utils/travelAnalytics';
 import {
@@ -41,7 +42,7 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
   const [ledgerStatusFilter, setLedgerStatusFilter] = useState<AdminLedgerStatusFilter>('ALL');
 
   useEffect(() => {
-    if (activeTab !== 'budgets') {
+    if (activeTab !== 'budgets' && activeTab !== 'users') {
       loadAdminQueue();
     }
   }, [activeTab, loadAdminQueue]);
@@ -124,6 +125,10 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
 
   if (activeTab === 'budgets') {
     return <DepartmentBudgetsPage />;
+  }
+
+  if (activeTab === 'users') {
+    return <AdminUsersPage />;
   }
 
   const pageMeta =

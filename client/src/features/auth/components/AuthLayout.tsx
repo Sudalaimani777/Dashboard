@@ -2,21 +2,17 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { AlertCircle, X } from 'lucide-react';
-import { AuthModeSwitch } from './AuthModeSwitch';
 
 export interface AuthLayoutProps {
   children: React.ReactNode;
-  mode?: 'sign-in' | 'sign-up' | null;
   title: string;
   subtitle: string;
   error?: string | null;
   onClearError?: () => void;
-  showBrandPanel?: boolean;
 }
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({
   children,
-  mode,
   title,
   subtitle,
   error,
@@ -41,12 +37,6 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
 
       {/* Centered Form Container */}
       <main className="my-auto w-full max-w-[440px] mx-auto py-2">
-        {mode ? (
-          <div className="mb-5 flex justify-center">
-            <AuthModeSwitch currentMode={mode} />
-          </div>
-        ) : null}
-
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
