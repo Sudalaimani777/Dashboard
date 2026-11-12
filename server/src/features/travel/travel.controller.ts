@@ -43,7 +43,11 @@ export class TravelController {
       }
 
       const statusFilter = req.query.status as TravelStatus | undefined;
-      const requests = await this.service.getScopedRequests(userId, role, statusFilter);
+      const isPersonal = req.query.scope === 'personal' || req.query.personal === 'true';
+
+      const requests = isPersonal
+        ? await this.service.getMyRequests(userId, statusFilter)
+        : await this.service.getScopedRequests(userId, role, statusFilter);
       return sendSuccess(res, requests, 'Travel requests fetched successfully');
     } catch (err: any) {
       return sendError(res, err.message, 500);

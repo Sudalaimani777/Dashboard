@@ -33,14 +33,22 @@ export interface TravelExpenseItem {
 export interface TravelTimelineEvent {
   id: string;
   travelRequestId?: string;
+  travel_request_id?: string;
   actorId?: string;
-  actorRole: TravelRole;
+  actor_id?: string;
+  actorRole?: TravelRole | string;
+  actor_role?: TravelRole | string;
   actorName?: string;
-  eventType: string;
+  actor_name?: string;
+  eventType?: string;
+  event_type?: string;
   fromStatus?: string | null;
-  toStatus: string;
+  from_status?: string | null;
+  toStatus?: string;
+  to_status?: string;
   remarks?: string | null;
-  createdAt: string;
+  createdAt?: string;
+  created_at?: string;
 }
 
 export interface TravelRequest {
@@ -100,6 +108,7 @@ export interface CreateTravelRequestInput {
     notes?: string | null;
   }>;
   currency?: string;
+  isDraft?: boolean;
 }
 
 export interface ManagerReviewInput {
@@ -118,9 +127,15 @@ export interface AdminReviewInput {
 export interface ResubmitRequestInput {
   remarks?: string;
   employee_response_notes?: string;
+  title?: string;
+  purpose?: string;
+  origin?: string;
+  destination?: string;
   departureDate?: string;
   returnDate?: string;
   supportingDocUrl?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
   expenses?: Array<{
     category: ExpenseCategory;
     merchant: string;
@@ -140,6 +155,7 @@ export interface DepartmentBudget {
   utilizedAmount: number;
   availableHeadroom: number;
   utilizationPercentage: number;
+  categoryBreakdown?: Array<{ category: string; total: number }>;
   createdAt?: string;
   updatedAt?: string;
 }

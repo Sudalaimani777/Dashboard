@@ -47,11 +47,14 @@ class TravelApiService {
   }
 
   /**
-   * Fetch current authenticated user's travel requests (or scoped requests).
+   * Fetch current authenticated user's personal travel requests.
    */
   async getMyRequests(statusFilter?: TravelStatus): Promise<TravelRequest[]> {
     try {
-      const params = statusFilter ? { status: statusFilter } : {};
+      const params: Record<string, string> = { scope: 'personal' };
+      if (statusFilter) {
+        params.status = statusFilter;
+      }
       const res = await travelApiClient.get<ApiResponse<TravelRequest[]>>('/travel/requests', { params });
       return res.data.data;
     } catch (err) {

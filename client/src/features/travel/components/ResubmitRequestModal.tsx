@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, Plus, Trash2, Loader2, ShieldAlert } from 'lucide-react';
+import { X, Plus, Trash2, Loader2 } from 'lucide-react';
 import { formatINR } from '../utils/currency';
 import type { TravelRequest, ResubmitRequestInput } from '../types/travel.types';
 
 const resubmitSchema = z.object({
-  remarks: z.string().min(3, 'Please describe what you revised'),
+  remarks: z.string().min(3, 'Please describe what alterations you made'),
   departureDate: z.string().min(1, 'Departure date required'),
   returnDate: z.string().min(1, 'Return date required'),
-  supportingDocUrl: z.string().url('Must be valid document URL'),
+  supportingDocUrl: z.string().url('Must be a valid document URL'),
   expenses: z.array(
     z.object({
       category: z.enum(['FLIGHT', 'HOTEL', 'MEALS_PER_DIEM', 'TRANSIT', 'MISC'] as const),
@@ -40,10 +41,19 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const { register, control, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(resubmitSchema),
     values: request ? {
-      remarks: 'Updated itemized expenses and attached fresh receipt proof.',
+      remarks: '',
       departureDate: request.departureDate ? request.departureDate.split('T')[0] : '',
       returnDate: request.returnDate ? request.returnDate.split('T')[0] : '',
       supportingDocUrl: request.supportingDocUrl || '',
@@ -54,7 +64,7 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
         expenseDate: e.expenseDate ? e.expenseDate.split('T')[0] : '',
         receiptImageUrl: e.receiptImageUrl || '',
         notes: e.notes || '',
-      })) || [{ category: 'FLIGHT', merchant: 'Airline', amount: 10000, expenseDate: new Date().toISOString().split('T')[0], receiptImageUrl: '', notes: '' }],
+      })) || [{ category: 'MISC', merchant: '', amount: 0, expenseDate: new Date().toISOString().split('T')[0], receiptImageUrl: '', notes: '' }],
     } : undefined,
   });
 
@@ -62,9 +72,8 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
   const watchedExpenses = watch('expenses') || [];
   const totalAmount = watchedExpenses.reduce((sum, exp) => sum + (Number(exp?.amount) || 0), 0);
 
-  if (!isOpen || !request) return null;
-
   const handleFormSubmit = async (values: FormValues) => {
+    if (!request) return;
     setError(null);
     try {
       await onSubmit(request.id, {
@@ -82,72 +91,122 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-      <div className="bg-white rounded-2xl border border-[#E8DFD3] max-w-xl w-full p-6 max-h-[90vh] overflow-y-auto flex flex-col gap-4 shadow-xl">
-        <div className="flex justify-between items-center border-b border-[#E8DFD3] pb-3">
-          <h2 className="text-base font-bold text-[#2B231D]">Fix & Resubmit Travel Request</h2>
-          <button type="button" onClick={onClose} className="p-1 rounded-md text-[#A0988E] hover:text-[#2B231D]">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <AnimatePresence>
+      {isOpen && request && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-ink/40 backdrop-blur-xs"
+          />
 
-        {error && <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg">{error}</div>}
-
-        <div className="p-3 bg-[#FEF9E7] border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-[#B9770E]">
-          <ShieldAlert className="w-4 h-4 shrink-0" />
-          <span>Resubmission returns directly to your Line Manager for re-audit.</span>
-        </div>
-
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold">Describe Alterations Made</label>
-            <textarea {...register('remarks')} rows={2} className="p-2.5 rounded-xl border border-[#E8DFD3] text-xs" />
-            {errors.remarks && <p className="text-[11px] text-red-600">{errors.remarks.message}</p>}
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold">Updated Proof URL</label>
-            <input type="url" {...register('supportingDocUrl')} className="p-2.5 rounded-xl border border-[#E8DFD3] text-xs" />
-            {errors.supportingDocUrl && <p className="text-[11px] text-red-600">{errors.supportingDocUrl.message}</p>}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold">Itemized Expenses (Total: {formatINR(totalAmount)})</span>
+          {/* Dialog Body */}
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resubmit-modal-title"
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 8 }}
+            transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
+            className="relative bg-surface rounded-xl border border-border-warm max-w-xl w-full p-6 max-h-[90vh] overflow-y-auto flex flex-col gap-4 shadow-xl z-10"
+          >
+            <div className="flex justify-between items-center border-b border-border-warm pb-3">
+              <div>
+                <h2 id="resubmit-modal-title" className="text-base font-bold text-ink">
+                  Fix & Resubmit Travel Request
+                </h2>
+                <p className="text-xs text-muted mt-0.5">
+                  Request #{request.id.slice(0, 8)} • {request.title}
+                </p>
+              </div>
               <button
                 type="button"
-                onClick={() => append({ category: 'MISC', merchant: '', amount: 1000, expenseDate: new Date().toISOString().split('T')[0] })}
-                className="flex items-center gap-1 text-xs text-[#8A582B] font-semibold"
+                onClick={onClose}
+                aria-label="Close dialog"
+                className="p-1 rounded-md text-faint hover:text-ink transition-colors cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" /> Add
+                <X className="size-5" />
               </button>
             </div>
-            {fields.map((f, i) => (
-              <div key={f.id} className="grid grid-cols-12 gap-2 items-center bg-[#FAF8F5] p-2 rounded-lg border border-[#E8DFD3] text-xs">
-                <select {...register(`expenses.${i}.category`)} className="col-span-3 p-1.5 bg-white border border-[#E8DFD3] rounded">
-                  <option value="FLIGHT">Flight</option>
-                  <option value="HOTEL">Hotel</option>
-                  <option value="MEALS_PER_DIEM">Meals</option>
-                  <option value="TRANSIT">Transit</option>
-                  <option value="MISC">Misc</option>
-                </select>
-                <input {...register(`expenses.${i}.merchant`)} placeholder="Merchant" className="col-span-4 p-1.5 bg-white border border-[#E8DFD3] rounded" />
-                <input {...register(`expenses.${i}.amount`, { valueAsNumber: true })} type="number" placeholder="₹" className="col-span-4 p-1.5 bg-white border border-[#E8DFD3] rounded font-mono tabular-nums" />
-                <button type="button" onClick={() => remove(i)} disabled={fields.length === 1} className="col-span-1 text-red-500 disabled:opacity-30">
-                  <Trash2 className="w-4 h-4" />
+
+            {error && <div className="p-3 bg-red-50 text-destructive text-xs rounded-lg border border-red-200">{error}</div>}
+
+            <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl flex items-center gap-2.5 text-xs text-amber-800">
+              <span>Resubmissions return directly to your Line Manager for re-verification.</span>
+            </div>
+
+            <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-ink">
+                  Describe Alterations Made <span className="text-destructive">*</span>
+                </label>
+                <textarea
+                  {...register('remarks')}
+                  rows={2}
+                  placeholder="Summarize the corrected details, adjusted quotes, or updated receipts..."
+                  className="p-2.5 rounded-xl border border-border-warm bg-surface-subtle text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                />
+                {errors.remarks && <p className="text-[11px] text-destructive">{errors.remarks.message}</p>}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-ink">
+                  Updated Proof URL <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://proofs.corp.com/updated-receipt.pdf"
+                  {...register('supportingDocUrl')}
+                  className="p-2.5 rounded-xl border border-border-warm bg-surface-subtle text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+                />
+                {errors.supportingDocUrl && <p className="text-[11px] text-destructive">{errors.supportingDocUrl.message}</p>}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-ink">Itemized Expenses (Total: {formatINR(totalAmount)})</span>
+                  <button
+                    type="button"
+                    onClick={() => append({ category: 'MISC', merchant: '', amount: 1000, expenseDate: new Date().toISOString().split('T')[0] })}
+                    className="flex items-center gap-1 text-xs text-primary font-semibold hover:underline cursor-pointer"
+                  >
+                    <Plus className="size-3.5" /> Add Row
+                  </button>
+                </div>
+                {fields.map((f, i) => (
+                  <div key={f.id} className="grid grid-cols-12 gap-2 items-center bg-surface-subtle p-2 rounded-lg border border-border-warm text-xs">
+                    <select {...register(`expenses.${i}.category`)} className="col-span-3 p-1.5 bg-surface border border-border-warm rounded text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20">
+                      <option value="FLIGHT">Flight</option>
+                      <option value="HOTEL">Hotel</option>
+                      <option value="MEALS_PER_DIEM">Meals</option>
+                      <option value="TRANSIT">Transit</option>
+                      <option value="MISC">Misc</option>
+                    </select>
+                    <input {...register(`expenses.${i}.merchant`)} placeholder="Merchant" className="col-span-4 p-1.5 bg-surface border border-border-warm rounded text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" />
+                    <input {...register(`expenses.${i}.amount`, { valueAsNumber: true })} type="number" placeholder="₹" className="col-span-4 p-1.5 bg-surface border border-border-warm rounded font-mono tabular-nums text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" />
+                    <button type="button" onClick={() => remove(i)} disabled={fields.length === 1} aria-label="Remove item" className="col-span-1 text-destructive hover:opacity-80 disabled:opacity-30 cursor-pointer">
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-border-warm">
+                <button type="button" onClick={onClose} className="px-4 py-2 border border-border-warm rounded-xl text-xs text-muted hover:bg-surface-subtle transition-all cursor-pointer">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-hover active:scale-[0.98] text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 transition-all cursor-pointer">
+                  {isSubmitting && <Loader2 className="size-3.5 animate-spin" />} Resubmit to Manager
                 </button>
               </div>
-            ))}
-          </div>
-
-          <div className="flex justify-end gap-3 pt-3 border-t border-[#E8DFD3]">
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-xl text-xs">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-5 py-2 bg-[#8A582B] text-white rounded-xl text-xs font-semibold">
-              {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Resubmit to Manager
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };

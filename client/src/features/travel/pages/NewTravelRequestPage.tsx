@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, FileEdit, Loader2 } from 'lucide-react';
 import { useTravel } from '../hooks/useTravel';
 import { useTravelForm, type TravelFormValues } from '../hooks/useTravelForm';
 import { TravelTypeToggle } from '../components/forms/TravelTypeToggle';
 import { TravelLogisticsFields } from '../components/forms/TravelLogisticsFields';
 import { ProofAttachmentField } from '../components/forms/ProofAttachmentField';
 import { DynamicExpenseTable } from '../components/forms/DynamicExpenseTable';
-import { formatINR } from '../utils/currency';
 
 export const NewTravelRequestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,6 +47,40 @@ export const NewTravelRequestPage: React.FC = () => {
     }
   };
 
+  const onSaveDraft = async () => {
+    setIsSubmitting(true);
+    setApiError(null);
+    try {
+      const values = form.getValues();
+      await createRequest({
+        travelType: values.travel_type || 'UPCOMING',
+        title: values.title || 'Untitled Travel Draft',
+        purpose: values.purpose,
+        projectCode: values.project_code || 'ENG-2026',
+        origin: values.origin,
+        destination: values.destination,
+        departureDate: values.departure_date,
+        returnDate: values.return_date,
+        emergencyContactName: values.emergency_contact_name,
+        emergencyContactPhone: values.emergency_contact_phone,
+        supportingDocUrl: values.supporting_doc_url,
+        isDraft: true,
+        expenses: (values.expenses || []).map((e) => ({
+          category: e.category,
+          merchant: e.merchant,
+          amount: Number(e.amount) || 0,
+          expenseDate: e.expenseDate,
+          notes: e.notes,
+        })),
+      });
+      navigate('/dashboard?tab=drafts');
+    } catch (err: any) {
+      setApiError(err?.response?.data?.message || err?.message || 'Failed to save travel draft');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-4xl mx-auto flex flex-col gap-6">
       {/* Header & Breadcrumb */}
@@ -55,30 +88,30 @@ export const NewTravelRequestPage: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2 text-xs font-semibold text-[#756F68] hover:text-[#2B231D] cursor-pointer"
+          className="flex items-center gap-2 text-xs font-semibold text-muted hover:text-ink cursor-pointer transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="size-4" /> Back to Dashboard
         </button>
-        <span className="text-xs font-mono tabular-nums text-[#8A582B] bg-[#F5EBE1] px-3 py-1 rounded-full border border-[#E8DFD3]">
+        {/* <span className="text-xs font-mono tabular-nums font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-border-warm">
           Estimated Total: {formatINR(totalAmount)}
-        </span>
+        </span> */}
       </div>
 
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-[#2B231D] tracking-tight">Create Travel Request</h1>
-        <p className="text-xs text-[#756F68]">
-          Submit a new pre-trip authorization or post-trip reimbursement claim.
+        <h1 className="text-2xl font-bold text-ink tracking-tight">Create Travel Request</h1>
+        <p className="text-xs text-muted">
+          Submit a new pre-trip authorization or post-trip reimbursement claim, or save a draft to finish later.
         </p>
       </div>
 
       {apiError && (
-        <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-[#9E2A2B] font-medium">
+        <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-destructive font-medium">
           {apiError}
         </div>
       )}
 
       {/* Main Form */}
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-[#E8DFD3] shadow-sm">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6 bg-surface p-6 rounded-xl border border-border-warm shadow-xs">
         <TravelTypeToggle
           value={watchedType}
           onChange={(t) => form.setValue('travel_type', t)}
@@ -100,22 +133,33 @@ export const NewTravelRequestPage: React.FC = () => {
           totalAmount={totalAmount}
         />
 
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E8DFD3]">
+        <div className="flex items-center justify-between pt-4 border-t border-border-warm">
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="px-4 py-2.5 rounded-xl border border-[#E8DFD3] text-xs font-semibold text-[#756F68] hover:bg-[#FAF8F5]"
+            className="px-4 py-2.5 rounded-xl border border-border-warm text-xs font-semibold text-muted hover:bg-surface-subtle transition-colors cursor-pointer"
           >
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#8A582B] hover:bg-[#754820] text-white text-xs font-semibold shadow-sm disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-            {isSubmitting ? 'Submitting...' : 'Submit Travel Request'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={onSaveDraft}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border-warm bg-surface hover:bg-surface-subtle active:scale-[0.98] text-ink text-xs font-semibold shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+            >
+              <FileEdit className="size-4 text-primary" />
+              Save as Draft
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-white text-xs font-semibold shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+            >
+              {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              {isSubmitting ? 'Submitting...' : 'Submit Travel Request'}
+            </button>
+          </div>
         </div>
       </form>
     </div>

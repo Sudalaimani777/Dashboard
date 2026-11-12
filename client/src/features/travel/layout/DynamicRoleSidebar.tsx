@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plane,
   AlertCircle,
@@ -10,8 +11,10 @@ import {
   ShieldCheck,
   GitFork,
   PieChart,
-  ChevronLeft,
-  ChevronRight,
+  FileEdit,
+  Pin,
+  PinOff,
+  PlusCircle,
   type LucideIcon,
 } from 'lucide-react';
 import type { User } from '../../auth/types/auth.types';
@@ -34,6 +37,7 @@ export function getRoleNavItems(role: string): NavItemConfig[] {
         { id: 'revisions', label: 'Revised Requests', icon: RotateCcw, countType: 'danger' },
         { id: 'past', label: 'Past Team History', icon: Users },
         { id: 'personal', label: 'My Personal Travel', icon: UserCheck },
+        { id: 'drafts', label: 'Travel Drafts', icon: FileEdit },
       ];
     case 'ADMIN':
       return [
@@ -47,6 +51,7 @@ export function getRoleNavItems(role: string): NavItemConfig[] {
       return [
         { id: 'present', label: 'Present Requests', icon: Plane },
         { id: 'revisions', label: 'Revised Requests', icon: AlertCircle, countType: 'danger' },
+        { id: 'drafts', label: 'Travel Drafts', icon: FileEdit },
         { id: 'past', label: 'Past Requests', icon: Archive },
       ];
   }
@@ -56,8 +61,11 @@ export interface DynamicRoleSidebarProps {
   user: User;
   activeTab: string;
   onTabChange: (tabId: string) => void;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
+  // Backward compatibility
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
   onSignOut: () => void;
   badgeCounts?: Record<string, number>;
 }
@@ -66,60 +74,114 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
   user,
   activeTab,
   onTabChange,
+  isPinned,
+  onTogglePin,
   isCollapsed,
   onToggleCollapse,
   onSignOut,
   badgeCounts = {},
 }) => {
+  const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Reconcile pinned state (prefers isPinned, falls back to !isCollapsed)
+  const pinned = isPinned ?? (typeof isCollapsed === 'boolean' ? !isCollapsed : false);
+  const handleTogglePin = onTogglePin ?? onToggleCollapse ?? (() => {});
+
+  // Expanded if pinned open OR currently hovered
+  const isExpanded = pinned || isHovered;
+  const isItemCollapsed = !isExpanded;
+
   const navItems = getRoleNavItems(user.role || 'EMPLOYEE');
+  const canCreate = user.role === 'EMPLOYEE' || user.role === 'MANAGER';
+
+  const roleSubtitle =
+    user.role === 'ADMIN'
+      ? 'Executive & Finance'
+      : user.role === 'MANAGER'
+      ? 'Team Manager Hub'
+      : 'Employee Portal';
 
   return (
     <aside
-      className={`bg-white border-r border-[#E8DFD3] flex flex-col shrink-0 transition-all duration-200 z-40 h-full ${
-        isCollapsed ? 'w-[72px]' : 'w-[260px]'
+      className={`fixed top-6 left-6 bottom-6 z-40 bg-surface border border-border-warm rounded-[20px] shadow-[0_20px_45px_-12px_rgba(43,35,29,0.10),0_0_1px_1px_rgba(232,223,211,0.8)] flex flex-col p-3.5 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden select-none ${
+        isExpanded ? 'w-[256px]' : 'w-[76px]'
       }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      aria-label="TripFlow Navigation Sidebar"
     >
-      {/* Brand Header */}
-      <div className="p-4 border-b border-[#E8DFD3] flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="w-9 h-9 rounded-xl bg-[#2B231D] text-white flex items-center justify-center font-bold text-sm shrink-0">
+      {/* 1. Brand Header */}
+      <div className="flex items-center justify-between h-11 shrink-0 px-0.5">
+        <div className="flex items-center min-w-0 overflow-hidden cursor-pointer" onClick={handleTogglePin}>
+          {/* Logo Monogram */}
+          <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
             TF
           </div>
-          {!isCollapsed && (
-            <div className="flex flex-col leading-tight whitespace-nowrap">
-              <span className="font-bold text-base text-[#2B231D] tracking-tight">TripFlow</span>
-              {/* <span className="text-[10px] text-[#A0988E] uppercase tracking-wider font-semibold">
-                Governance
-              </span> */}
+
+          {/* Brand Name & Subtitle */}
+          {!isItemCollapsed && (
+            <div className="flex flex-col min-w-0 ml-2.5 overflow-hidden text-left leading-tight">
+              <span className="font-bold text-base text-ink tracking-tight truncate">
+                TripFlow
+              </span>
+              <span className="text-[11px] text-muted truncate mt-0.5">
+                {roleSubtitle}
+              </span>
             </div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          className="text-[#756F68] hover:text-[#2B231D] hover:bg-[#FAF8F5] p-1 rounded-md border border-[#E8DFD3]"
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
+
+        {/* Pin Toggle Button */}
+        {!isItemCollapsed && (
+          <button
+            type="button"
+            onClick={handleTogglePin}
+            className={`p-1.5 rounded-lg border cursor-pointer transition-colors shrink-0 ml-1 ${
+              pinned
+                ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
+                : 'border-border-warm text-muted hover:text-ink hover:bg-surface-subtle'
+            }`}
+            title={pinned ? 'Unpin sidebar (hover-only mode)' : 'Pin sidebar open'}
+            aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+          >
+            {pinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
+          </button>
+        )}
       </div>
 
-      {/* Role Chip */}
-      {/* {!isCollapsed && (
-        <div className="px-4 pt-3.5 pb-1">
-          <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#F5EBE1] text-[#8A582B] border border-[#E8DFD3]">
-            Role: {user.role}
-          </span>
+      {/* 2. Quick Action: + New Request Button (For Employee & Manager) */}
+      {canCreate && (
+        <div className="mt-3.5 mb-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => navigate('/travel/new')}
+            className={`w-full flex items-center h-10 rounded-xl bg-primary text-white hover:bg-primary-hover font-semibold text-xs shadow-xs transition-all cursor-pointer overflow-hidden ${
+              isItemCollapsed ? 'justify-center px-0' : 'px-1'
+            }`}
+            title={isItemCollapsed ? 'New Travel Request' : undefined}
+          >
+            <span className="w-[42px] h-[42px] flex items-center justify-center shrink-0">
+              <PlusCircle className="w-5 h-5 text-white" />
+            </span>
+            {!isItemCollapsed && (
+              <span className="truncate font-semibold text-[13px] ml-1 pr-3">
+                New Request
+              </span>
+            )}
+          </button>
         </div>
-      )} */}
+      )}
 
-      {/* Nav List */}
-      <nav className="flex-1 p-3 flex flex-col gap-1 overflow-y-auto">
-        {/* {!isCollapsed && (
-          <div className="text-[10px] font-bold uppercase tracking-wider text-[#A0988E] px-2.5 py-1">
-            Navigatio
-          </div>
-        )} */}
+      {/* 3. Section Label */}
+      {!isItemCollapsed && (
+        <p className="px-2 pt-3 pb-1 text-[11px] font-semibold text-muted/75 uppercase tracking-wider select-none shrink-0">
+          Workstation
+        </p>
+      )}
+
+      {/* 4. Primary Role Navigation List */}
+      <nav className="flex-1 py-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden scrollbar-none">
         {navItems.map((item) => (
           <SidebarNavItem
             key={item.id}
@@ -129,14 +191,14 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
             count={badgeCounts[item.id] ?? item.count}
             countType={item.countType}
             isActive={activeTab === item.id}
-            isCollapsed={isCollapsed}
+            isCollapsed={isItemCollapsed}
             onClick={() => onTabChange(item.id)}
           />
         ))}
       </nav>
 
-      {/* Footer Profile */}
-      <SidebarUserProfile user={user} isCollapsed={isCollapsed} onSignOut={onSignOut} />
+      {/* 5. Authenticated Current User Profile Footer */}
+      <SidebarUserProfile user={user} isCollapsed={isItemCollapsed} onSignOut={onSignOut} />
     </aside>
   );
 };
