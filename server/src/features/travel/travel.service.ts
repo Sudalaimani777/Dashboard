@@ -32,8 +32,12 @@ export interface AdminReviewOptions {
 export interface EmployeeResubmitOptions {
   remarks?: string;
   employee_response_notes?: string;
+  isDraft?: boolean;
+  is_draft?: boolean;
   title?: string;
   purpose?: string;
+  projectCode?: string;
+  project_code?: string;
   origin?: string;
   destination?: string;
   departureDate?: string;
@@ -343,21 +347,25 @@ export class TravelService {
 
     const expensesList = options.updated_expenses || options.expenses;
     const remarks = options.employee_response_notes || options.remarks;
+    const keepAsDraft = request.status === 'DRAFT' && Boolean(options.isDraft || options.is_draft);
 
-    // Validate resubmit payload
-    const validation = validateResubmitPayload({
-      employee_response_notes: remarks,
-      updated_expenses: expensesList
-    });
+    if (!keepAsDraft) {
+      // Validate resubmit payload
+      const validation = validateResubmitPayload({
+        employee_response_notes: remarks,
+        updated_expenses: expensesList
+      });
 
-    if (!validation.valid) {
-      throw new Error(`Resubmission validation failed: ${validation.errors?.join(', ')}`);
+      if (!validation.valid) {
+        throw new Error(`Resubmission validation failed: ${validation.errors?.join(', ')}`);
+      }
     }
 
     // Update request metadata if provided
     await this.repo.updateRequestFields(requestId, {
       title: options.title,
       purpose: options.purpose,
+      projectCode: options.project_code || options.projectCode,
       origin: options.origin,
       destination: options.destination,
       departureDate: options.departure_date || options.departureDate,
@@ -370,14 +378,18 @@ export class TravelService {
     // Update expenses if new list provided
     if (expensesList && Array.isArray(expensesList) && expensesList.length > 0) {
       const normalizedExpenses = expensesList.map((e) => ({
-        category: e.category,
-        merchant: e.merchant,
-        amount: Number(e.amount),
-        expenseDate: e.expense_date || e.expenseDate,
+        category: e.category || 'MISC',
+        merchant: e.merchant || 'Pending',
+        amount: Number(e.amount) || 0,
+        expenseDate: e.expense_date || e.expenseDate || new Date().toISOString().split('T')[0],
         receiptImageUrl: e.receipt_image_url || e.receiptImageUrl,
         notes: e.notes
       }));
       await this.repo.updateExpenses(requestId, normalizedExpenses);
+    }
+
+    if (keepAsDraft) {
+      return this.getRequestById(requestId);
     }
 
     // Mandatory Invariant: Resubmission strictly returns to PENDING_MANAGER_REVIEW

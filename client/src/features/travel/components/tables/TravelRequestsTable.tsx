@@ -3,6 +3,7 @@ import { Inbox, ChevronRight } from 'lucide-react';
 import type { TravelRequest } from '../../types/travel.types';
 import { TravelTableRow } from './TravelTableRow';
 import { TravelStatusBadge } from '../TravelStatusBadge';
+import { RouteLabel } from '../shared/RouteLabel';
 import { formatINR } from '../../utils/currency';
 
 export interface TravelRequestsTableProps {
@@ -10,8 +11,17 @@ export interface TravelRequestsTableProps {
   requests: TravelRequest[];
   actionLabel?: string;
   onAction: (request: TravelRequest) => void;
+  secondaryAction?: {
+    label: string;
+    onClick: (request: TravelRequest) => void;
+  };
   showRequester?: boolean;
+  showRemarksPreview?: boolean;
   emptyMessage?: string;
+  emptyDescription?: string;
+  emptyAction?: React.ReactNode;
+  compactEmpty?: boolean;
+  headerActions?: React.ReactNode;
 }
 
 export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
@@ -19,26 +29,35 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
   requests,
   actionLabel = 'Inspect',
   onAction,
+  secondaryAction,
   showRequester = false,
+  showRemarksPreview = false,
   emptyMessage = 'No travel requests found in this view.',
+  emptyDescription = 'Requests assigned to this queue will appear here in real-time as workflows advance.',
+  emptyAction,
+  compactEmpty = false,
+  headerActions,
 }) => {
   return (
     <div className="bg-surface rounded-xl border border-border-warm overflow-hidden shadow-xs flex flex-col">
-      <div className="p-4 border-b border-border-warm flex justify-between items-center bg-surface-subtle">
-        <h3 className="text-sm font-semibold text-ink">
-          {title}
-        </h3>
+      <div className="p-4 border-b border-border-warm flex flex-wrap justify-between items-center gap-3 bg-surface-subtle">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-ink">{title}</h3>
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-surface border border-border-warm text-muted">
+            {requests.length}
+          </span>
+        </div>
+        {headerActions && <div className="flex flex-wrap items-center gap-2">{headerActions}</div>}
       </div>
 
       {requests.length === 0 ? (
-        <div className="py-16 px-4 flex flex-col items-center justify-center text-center">
-          <div className="size-12 rounded-full bg-surface-subtle border border-border-warm flex items-center justify-center mb-3">
+        <div className={`${compactEmpty ? 'py-8' : 'py-12'} px-4 flex flex-col items-center justify-center text-center`}>
+          <div className="size-11 rounded-full bg-surface-subtle border border-border-warm flex items-center justify-center mb-2.5">
             <Inbox className="size-5 text-muted" />
           </div>
           <p className="text-sm font-medium text-ink">{emptyMessage}</p>
-          <p className="text-xs text-muted mt-1 max-w-sm">
-            Requests assigned to this queue will appear here in real-time as workflows advance.
-          </p>
+          <p className="text-xs text-muted mt-1 max-w-md">{emptyDescription}</p>
+          {emptyAction && <div className="mt-4 flex flex-wrap items-center justify-center gap-2">{emptyAction}</div>}
         </div>
       ) : (
         <>
@@ -62,13 +81,21 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
                   </div>
                 )}
 
+                {showRemarksPreview && (req.adminRemarks || req.managerRemarks) && (
+                  <p className="text-[11px] text-amber-800 bg-amber-50/90 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                    Note: “{req.adminRemarks || req.managerRemarks}”
+                  </p>
+                )}
+
                 <div className="grid grid-cols-2 gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-surface-subtle border border-border-warm/60">
                   <div>
-                    <span className="text-[10px] text-muted block">Destination</span>
-                    <span className="font-medium text-ink truncate block">{req.destination}</span>
+                    <span className="text-[10px] text-muted block">Route</span>
+                    <span className="font-medium text-ink truncate block">
+                      <RouteLabel origin={req.origin} destination={req.destination} />
+                    </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted block">Departure</span>
+                    <span className="text-[10px] text-muted block">Dates</span>
                     <span className="font-mono text-ink text-[11px] block">{req.departureDate}</span>
                   </div>
                 </div>
@@ -81,14 +108,25 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => onAction(req)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-warm bg-surface text-xs font-semibold text-primary hover:border-primary/50 hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 active:scale-[0.98] transition-all cursor-pointer shadow-2xs"
-                  >
-                    {actionLabel}
-                    <ChevronRight className="size-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {secondaryAction && (
+                      <button
+                        type="button"
+                        onClick={() => secondaryAction.onClick(req)}
+                        className="inline-flex items-center px-2.5 py-1.5 rounded-lg border border-border-warm bg-surface-subtle text-xs font-semibold text-ink hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
+                      >
+                        {secondaryAction.label}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onAction(req)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-warm bg-surface text-xs font-semibold text-primary hover:border-primary/50 hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
+                    >
+                      {actionLabel}
+                      <ChevronRight className="size-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -102,8 +140,8 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
                   <th className="p-3.5">Trip Title</th>
                   {showRequester && <th className="p-3.5">Requester</th>}
                   <th className="p-3.5">Type</th>
-                  <th className="p-3.5">Destination</th>
-                  <th className="p-3.5">Departure</th>
+                  <th className="p-3.5">Route / Destination</th>
+                  <th className="p-3.5">Dates</th>
                   <th className="p-3.5">Total Amount</th>
                   <th className="p-3.5">Status</th>
                   <th className="p-3.5 text-right">Action</th>
@@ -116,7 +154,9 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
                     request={req}
                     actionLabel={actionLabel}
                     onAction={onAction}
+                    secondaryAction={secondaryAction}
                     showRequester={showRequester}
+                    showRemarksPreview={showRemarksPreview}
                   />
                 ))}
               </tbody>

@@ -104,7 +104,7 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
 
   return (
     <aside
-      className={`fixed top-6 left-6 bottom-6 z-40 bg-surface border border-border-warm rounded-[20px] shadow-[0_20px_45px_-12px_rgba(43,35,29,0.10),0_0_1px_1px_rgba(232,223,211,0.8)] flex flex-col p-3.5 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden select-none ${
+      className={`fixed inset-y-0 left-0 z-40 bg-surface border-r border-border-warm shadow-xs flex flex-col p-3.5 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden select-none ${
         isExpanded ? 'w-[256px]' : 'w-[76px]'
       }`}
       onMouseEnter={() => setIsHovered(true)}
@@ -113,9 +113,14 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
     >
       {/* 1. Brand Header */}
       <div className="flex items-center justify-between h-11 shrink-0 px-0.5">
-        <div className="flex items-center min-w-0 overflow-hidden cursor-pointer" onClick={handleTogglePin}>
+        <button
+          type="button"
+          onClick={handleTogglePin}
+          aria-label={pinned ? 'Collapse sidebar' : 'Expand and pin sidebar'}
+          className="flex items-center min-w-0 overflow-hidden cursor-pointer rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        >
           {/* Logo Monogram */}
-          <div className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+          <div className="w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
             TF
           </div>
 
@@ -130,14 +135,14 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
               </span>
             </div>
           )}
-        </div>
+        </button>
 
         {/* Pin Toggle Button */}
         {!isItemCollapsed && (
           <button
             type="button"
             onClick={handleTogglePin}
-            className={`p-1.5 rounded-lg border cursor-pointer transition-colors shrink-0 ml-1 ${
+            className={`p-1.5 rounded-lg border cursor-pointer transition-colors shrink-0 ml-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] ${
               pinned
                 ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
                 : 'border-border-warm text-muted hover:text-ink hover:bg-surface-subtle'
@@ -156,7 +161,7 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
           <button
             type="button"
             onClick={() => navigate('/travel/new')}
-            className={`w-full flex items-center h-10 rounded-xl bg-primary text-white hover:bg-primary-hover font-semibold text-xs shadow-xs transition-all cursor-pointer overflow-hidden ${
+            className={`w-full flex items-center h-10 rounded-lg bg-primary text-white hover:bg-primary-hover font-semibold text-xs transition-all cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-[0.98] ${
               isItemCollapsed ? 'justify-center px-0' : 'px-1'
             }`}
             title={isItemCollapsed ? 'New Travel Request' : undefined}
@@ -175,8 +180,8 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
 
       {/* 3. Section Label */}
       {!isItemCollapsed && (
-        <p className="px-2 pt-3 pb-1 text-[11px] font-semibold text-muted/75 uppercase tracking-wider select-none shrink-0">
-          Workstation
+        <p className="px-2 pt-3 pb-1 text-[11px] font-medium text-faint select-none shrink-0">
+          Navigation
         </p>
       )}
 

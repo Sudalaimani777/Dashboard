@@ -252,7 +252,46 @@ export class TravelRepository {
     sql += ' ORDER BY tr.created_at DESC';
 
     const res = await query(sql, params);
-    return res.rows.map(this.mapRowToRequest);
+    const requests = res.rows.map(this.mapRowToRequest);
+    if (requests.length === 0) return requests;
+
+    const ids = requests.map((r) => r.id);
+    const [expRes, timelineRes] = await Promise.all([
+      query(
+        `SELECT * FROM travel_expenses WHERE travel_request_id = ANY($1::uuid[]) ORDER BY expense_date ASC, created_at ASC`,
+        [ids]
+      ),
+      query(
+        `SELECT rte.*, u.name as actor_name
+         FROM request_timeline_events rte
+         LEFT JOIN users u ON rte.actor_id = u.id
+         WHERE rte.travel_request_id = ANY($1::uuid[])
+         ORDER BY rte.created_at ASC`,
+        [ids]
+      ),
+    ]);
+
+    const expensesByReq = new Map<string, TravelExpense[]>();
+    for (const row of expRes.rows) {
+      const mapped = this.mapRowToExpense(row);
+      const list = expensesByReq.get(row.travel_request_id) || [];
+      list.push(mapped);
+      expensesByReq.set(row.travel_request_id, list);
+    }
+
+    const timelineByReq = new Map<string, TimelineEvent[]>();
+    for (const row of timelineRes.rows) {
+      const mapped = this.mapRowToTimeline(row);
+      const list = timelineByReq.get(row.travel_request_id) || [];
+      list.push(mapped);
+      timelineByReq.set(row.travel_request_id, list);
+    }
+
+    return requests.map((req) => ({
+      ...req,
+      expenses: expensesByReq.get(req.id) || [],
+      timeline: timelineByReq.get(req.id) || [],
+    }));
   }
 
   /**
@@ -279,7 +318,46 @@ export class TravelRepository {
     sql += ' ORDER BY tr.created_at DESC';
 
     const res = await query(sql, params);
-    return res.rows.map(this.mapRowToRequest);
+    const requests = res.rows.map(this.mapRowToRequest);
+    if (requests.length === 0) return requests;
+
+    const ids = requests.map((r) => r.id);
+    const [expRes, timelineRes] = await Promise.all([
+      query(
+        `SELECT * FROM travel_expenses WHERE travel_request_id = ANY($1::uuid[]) ORDER BY expense_date ASC, created_at ASC`,
+        [ids]
+      ),
+      query(
+        `SELECT rte.*, u.name as actor_name
+         FROM request_timeline_events rte
+         LEFT JOIN users u ON rte.actor_id = u.id
+         WHERE rte.travel_request_id = ANY($1::uuid[])
+         ORDER BY rte.created_at ASC`,
+        [ids]
+      ),
+    ]);
+
+    const expensesByReq = new Map<string, TravelExpense[]>();
+    for (const row of expRes.rows) {
+      const mapped = this.mapRowToExpense(row);
+      const list = expensesByReq.get(row.travel_request_id) || [];
+      list.push(mapped);
+      expensesByReq.set(row.travel_request_id, list);
+    }
+
+    const timelineByReq = new Map<string, TimelineEvent[]>();
+    for (const row of timelineRes.rows) {
+      const mapped = this.mapRowToTimeline(row);
+      const list = timelineByReq.get(row.travel_request_id) || [];
+      list.push(mapped);
+      timelineByReq.set(row.travel_request_id, list);
+    }
+
+    return requests.map((req) => ({
+      ...req,
+      expenses: expensesByReq.get(req.id) || [],
+      timeline: timelineByReq.get(req.id) || [],
+    }));
   }
 
   /**
@@ -463,6 +541,7 @@ export class TravelRepository {
     fields: Partial<{
       title: string;
       purpose: string;
+      projectCode: string;
       origin: string;
       destination: string;
       departureDate: string;
@@ -484,6 +563,7 @@ export class TravelRepository {
 
     addSet('title', fields.title);
     addSet('purpose', fields.purpose);
+    addSet('project_code', fields.projectCode);
     addSet('origin', fields.origin);
     addSet('destination', fields.destination);
     addSet('departure_date', fields.departureDate);

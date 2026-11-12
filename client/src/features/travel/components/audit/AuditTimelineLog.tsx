@@ -38,7 +38,7 @@ export const AuditTimelineLog: React.FC<AuditTimelineLogProps> = ({ timeline = [
 
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-surface-subtle border border-border-warm text-muted">
+                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-surface-subtle border border-border-warm text-muted">
                     {actorRole}
                   </span>
                   <span className="font-semibold text-ink">
@@ -58,7 +58,7 @@ export const AuditTimelineLog: React.FC<AuditTimelineLogProps> = ({ timeline = [
               </div>
 
               {event.remarks && (
-                <p className="text-[11px] text-muted italic bg-surface-subtle/60 p-2 rounded-lg border border-border-warm/60 mt-1">
+                <p className="text-[11px] text-muted italic border-l-2 border-border-warm pl-2.5 py-0.5 mt-1">
                   "{event.remarks}"
                 </p>
               )}

@@ -12,7 +12,9 @@ export interface DashboardLayoutProps {
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { user, signout } = useAuth();
   const { requests, managerQueue, adminQueue } = useTravel();
-  const [isPinned, setIsPinned] = useState(false);
+  const [isPinned, setIsPinned] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
+  );
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -55,7 +57,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-canvas text-ink relative">
+    <div className="flex min-h-[100dvh] h-[100dvh] w-full overflow-hidden bg-canvas text-ink relative">
       {/* Floating Dynamic Role Sidebar */}
       <DynamicRoleSidebar
         user={user}
@@ -70,12 +72,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       {/* Main View Area */}
       <main
         className={`flex-1 overflow-y-auto min-w-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          isPinned ? 'pl-[296px]' : 'pl-[116px]'
-        } pr-6 py-6`}
+          isPinned ? 'pl-[256px]' : 'pl-[76px]'
+        }`}
       >
-        <ErrorBoundary fallbackTitle="Workstation Error" fallbackMessage="There was a problem loading this workstation view. Try reloading or return to the dashboard.">
-          {children || <Outlet />}
-        </ErrorBoundary>
+        <div className="px-6 py-5">
+          <ErrorBoundary fallbackTitle="Workstation Error" fallbackMessage="There was a problem loading this workstation view. Try reloading or return to the dashboard.">
+            {children || <Outlet />}
+          </ErrorBoundary>
+        </div>
       </main>
     </div>
   );

@@ -27,9 +27,9 @@ export const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
     <button
       type="button"
       onClick={onClick}
-      className={`relative w-full flex items-center h-11 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer select-none border text-left ${
+      className={`relative w-full flex items-center h-10 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer select-none border text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
         isActive
-          ? 'bg-primary/10 border-primary/25 text-primary font-semibold shadow-xs'
+          ? 'bg-primary/10 border-primary/25 text-primary font-semibold'
           : 'border-transparent text-muted hover:bg-surface-subtle hover:text-ink'
       }`}
       title={isCollapsed ? label : undefined}

@@ -22,7 +22,7 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           type="text"
           placeholder="e.g. Tokyo Architecture Integration 2026"
           {...register('title')}
-          className="w-full bg-surface border border-border-warm rounded-xl px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
         {errors.title && <span className="text-[11px] text-destructive">{errors.title.message}</span>}
       </div>
@@ -36,7 +36,7 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           rows={2}
           placeholder="Detailed business necessity justifying corporate travel..."
           {...register('purpose')}
-          className="w-full bg-surface border border-border-warm rounded-xl px-3.5 py-2 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
         {errors.purpose && <span className="text-[11px] text-destructive">{errors.purpose.message}</span>}
       </div>
@@ -48,7 +48,7 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           type="text"
           placeholder="e.g. ENG-APAC-2026"
           {...register('project_code')}
-          className="w-full bg-surface border border-border-warm rounded-xl px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink font-mono placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
       </div>
 
@@ -59,7 +59,7 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           type="text"
           placeholder="e.g. Tokyo, Japan"
           {...register('destination')}
-          className="w-full bg-surface border border-border-warm rounded-xl px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
         {errors.destination && <span className="text-[11px] text-destructive">{errors.destination.message}</span>}
       </div>
@@ -71,7 +71,7 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           type="text"
           placeholder="e.g. Bengaluru, India"
           {...register('origin')}
-          className="w-full bg-surface border border-border-warm rounded-xl px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
         {errors.origin && <span className="text-[11px] text-destructive">{errors.origin.message}</span>}
       </div>
@@ -83,7 +83,7 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           <input
             type="date"
             {...register('departure_date')}
-            className="w-full bg-surface border border-border-warm rounded-xl px-2.5 py-2 text-xs text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all cursor-pointer"
+            className="w-full bg-surface border border-border-warm rounded-lg px-2.5 py-2 text-xs text-ink font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all cursor-pointer"
           />
           {errors.departure_date && <span className="text-[11px] text-destructive">{errors.departure_date.message}</span>}
         </div>
@@ -92,10 +92,42 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           <input
             type="date"
             {...register('return_date')}
-            className="w-full bg-surface border border-border-warm rounded-xl px-2.5 py-2 text-xs text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all cursor-pointer"
+            className="w-full bg-surface border border-border-warm rounded-lg px-2.5 py-2 text-xs text-ink font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all cursor-pointer"
           />
           {errors.return_date && <span className="text-[11px] text-destructive">{errors.return_date.message}</span>}
         </div>
+      </div>
+
+      {/* Emergency Contact Name */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-ink">
+          Emergency Contact Name <span className="text-destructive">*</span>
+        </label>
+        <input
+          type="text"
+          placeholder="e.g. HR Operations / Primary Contact"
+          {...register('emergency_contact_name')}
+          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
+        />
+        {errors.emergency_contact_name && (
+          <span className="text-[11px] text-destructive">{errors.emergency_contact_name.message}</span>
+        )}
+      </div>
+
+      {/* Emergency Contact Phone */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-semibold text-ink">
+          Emergency Contact Phone <span className="text-destructive">*</span>
+        </label>
+        <input
+          type="tel"
+          placeholder="e.g. +91 9876543210"
+          {...register('emergency_contact_phone')}
+          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink font-mono placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
+        />
+        {errors.emergency_contact_phone && (
+          <span className="text-[11px] text-destructive">{errors.emergency_contact_phone.message}</span>
+        )}
       </div>
     </div>
   );

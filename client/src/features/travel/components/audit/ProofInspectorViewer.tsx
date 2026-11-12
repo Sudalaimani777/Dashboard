@@ -29,7 +29,11 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({ proo
       </div>
 
       {proofUrl ? (
-        <div className="rounded-xl border border-border-warm overflow-hidden bg-surface-subtle min-h-[280px] flex items-center justify-center p-2">
+        <div
+          className={`rounded-xl border border-border-warm overflow-hidden bg-surface-subtle flex items-center justify-center p-2 ${
+            isImage && !imgError ? 'min-h-[260px]' : 'min-h-[140px]'
+          }`}
+        >
           {isImage && !imgError ? (
             <img
               src={proofUrl}
