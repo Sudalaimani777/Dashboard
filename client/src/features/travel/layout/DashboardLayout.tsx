@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { DynamicRoleSidebar } from './DynamicRoleSidebar';
 import { ErrorBoundary } from '../../../shared/components/ErrorBoundary';
+import { classifyManagerQueue } from '../utils/managerQueue';
 
 export interface DashboardLayoutProps {
   children?: React.ReactNode;
@@ -29,17 +30,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       counts.revisions = requests.filter((r) => r.status.includes('REVISION_REQUESTED')).length;
       counts.drafts = requests.filter((r) => r.status === 'DRAFT').length;
     } else if (user.role === 'MANAGER') {
-      counts.present = managerQueue.filter((r) => r.status === 'PENDING_MANAGER_REVIEW').length;
-      counts.revisions = managerQueue.filter(
-        (r) =>
-          r.status === 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER' ||
-          (r.status === 'PENDING_MANAGER_REVIEW' &&
-            r.timeline?.some(
-              (t) =>
-                Boolean((t.eventType || t.event_type || '')?.includes('RESUBMIT')) ||
-                Boolean((t.remarks || '')?.includes('Resubmit'))
-            ))
-      ).length;
+      const classified = classifyManagerQueue(managerQueue, user.id);
+      counts.present = classified.initialAudit.length;
+      counts.revisions = classified.revisions.length;
       counts.drafts = requests.filter((r) => r.status === 'DRAFT').length;
     } else if (user.role === 'ADMIN') {
       counts.present = adminQueue.filter((r) => r.status === 'PENDING_ADMIN_APPROVAL').length;

@@ -16,6 +16,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
+import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { TravelLogisticsFields } from '../components/forms/TravelLogisticsFields';
 import { ProofAttachmentField } from '../components/forms/ProofAttachmentField';
@@ -68,7 +69,10 @@ export const ResubmitTravelRequestPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromTab = searchParams.get('tab');
+  const { user } = useAuth();
   const { loadRequestDetails, resubmitRequest, cancelRequest } = useTravel();
+  const isManagerUser = user?.role === 'MANAGER';
+  const postSubmitTab = isManagerUser ? 'personal' : 'present';
 
   const [request, setRequest] = useState<TravelRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -220,7 +224,7 @@ export const ResubmitTravelRequestPage: React.FC = () => {
           notes: e.notes,
         })),
       });
-      navigate('/dashboard?tab=present');
+      navigate(`/dashboard?tab=${postSubmitTab}`);
     } catch (err: any) {
       setApiError(err?.response?.data?.message || err?.message || 'Failed to submit request');
     } finally {
@@ -268,7 +272,7 @@ export const ResubmitTravelRequestPage: React.FC = () => {
     setApiError(null);
     try {
       await cancelRequest(request.id, isDraft ? 'Draft discarded by requester' : 'Cancelled by requester');
-      navigate(isDraft ? '/dashboard?tab=drafts' : '/dashboard?tab=revisions');
+      navigate(isDraft ? '/dashboard?tab=drafts' : isManagerUser ? '/dashboard?tab=personal' : '/dashboard?tab=revisions');
     } catch (err: any) {
       setApiError(err?.response?.data?.message || err?.message || 'Failed to cancel request');
       setIsSubmitting(false);
@@ -334,10 +338,23 @@ export const ResubmitTravelRequestPage: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => navigate(isDraft || fromTab === 'drafts' ? '/dashboard?tab=drafts' : '/dashboard?tab=revisions')}
+          onClick={() =>
+            navigate(
+              isDraft || fromTab === 'drafts'
+                ? '/dashboard?tab=drafts'
+                : fromTab === 'personal' || isManagerUser
+                ? '/dashboard?tab=personal'
+                : '/dashboard?tab=revisions'
+            )
+          }
           className="flex items-center gap-2 text-xs font-semibold text-muted hover:text-ink transition-colors cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
-          <ArrowLeft className="size-4" /> {isDraft || fromTab === 'drafts' ? 'Back to Travel Drafts' : 'Back to Revised Requests'}
+          <ArrowLeft className="size-4" />{' '}
+          {isDraft || fromTab === 'drafts'
+            ? 'Back to Travel Drafts'
+            : fromTab === 'personal' || isManagerUser
+            ? 'Back to My Personal Travel'
+            : 'Back to Revised Requests'}
         </button>
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold bg-surface border border-border-warm text-muted">

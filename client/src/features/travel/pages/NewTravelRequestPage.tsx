@@ -11,6 +11,7 @@ import {
   Copy,
   GitMerge,
 } from 'lucide-react';
+import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { useTravelForm, type TravelFormValues } from '../hooks/useTravelForm';
 import { TravelTypeToggle } from '../components/forms/TravelTypeToggle';
@@ -25,6 +26,10 @@ export const NewTravelRequestPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const initialTypeParam = searchParams.get('type');
   const cloneIdParam = searchParams.get('clone');
+  const fromTab = searchParams.get('tab');
+  const { user } = useAuth();
+  const defaultReturnTab = user?.role === 'MANAGER' ? 'personal' : 'present';
+  const backPath = `/dashboard?tab=${fromTab || defaultReturnTab}`;
 
   const { requests, loadRequests, loadRequestDetails, createRequest } = useTravel();
   const { form, fieldArray, watchedType, watchedProof, totalAmount } = useTravelForm(
@@ -162,7 +167,7 @@ export const NewTravelRequestPage: React.FC = () => {
           notes: e.notes,
         })),
       });
-      navigate('/dashboard?tab=present');
+      navigate(`/dashboard?tab=${defaultReturnTab}`);
     } catch (err: any) {
       setApiError(err?.response?.data?.message || err?.message || 'Failed to submit travel request');
     } finally {
@@ -215,10 +220,11 @@ export const NewTravelRequestPage: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate(backPath)}
           className="flex items-center gap-2 text-xs font-semibold text-muted hover:text-ink cursor-pointer transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
-          <ArrowLeft className="size-4" /> Back to Dashboard
+          <ArrowLeft className="size-4" />
+          {user?.role === 'MANAGER' ? 'Back to My Personal Travel' : 'Back to Dashboard'}
         </button>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -292,7 +298,7 @@ export const NewTravelRequestPage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border-warm">
             <button
               type="button"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate(backPath)}
               className="px-4 py-2 rounded-lg border border-border-warm text-xs font-semibold text-muted hover:bg-surface-subtle active:scale-[0.98] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               Cancel
@@ -354,7 +360,7 @@ export const NewTravelRequestPage: React.FC = () => {
               <GitMerge className="size-3.5 text-primary shrink-0" />
               <span>Route: You</span>
               <ArrowRight className="size-3 text-faint shrink-0" aria-hidden="true" />
-              <span>Line Manager</span>
+              <span>{user?.role === 'MANAGER' ? 'Reviewer' : 'Line Manager'}</span>
               <ArrowRight className="size-3 text-faint shrink-0" aria-hidden="true" />
               <span>Admin Clearance</span>
             </div>

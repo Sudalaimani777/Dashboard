@@ -318,7 +318,8 @@ export const TravelDetailPage: React.FC = () => {
         </div>
       )}
 
-      {user?.role === 'MANAGER' &&
+      {!isOwner &&
+        user?.role === 'MANAGER' &&
         (request.status === 'PENDING_MANAGER_REVIEW' ||
           request.status === 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER') && (
           <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-xs">

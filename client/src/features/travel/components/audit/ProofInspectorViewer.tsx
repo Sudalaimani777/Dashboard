@@ -30,7 +30,7 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({ proo
 
       {proofUrl ? (
         <div
-          className={`rounded-xl border border-border-warm overflow-hidden bg-surface-subtle flex items-center justify-center p-2 ${
+          className={`rounded-lg border border-border-warm/80 overflow-hidden bg-surface-subtle flex items-center justify-center p-2 ${
             isImage && !imgError ? 'min-h-[260px]' : 'min-h-[140px]'
           }`}
         >
@@ -38,7 +38,7 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({ proo
             <img
               src={proofUrl}
               alt={`Proof for ${title}`}
-              className="max-h-[380px] w-auto object-contain rounded-lg shadow-xs"
+              className="max-h-[380px] w-auto object-contain rounded-md"
               onError={() => setImgError(true)}
             />
           ) : imgError ? (
@@ -58,8 +58,8 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({ proo
           )}
         </div>
       ) : (
-        <div className="h-44 rounded-xl border border-dashed border-border-warm flex flex-col items-center justify-center gap-1.5 text-xs text-faint">
-          <FileText className="size-6 text-muted/40" />
+        <div className="h-40 rounded-lg border border-dashed border-border-warm bg-surface-subtle/40 flex flex-col items-center justify-center gap-1.5 text-xs text-faint">
+          <FileText className="size-5 text-muted/50" />
           <span>No proof document attached to this request.</span>
         </div>
       )}
