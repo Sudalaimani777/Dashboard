@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
@@ -18,6 +18,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   );
   const location = useLocation();
   const navigate = useNavigate();
+  const mainScrollRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname, location.search]);
 
   // Compute active tab from query params or route
   const searchParams = new URLSearchParams(location.search);
@@ -64,6 +69,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
       {/* Main View Area */}
       <main
+        ref={mainScrollRef}
         className={`flex-1 overflow-y-auto min-w-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
           isPinned ? 'pl-[256px]' : 'pl-[76px]'
         }`}
