@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
-import { DepartmentBudgetCard } from './DepartmentBudgetCard';
+import { RefreshButton } from './shared/RefreshButton';
 import { DepartmentBudgetsPage } from '../pages/DepartmentBudgetsPage';
 
 export interface AdminGovernancePortalProps {
@@ -11,12 +11,11 @@ export interface AdminGovernancePortalProps {
 
 export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ activeTab = 'present' }) => {
   const navigate = useNavigate();
-  const { adminQueue, budget, loadAdminQueue, loadBudget } = useTravel();
+  const { adminQueue, loadAdminQueue, refresh, isRefreshing, lastSyncedAt } = useTravel();
 
   useEffect(() => {
     loadAdminQueue();
-    loadBudget('Engineering', 2026, 'Q4');
-  }, [loadAdminQueue, loadBudget]);
+  }, [loadAdminQueue]);
 
   const pendingRequests = useMemo(
     () => adminQueue.filter((r) => r.status === 'PENDING_ADMIN_APPROVAL'),
@@ -39,31 +38,36 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
 
   return (
     <div className="p-8 max-w-6xl mx-auto flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-[#2B231D] tracking-tight">
-          {activeTab === 'revisions'
-            ? 'Dispatched Revision Tracking'
-            : activeTab === 'past'
-            ? 'Corporate Travel Ledger Archive'
-            : 'Corporate Governance Hub'}
-        </h1>
-        <p className="text-xs text-[#756F68]">
-          Tier 2 executive clearance, disbursement authorization, and budget oversight.
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-ink tracking-tight">
+            {activeTab === 'revisions'
+              ? 'Dispatched Revision Tracking'
+              : activeTab === 'past'
+              ? 'Corporate Travel Ledger Archive'
+              : 'Corporate Governance Hub'}
+          </h1>
+          <p className="text-xs text-muted">
+            Executive clearance, disbursement authorization, and budget oversight.
+          </p>
+        </div>
+
+        <RefreshButton
+          onRefresh={() => refresh('ADMIN')}
+          isRefreshing={isRefreshing}
+          lastSyncedAt={lastSyncedAt}
+        />
       </div>
 
       {activeTab === 'present' && (
-        <>
-          <DepartmentBudgetCard budget={budget} />
-          <TravelRequestsTable
-            title="Requests Awaiting Executive Action"
-            requests={pendingRequests}
-            showRequester
-            actionLabel="Review & Clear"
-            onAction={(req) => navigate(`/travel/clearance/${req.id}`)}
-            emptyMessage="All manager-approved requests have been processed."
-          />
-        </>
+        <TravelRequestsTable
+          title="Requests Awaiting Executive Action"
+          requests={pendingRequests}
+          showRequester
+          actionLabel="Review & Clear"
+          onAction={(req) => navigate(`/travel/clearance/${req.id}`)}
+          emptyMessage="All manager-approved requests have been processed."
+        />
       )}
 
       {activeTab === 'revisions' && (
@@ -72,7 +76,7 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
           requests={dispatchedRevisions}
           showRequester
           actionLabel="View Status"
-          onAction={(req) => navigate(`/travel/clearance/${req.id}`)}
+          onAction={(req) => navigate(`/travel/requests/${req.id}?tab=revisions`)}
           emptyMessage="No requests currently in revision dispatch."
         />
       )}
@@ -82,7 +86,8 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
           title="Company-Wide Travel Ledger"
           requests={pastLedger}
           showRequester
-          onAction={(req) => navigate(`/travel/clearance/${req.id}`)}
+          actionLabel="Inspect"
+          onAction={(req) => navigate(`/travel/requests/${req.id}?tab=past`)}
           emptyMessage="No historical travel records found."
         />
       )}

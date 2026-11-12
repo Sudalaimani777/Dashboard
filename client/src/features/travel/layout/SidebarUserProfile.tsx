@@ -22,30 +22,45 @@ export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
         .toUpperCase()
     : 'U';
 
+  const roleLabel =
+    user.role === 'ADMIN'
+      ? 'Executive & Finance'
+      : user.role === 'MANAGER'
+      ? 'Line Manager'
+      : 'Employee';
+
   return (
-    <div className="border-t border-[#E8DFD3] p-3.5 bg-white flex items-center justify-between shrink-0">
-      <div className="flex items-center gap-2.5 overflow-hidden">
-        <div className="w-8 h-8 rounded-full bg-[#8A582B] text-white flex items-center justify-center font-semibold text-xs shrink-0">
+    <div className="mt-auto pt-3 border-t border-border-warm flex items-center justify-between shrink-0 select-none">
+      <div
+        className="flex items-center min-w-0 overflow-hidden cursor-pointer"
+        title={isCollapsed ? `${user.name} (${roleLabel})` : undefined}
+      >
+        {/* 36px Circular Initials Avatar matching reference */}
+        <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
           {initials}
         </div>
+
+        {/* User Details (Smoothly masked when collapsed) */}
         {!isCollapsed && (
-          <div className="flex flex-col overflow-hidden leading-tight">
-            <span className="text-xs font-semibold text-[#2B231D] truncate">
+          <div className="flex flex-col min-w-0 ml-2.5 overflow-hidden text-left leading-tight">
+            <span className="text-[13px] font-semibold text-ink truncate">
               {user.name}
             </span>
-            <span className="text-[10px] text-[#A0988E] truncate">
-              {user.role}
+            <span className="text-[11px] text-muted truncate mt-0.5">
+              {roleLabel}
             </span>
           </div>
         )}
       </div>
 
+      {/* Logout Action Button */}
       {!isCollapsed && (
         <button
           type="button"
           onClick={onSignOut}
-          className="text-[#A0988E] hover:text-[#9E2A2B] hover:bg-[#FDF2F2] p-1.5 rounded-md transition-colors"
-          title="Sign Out"
+          className="p-1.5 text-muted hover:text-destructive hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
+          title="Sign Out of TripFlow"
+          aria-label="Sign Out"
         >
           <LogOut className="w-4 h-4" />
         </button>

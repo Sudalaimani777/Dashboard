@@ -1,5 +1,5 @@
-import React from 'react';
-import { ExternalLink, FileText, Image as ImageIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { ExternalLink, FileText, Image as ImageIcon, AlertCircle } from 'lucide-react';
 
 export interface ProofInspectorViewerProps {
   proofUrl?: string | null;
@@ -7,48 +7,56 @@ export interface ProofInspectorViewerProps {
 }
 
 export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({ proofUrl, title }) => {
+  const [imgError, setImgError] = useState(false);
   const isImage = proofUrl ? /\.(png|jpe?g|webp|gif|svg)$/i.test(proofUrl) : false;
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E8DFD3] p-5 flex flex-col gap-3 shadow-sm">
-      <div className="flex items-center justify-between border-b border-[#E8DFD3] pb-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#756F68] flex items-center gap-2">
-          <FileText className="w-4 h-4 text-[#8A582B]" /> Attached Proof Inspector
+    <div className="bg-surface rounded-xl border border-border-warm p-5 flex flex-col gap-3 shadow-xs">
+      <div className="flex items-center justify-between border-b border-border-warm pb-3">
+        <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+          <FileText className="size-4 text-primary" /> Attached Proof Inspector
         </h3>
         {proofUrl && (
           <a
             href={proofUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-xs font-semibold text-[#8A582B] hover:underline flex items-center gap-1"
+            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-md"
           >
-            Open Original <ExternalLink className="w-3.5 h-3.5" />
+            Open Original <ExternalLink className="size-3.5" />
           </a>
         )}
       </div>
 
       {proofUrl ? (
-        <div className="rounded-xl border border-[#E8DFD3] overflow-hidden bg-[#FAF8F5] min-h-[280px] flex items-center justify-center p-2">
-          {isImage ? (
+        <div className="rounded-xl border border-border-warm overflow-hidden bg-surface-subtle min-h-[280px] flex items-center justify-center p-2">
+          {isImage && !imgError ? (
             <img
               src={proofUrl}
               alt={`Proof for ${title}`}
               className="max-h-[380px] w-auto object-contain rounded-lg shadow-xs"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
+              onError={() => setImgError(true)}
             />
+          ) : imgError ? (
+            <div className="flex flex-col items-center gap-2 text-muted p-6 text-center">
+              <AlertCircle className="size-8 text-amber-600" />
+              <span className="text-xs font-semibold text-ink">External Image Preview Unavailable</span>
+              <span className="text-[11px] text-faint max-w-xs break-all">
+                The image couldn't be loaded directly in this browser frame. Use the link above to inspect it.
+              </span>
+            </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 text-[#756F68] p-6 text-center">
-              <ImageIcon className="w-8 h-8 text-[#A0988E]" />
-              <span className="text-xs font-semibold">Document / PDF Attachment</span>
-              <span className="text-[11px] text-[#A0988E] max-w-xs break-all">{proofUrl}</span>
+            <div className="flex flex-col items-center gap-2 text-muted p-6 text-center">
+              <ImageIcon className="size-8 text-faint" />
+              <span className="text-xs font-semibold text-ink">Document / PDF Attachment</span>
+              <span className="text-[11px] text-faint max-w-xs break-all">{proofUrl}</span>
             </div>
           )}
         </div>
       ) : (
-        <div className="h-44 rounded-xl border border-dashed border-[#E8DFD3] flex items-center justify-center text-xs text-[#A0988E]">
-          No proof document attached to this request.
+        <div className="h-44 rounded-xl border border-dashed border-border-warm flex flex-col items-center justify-center gap-1.5 text-xs text-faint">
+          <FileText className="size-6 text-muted/40" />
+          <span>No proof document attached to this request.</span>
         </div>
       )}
     </div>

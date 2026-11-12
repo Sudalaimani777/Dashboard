@@ -1,5 +1,5 @@
 // client/src/features/travel/context/TravelContext.tsx
-import React, { createContext, useCallback, useState } from 'react';
+import React, { createContext, useCallback, useState, useEffect } from 'react';
 import { travelApi } from '../services/travel.api';
 import type {
   TravelRequest,
@@ -11,6 +11,8 @@ import type {
   TravelStatus,
 } from '../types/travel.types';
 
+export type RefreshScope = 'EMPLOYEE' | 'MANAGER' | 'ADMIN' | 'DETAIL' | 'ALL';
+
 export interface TravelContextType {
   requests: TravelRequest[];
   selectedRequest: TravelRequest | null;
@@ -18,6 +20,8 @@ export interface TravelContextType {
   adminQueue: TravelRequest[];
   budget: DepartmentBudget | null;
   isLoading: boolean;
+  isRefreshing: boolean;
+  lastSyncedAt: Date | null;
   error: string | null;
   clearError: () => void;
   // Actions
@@ -26,6 +30,7 @@ export interface TravelContextType {
   loadManagerQueue: () => Promise<void>;
   loadAdminQueue: () => Promise<void>;
   loadBudget: (department?: string, year?: number, quarter?: string) => Promise<void>;
+  refresh: (scope?: RefreshScope, id?: string) => Promise<void>;
   createRequest: (input: CreateTravelRequestInput) => Promise<TravelRequest>;
   reviewAsManager: (id: string, input: ManagerReviewInput) => Promise<TravelRequest>;
   reviewAsAdmin: (id: string, input: AdminReviewInput) => Promise<TravelRequest>;
@@ -42,6 +47,8 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [adminQueue, setAdminQueue] = useState<TravelRequest[]>([]);
   const [budget, setBudget] = useState<DepartmentBudget | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const clearError = useCallback(() => setError(null), []);
@@ -52,6 +59,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const data = await travelApi.getMyRequests(statusFilter);
       setRequests(data);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
       setError(err.message || 'Failed to load travel requests');
     } finally {
@@ -65,6 +73,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const data = await travelApi.getRequestById(id);
       setSelectedRequest(data);
+      setLastSyncedAt(new Date());
       return data;
     } catch (err: any) {
       const msg = err.message || 'Failed to load request details';
@@ -81,6 +90,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const data = await travelApi.getManagerQueue();
       setManagerQueue(data);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
       setError(err.message || 'Failed to load manager queue');
     } finally {
@@ -94,6 +104,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       const data = await travelApi.getAdminQueue();
       setAdminQueue(data);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
       setError(err.message || 'Failed to load admin queue');
     } finally {
@@ -108,6 +119,47 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (err: any) {
       // Non-fatal if budget not configured yet
       console.warn('Could not load department budget:', err.message);
+    }
+  }, []);
+
+  const refresh = useCallback(async (scope: RefreshScope = 'ALL', id?: string) => {
+    setIsRefreshing(true);
+    try {
+      if (scope === 'EMPLOYEE') {
+        const data = await travelApi.getMyRequests();
+        setRequests(data);
+      } else if (scope === 'MANAGER') {
+        const [mQueue, myReqs] = await Promise.all([
+          travelApi.getManagerQueue(),
+          travelApi.getMyRequests(),
+        ]);
+        setManagerQueue(mQueue);
+        setRequests(myReqs);
+      } else if (scope === 'ADMIN') {
+        const [aQueue, bData] = await Promise.all([
+          travelApi.getAdminQueue(),
+          travelApi.getDepartmentBudget('Engineering', 2026, 'Q4').catch(() => null),
+        ]);
+        setAdminQueue(aQueue);
+        if (bData) setBudget(bData);
+      } else if (scope === 'DETAIL' && id) {
+        const data = await travelApi.getRequestById(id);
+        setSelectedRequest(data);
+      } else {
+        const results = await Promise.allSettled([
+          travelApi.getMyRequests(),
+          travelApi.getManagerQueue(),
+          travelApi.getAdminQueue(),
+        ]);
+        if (results[0].status === 'fulfilled') setRequests(results[0].value);
+        if (results[1].status === 'fulfilled') setManagerQueue(results[1].value);
+        if (results[2].status === 'fulfilled') setAdminQueue(results[2].value);
+      }
+      setLastSyncedAt(new Date());
+    } catch (err: any) {
+      console.error('Data refresh failed:', err);
+    } finally {
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -205,6 +257,19 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [selectedRequest?.id]);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Automatically revalidate if older than 30 seconds
+        if (!lastSyncedAt || Date.now() - lastSyncedAt.getTime() > 30000) {
+          refresh('ALL');
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [refresh, lastSyncedAt]);
+
   return (
     <TravelContext.Provider
       value={{
@@ -214,6 +279,8 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         adminQueue,
         budget,
         isLoading,
+        isRefreshing,
+        lastSyncedAt,
         error,
         clearError,
         loadRequests,
@@ -221,6 +288,7 @@ export const TravelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         loadManagerQueue,
         loadAdminQueue,
         loadBudget,
+        refresh,
         createRequest,
         reviewAsManager,
         reviewAsAdmin,

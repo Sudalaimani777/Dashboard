@@ -21,32 +21,51 @@ export const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
   isCollapsed,
   onClick,
 }) => {
+  const hasCount = typeof count === 'number' && count > 0;
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer select-none text-left ${
+      className={`relative w-full flex items-center h-11 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer select-none border text-left ${
         isActive
-          ? 'bg-[#F5EBE1] text-[#8A582B] font-semibold'
-          : 'text-[#756F68] hover:bg-[#FAF8F5] hover:text-[#2B231D]'
+          ? 'bg-primary/10 border-primary/25 text-primary font-semibold shadow-xs'
+          : 'border-transparent text-muted hover:bg-surface-subtle hover:text-ink'
       }`}
       title={isCollapsed ? label : undefined}
     >
-      <div className="flex items-center gap-3 overflow-hidden">
-        <Icon className="w-5 h-5 shrink-0" />
-        {!isCollapsed && <span className="truncate">{label}</span>}
-      </div>
+      {/* Icon Wrapper (exact 42px centered container matching reference) */}
+      <span className="w-[42px] h-[42px] flex items-center justify-center shrink-0">
+        <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-primary' : 'text-muted'}`} />
+      </span>
 
-      {!isCollapsed && typeof count === 'number' && count > 0 && (
+      {/* Label Text (Smoothly masked when collapsed) */}
+      {!isCollapsed && (
+        <span className="truncate flex-1 font-medium text-[13.5px] ml-1 pr-2">
+          {label}
+        </span>
+      )}
+
+      {/* Badge Pill when Expanded */}
+      {!isCollapsed && hasCount && (
         <span
-          className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+          className={`shrink-0 text-[10.5px] font-bold px-2 py-0.5 rounded-full border mr-2.5 transition-all ${
             countType === 'danger'
-              ? 'bg-[#FDF2F2] text-[#9E2A2B] border-red-200'
-              : 'bg-[#FEF9E7] text-[#B9770E] border-amber-200'
+              ? 'bg-red-50 text-destructive border-red-200/80'
+              : 'bg-amber-50 text-amber-800 border-amber-200/80'
           }`}
         >
           {count}
         </span>
+      )}
+
+      {/* Subtle Notification Dot when Collapsed */}
+      {isCollapsed && hasCount && (
+        <span
+          className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ring-2 ring-surface ${
+            countType === 'danger' ? 'bg-destructive' : 'bg-amber-600'
+          }`}
+        />
       )}
     </button>
   );

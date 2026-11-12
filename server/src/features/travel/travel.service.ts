@@ -32,12 +32,20 @@ export interface AdminReviewOptions {
 export interface EmployeeResubmitOptions {
   remarks?: string;
   employee_response_notes?: string;
+  title?: string;
+  purpose?: string;
+  origin?: string;
+  destination?: string;
   departureDate?: string;
   departure_date?: string;
   returnDate?: string;
   return_date?: string;
   supportingDocUrl?: string;
   supporting_doc_url?: string;
+  emergencyContactName?: string;
+  emergency_contact_name?: string;
+  emergencyContactPhone?: string;
+  emergency_contact_phone?: string;
   expenses?: any[];
   updated_expenses?: any[];
 }
@@ -76,35 +84,43 @@ export class TravelService {
       }))
     };
 
-    const { valid, errors } = validateCreateRequestPayload(normalizedValidation);
-    if (!valid) {
-      throw new Error(`Validation failed: ${errors?.join(', ')}`);
+    const isDraft = Boolean(rawInput.isDraft || rawInput.is_draft || rawInput.status === 'DRAFT');
+
+    if (!isDraft) {
+      const { valid, errors } = validateCreateRequestPayload(normalizedValidation);
+      if (!valid) {
+        throw new Error(`Validation failed: ${errors?.join(', ')}`);
+      }
+    } else {
+      if (!normalizedValidation.title || String(normalizedValidation.title).trim().length < 2) {
+        throw new Error('Title is required to save a travel draft.');
+      }
     }
 
     // Format for repository
     const repoPayload: CreateTravelRequestData = {
       userId,
-      travelType: normalizedValidation.travel_type as TravelType,
+      travelType: (normalizedValidation.travel_type as TravelType) || 'UPCOMING',
       title: normalizedValidation.title,
-      purpose: normalizedValidation.purpose,
-      projectCode: normalizedValidation.project_code,
-      origin: normalizedValidation.origin,
-      destination: normalizedValidation.destination,
-      departureDate: normalizedValidation.departure_date,
-      returnDate: normalizedValidation.return_date,
+      purpose: normalizedValidation.purpose || 'Travel draft',
+      projectCode: normalizedValidation.project_code || 'ENG-2026',
+      origin: normalizedValidation.origin || 'TBD',
+      destination: normalizedValidation.destination || 'TBD',
+      departureDate: normalizedValidation.departure_date || new Date().toISOString().split('T')[0],
+      returnDate: normalizedValidation.return_date || new Date().toISOString().split('T')[0],
       emergencyContactName: normalizedValidation.emergency_contact_name,
       emergencyContactPhone: normalizedValidation.emergency_contact_phone,
       supportingDocUrl: normalizedValidation.supporting_doc_url,
       expenses: normalizedValidation.expenses.map((e: any) => ({
-        category: e.category,
-        merchant: e.merchant,
-        amount: e.amount,
-        expenseDate: e.expense_date,
+        category: e.category || 'MISC',
+        merchant: e.merchant || 'Pending',
+        amount: Number(e.amount) || 0,
+        expenseDate: e.expense_date || new Date().toISOString().split('T')[0],
         receiptImageUrl: e.receipt_image_url,
         notes: e.notes
       })),
       currency: rawInput.currency || 'INR',
-      status: 'PENDING_MANAGER_REVIEW'
+      status: isDraft ? 'DRAFT' : 'PENDING_MANAGER_REVIEW'
     };
 
     return this.repo.createRequestWithExpenses(repoPayload);
@@ -113,8 +129,8 @@ export class TravelService {
   /**
    * Fetches requests belonging to the authenticated user.
    */
-  async getMyRequests(userId: string): Promise<TravelRequest[]> {
-    return this.repo.findScopedRequests(userId, 'EMPLOYEE');
+  async getMyRequests(userId: string, statusFilter?: TravelStatus): Promise<TravelRequest[]> {
+    return this.repo.findScopedRequests(userId, 'EMPLOYEE', statusFilter);
   }
 
   /**
@@ -167,8 +183,9 @@ export class TravelService {
   ): Promise<TravelRequest> {
     const request = await this.getRequestById(requestId);
 
-    if (request.status !== 'PENDING_MANAGER_REVIEW') {
-      throw new Error(`Cannot review request: current status is ${request.status}, expected PENDING_MANAGER_REVIEW`);
+    const reviewableStatuses: TravelStatus[] = ['PENDING_MANAGER_REVIEW', 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER'];
+    if (!reviewableStatuses.includes(request.status)) {
+      throw new Error(`Cannot review request: current status is ${request.status}, expected one of: ${reviewableStatuses.join(', ')}`);
     }
 
     // Normalize action
@@ -337,6 +354,19 @@ export class TravelService {
       throw new Error(`Resubmission validation failed: ${validation.errors?.join(', ')}`);
     }
 
+    // Update request metadata if provided
+    await this.repo.updateRequestFields(requestId, {
+      title: options.title,
+      purpose: options.purpose,
+      origin: options.origin,
+      destination: options.destination,
+      departureDate: options.departure_date || options.departureDate,
+      returnDate: options.return_date || options.returnDate,
+      supportingDocUrl: options.supporting_doc_url || options.supportingDocUrl,
+      emergencyContactName: options.emergency_contact_name || options.emergencyContactName,
+      emergencyContactPhone: options.emergency_contact_phone || options.emergencyContactPhone,
+    });
+
     // Update expenses if new list provided
     if (expensesList && Array.isArray(expensesList) && expensesList.length > 0) {
       const normalizedExpenses = expensesList.map((e) => ({
@@ -363,7 +393,7 @@ export class TravelService {
       actorRole: 'EMPLOYEE',
       fromStatus: request.status,
       toStatus,
-      remarks: remarks || 'Resubmitted after employee revisions'
+      remarks: remarks || (request.status === 'DRAFT' ? 'Submitted travel request from draft' : 'Resubmitted after employee revisions')
     });
 
     return this.getRequestById(requestId);

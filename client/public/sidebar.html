@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TripFlow — Dynamic Role-Based Sidebar Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <!-- Lucide Icons Library with fallback -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* ==========================================================================
+       1. Base & Reset
+       ========================================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      background: #F7F4EE;
+    }
+
+    /* ==========================================================================
+       2. Prototype Controls Bar (Top Reviewer Helper Bar)
+       ========================================================================== */
+    .prototype-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 44px;
+      background: #2B231D;
+      color: #F7F4EE;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      font-size: 12px;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .prototype-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+    }
+
+    .prototype-pill {
+      background: rgba(255, 255, 255, 0.12);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      color: #D4A373;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .prototype-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .role-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #E8DFD3;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .role-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #FFFFFF;
+    }
+
+    .role-btn.active {
+      background: #8A582B;
+      border-color: #8A582B;
+      color: #FFFFFF;
+      font-weight: 600;
+    }
+
+    .pin-btn {
+      margin-left: 8px;
+      background: rgba(212, 163, 115, 0.15);
+      border: 1px solid #D4A373;
+      color: #D4A373;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ==========================================================================
+       3. Warm Storycraft Design Tokens
+       ========================================================================== */
+    .page {
+      --surface: #ffffff;
+      --text: #2B231D;
+      --muted: #756F68;
+      --line: #E8DFD3;
+      --chip: #FAF8F5;
+      --border: #E8DFD3;
+      --hover: #F5EFE6;
+      --accent: #8A582B;
+      --accent-hover: #754820;
+      --active-bg: rgba(138, 88, 43, 0.12);
+      --active-border: rgba(138, 88, 43, 0.32);
+      --shadow: 0 20px 45px -12px rgba(43, 35, 29, 0.10), 0 0 1px 1px rgba(232, 223, 211, 0.8);
+      
+      height: 100vh;
+      background: #F7F4EE;
+      color: var(--text);
+      font-family: "Poppins", -apple-system, sans-serif;
+      padding-top: 44px; /* Space for top helper bar */
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ==========================================================================
+       4. Floating Collapsible Sidebar
+       ========================================================================== */
+    .sidebar {
+      position: fixed;
+      top: 68px; /* Below prototype bar */
+      left: 24px;
+      bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      width: 76px;
+      padding: 16px;
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 50;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .sidebar:hover,
+    .sidebar.pinned {
+      width: 256px;
+    }
+
+    /* --------------------------------------------------------------------------
+       Brand Section
+       -------------------------------------------------------------------------- */
+    .brand {
+      display: flex;
+      align-items: center;
+      height: 44px;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      margin: 0 3px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.5px;
+      box-shadow: 0 4px 10px rgba(138, 88, 43, 0.25);
+    }
+
+    .brand-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      margin-left: 9px;
+      overflow: hidden;
+      transition: opacity 0.2s ease;
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .brand-chevron {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      color: var(--muted);
+      transition: opacity 0.2s ease;
+      margin-right: 2px;
+      display: grid;
+      place-items: center;
+    }
+
+    /* --------------------------------------------------------------------------
+       Quick Action (+ New Travel Request)
+       -------------------------------------------------------------------------- */
+    .action-item {
+      margin-top: 14px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-create-trip {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #ffffff !important;
+      font-size: 13.5px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .btn-create-trip:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-create-trip .icon-wrap {
+      color: #ffffff;
+    }
+
+    .btn-create-trip p {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* --------------------------------------------------------------------------
+       Section Labels & Nav Lists
+       -------------------------------------------------------------------------- */
+    .section-label {
+      height: 16px;
+      margin: 16px 0 8px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      line-height: 16px;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0.75;
+      overflow: hidden;
+      transition: opacity 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .sidebar:not(:hover):not(.pinned) .section-label {
+      opacity: 0;
+    }
+
+    .sidebar ul.nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .nav-radio {
+      display: none;
+    }
+
+    .nav :is(label, button) {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 44px;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 13.5px;
+      text-align: left;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      text-decoration: none;
+    }
+
+    .icon-wrap {
+      flex: 0 0 42px;
+      display: grid;
+      place-items: center;
+    }
+
+    .icon-wrap svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 1.8;
+      transition: color 0.15s ease;
+    }
+
+    .nav p {
+      flex: 1 1 auto;
+      min-width: 0;
+      margin: 0 0 0 4px;
+      overflow: hidden;
+      transition: opacity 0.2s ease;
+      font-weight: 500;
+    }
+
+    .nav-badge {
+      flex: 0 0 auto;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      margin-right: 8px;
+      transition: opacity 0.2s ease;
+    }
+
+    .nav-badge.danger {
+      background: rgba(158, 42, 43, 0.12);
+      color: #9E2A2B;
+      border: 1px solid rgba(158, 42, 43, 0.25);
+    }
+
+    .nav-badge.warning {
+      background: rgba(185, 119, 14, 0.12);
+      color: #B9770E;
+      border: 1px solid rgba(185, 119, 14, 0.25);
+    }
+
+    .nav-badge.neutral {
+      background: var(--chip);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .nav :is(label, button):hover {
+      background: var(--hover);
+      color: var(--text);
+    }
+
+    .nav-radio:checked + label {
+      background: var(--active-bg);
+      border-color: var(--active-border);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .nav-radio:checked + label .icon-wrap {
+      color: var(--accent);
+    }
+
+    /* --------------------------------------------------------------------------
+       Current User Profile Footer (Anchored to bottom with margin-top: auto)
+       -------------------------------------------------------------------------- */
+    .user-footer {
+      border-top: 1px solid var(--border);
+      margin-top: auto; /* Pushes profile footer to the very bottom */
+      padding-top: 14px;
+      display: flex;
+      align-items: center;
+      height: 52px;
+      flex-shrink: 0;
+    }
+
+    .user-avatar {
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      margin: 0 3px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .user-info {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      margin-left: 9px;
+      overflow: hidden;
+      transition: opacity 0.2s ease;
+    }
+
+    .user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .user-role {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .logout-btn {
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .logout-btn:hover {
+      color: #9E2A2B;
+      background: rgba(158, 42, 43, 0.1);
+    }
+
+    /* --------------------------------------------------------------------------
+       Collapsed Visibility Masking
+       -------------------------------------------------------------------------- */
+    .sidebar:not(:hover):not(.pinned) :is(.brand-text, .brand-chevron, .nav p, .nav-badge, .user-info, .logout-btn, .btn-create-trip p) {
+      flex: 0 0 0;
+      width: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar:not(:hover):not(.pinned) .brand {
+      gap: 0;
+    }
+
+    /* ==========================================================================
+       5. Workstation Preview Area
+       ========================================================================== */
+    .workstation {
+      flex: 1;
+      margin-left: 100px; /* Space for collapsed 76px sidebar + padding */
+      margin-right: 24px;
+      margin-top: 24px;
+      margin-bottom: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .workstation-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+    }
+
+    .workstation-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-role {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--active-bg);
+      color: var(--accent);
+      border: 1px solid var(--active-border);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .workstation-body {
+      padding: 28px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Metric Cards Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+    }
+
+    .metric-card {
+      background: var(--chip);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      border-radius: 14px;
+    }
+
+    .metric-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .metric-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Sample Travel Requests Table */
+    .table-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .table-title {
+      padding: 14px 20px;
+      font-size: 13.5px;
+      font-weight: 600;
+      background: var(--chip);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sample-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .sample-table th {
+      padding: 12px 20px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sample-table td {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .sample-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .sample-table tr:hover td {
+      background: var(--hover);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .status-pending {
+      background: rgba(185, 119, 14, 0.12);
+      color: #B9770E;
+      border: 1px solid rgba(185, 119, 14, 0.25);
+    }
+
+    .status-revision {
+      background: rgba(158, 42, 43, 0.12);
+      color: #9E2A2B;
+      border: 1px solid rgba(158, 42, 43, 0.25);
+    }
+
+    .status-approved {
+      background: rgba(46, 125, 50, 0.12);
+      color: #2E7D32;
+      border: 1px solid rgba(46, 125, 50, 0.25);
+    }
+
+    .currency-inr {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Prototype Control Bar (Helps test & inspect the 3 roles and pin state) -->
+  <header class="prototype-bar">
+    <div class="prototype-info">
+      <span>TripFlow Workspace</span>
+      <span class="prototype-pill">Design Reference Prototype</span>
+    </div>
+
+    <div class="prototype-controls">
+      <span style="color: #A0988E; font-size: 11px; margin-right: 4px;">Role Simulator:</span>
+      <button type="button" class="role-btn active" onclick="switchRole('EMPLOYEE')">Employee (4 tabs)</button>
+      <button type="button" class="role-btn" onclick="switchRole('MANAGER')">Manager (5 tabs)</button>
+      <button type="button" class="role-btn" onclick="switchRole('ADMIN')">Admin / Finance (4 tabs)</button>
+      <button type="button" class="pin-btn" id="pinToggle" onclick="togglePin()">
+        <span id="pinIcon">📌</span> <span id="pinText">Pin Open</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="page">
+    
+    <!-- ========================================================================
+         STREAMLINED SIDEBAR COMPONENT (No Dark Mode, No Search, No Other User Avatars)
+         ======================================================================== -->
+    <aside class="sidebar" id="sidebarElement">
+      
+      <!-- 1. Brand Section -->
+      <div class="brand" onclick="togglePin()" title="Click to toggle pinned sidebar">
+        <div class="logo">TF</div>
+        <span class="brand-text">
+          <span class="brand-name">TripFlow</span>
+          <span class="brand-sub" id="brandSubRole">Employee Portal</span>
+        </span>
+        <i class="brand-chevron" data-lucide="chevrons-up-down"></i>
+      </div>
+
+      <!-- 2. Quick Action: Create New Request -->
+      <div class="action-item" id="newRequestAction">
+        <button type="button" class="btn-create-trip" onclick="handleNewRequest()" title="New Travel Request">
+          <span class="icon-wrap">
+            <i data-lucide="plus-circle"></i>
+          </span>
+          <p>New Request</p>
+        </button>
+      </div>
+
+      <!-- 3. Primary Navigation Section -->
+      <p class="section-label" id="sectionLabelWorkstation">Workstation</p>
+      <ul class="nav" id="roleNavList">
+        <!-- Rendered dynamically by script based on role -->
+      </ul>
+
+      <!-- 4. Current Logged-in User Profile Footer (Anchored to bottom) -->
+      <div class="user-footer">
+        <div class="user-avatar" id="userAvatar">SK</div>
+        <div class="user-info">
+          <span class="user-name" id="userName">Sudalaimani K.</span>
+          <span class="user-role" id="userRoleTitle">Software Engineer • IT</span>
+        </div>
+        <button type="button" class="logout-btn" title="Sign Out" onclick="alert('TripFlow Session: Signed Out safely.')">
+          <i data-lucide="log-out"></i>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- ========================================================================
+         MAIN WORKSTATION CONTENT PREVIEW
+         ======================================================================== -->
+    <main class="workstation">
+      <header class="workstation-header">
+        <div class="workstation-title">
+          <span id="currentViewTitle">Present Travel Requests</span>
+          <span class="badge-role" id="roleBadgeHeader">EMPLOYEE</span>
+        </div>
+        <button type="button" class="role-btn active" style="padding: 7px 16px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;" onclick="handleNewRequest()">
+          <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+          <span>New Travel Request</span>
+        </button>
+      </header>
+
+      <section class="workstation-body">
+        
+        <!-- Summary Metrics -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Active Queue</div>
+            <div class="metric-value" id="metricActiveQueue">3 Trips</div>
+            <div class="metric-sub">Awaiting Line Manager clearance</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Requires Revision</div>
+            <div class="metric-value" style="color: #9E2A2B;" id="metricRevisionCount">1 Action</div>
+            <div class="metric-sub">Receipt photo clarification required</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Committed Expenses</div>
+            <div class="metric-value currency-inr" id="metricCommittedSpend">₹1,48,500.00</div>
+            <div class="metric-sub">INR Standard · 100% Tax Invoices Attached</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Department Headroom</div>
+            <div class="metric-value currency-inr" style="color: #2E7D32;" id="metricHeadroom">₹23,51,500.00</div>
+            <div class="metric-sub">₹35,00,000.00 Total FY Allocation</div>
+          </div>
+        </div>
+
+        <!-- Sample Travel Request Table -->
+        <div class="table-container">
+          <div class="table-title">
+            <span id="tableHeaderLabel">Current Active Travel Requests (INR Standard)</span>
+            <span style="font-size: 11px; color: var(--muted);">Auto-synced with Postgres Ledger</span>
+          </div>
+          <table class="sample-table">
+            <thead>
+              <tr>
+                <th>Request ID</th>
+                <th>Destination / Purpose</th>
+                <th>Dates</th>
+                <th>Estimated Cost</th>
+                <th>Status</th>
+                <th>Next Action</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr>
+                <td><strong>TRV-2026-089</strong></td>
+                <td>Bangalore → Mumbai (Client Architecture Workshop)</td>
+                <td>18 Nov – 21 Nov 2026</td>
+                <td class="currency-inr">₹48,200.00</td>
+                <td><span class="status-badge status-pending">PENDING MANAGER</span></td>
+                <td style="color: var(--muted);">Waiting for Audit</td>
+              </tr>
+              <tr>
+                <td><strong>TRV-2026-074</strong></td>
+                <td>Chennai → Delhi (Annual Tech Summit)</td>
+                <td>02 Nov – 05 Nov 2026</td>
+                <td class="currency-inr">₹32,800.00</td>
+                <td><span class="status-badge status-revision">REVISION REQUESTED</span></td>
+                <td><a href="javascript:void(0)" style="color: #9E2A2B; font-weight: 600; text-decoration: none;">Resubmit Proof →</a></td>
+              </tr>
+              <tr>
+                <td><strong>TRV-2026-061</strong></td>
+                <td>Hyderabad → Pune (Customer Escalation Review)</td>
+                <td>25 Oct – 28 Oct 2026</td>
+                <td class="currency-inr">₹67,500.00</td>
+                <td><span class="status-badge status-approved">APPROVED</span></td>
+                <td style="color: #2E7D32; font-weight: 500;">Cleared for Booking</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+    </main>
+
+  </div>
+
+  <!-- ========================================================================
+       6. Interactive Prototype Controller Script & Inline SVG Fallbacks
+       ======================================================================== -->
+  <script>
+    // Inline SVG dictionary fallback ensuring icons render even offline without CDN
+    const SVG_ICONS = {
+      'chevrons-up-down': `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>`,
+      'plane': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg>`,
+      'alert-circle': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>`,
+      'file-edit': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2h-5.5"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M10.4 12.6a2 2 0 1 1 3 3L6 23l-4 1 1-4Z"></path></svg>`,
+      'archive': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg>`,
+      'inbox': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`,
+      'rotate-ccw': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>`,
+      'users': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+      'user-check': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg>`,
+      'shield-check': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>`,
+      'git-fork': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="6" r="3"></circle><path d="M18 9v2c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V9"></path><path d="M12 12v3"></path></svg>`,
+      'pie-chart': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>`,
+      'plus-circle': `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>`,
+      'plus': `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>`,
+      'log-out': `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>`
+    };
+
+    function renderIcons() {
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+      // Apply offline fallback if lucide is unavailable or failed
+      document.querySelectorAll('i[data-lucide]').forEach(iconEl => {
+        if (!iconEl.innerHTML.trim()) {
+          const iconName = iconEl.getAttribute('data-lucide');
+          if (SVG_ICONS[iconName]) {
+            iconEl.innerHTML = SVG_ICONS[iconName];
+          }
+        }
+      });
+    }
+
+    // Navigation configurations matching TripFlow dynamic role specifications:
+    const NAV_CONFIGS = {
+      EMPLOYEE: [
+        { id: 'present', label: 'Present Requests', icon: 'plane', badge: 3, badgeType: 'warning' },
+        { id: 'revisions', label: 'Revised Requests', icon: 'alert-circle', badge: 1, badgeType: 'danger' },
+        { id: 'drafts', label: 'Travel Drafts', icon: 'file-edit', badge: 2, badgeType: 'neutral' },
+        { id: 'past', label: 'Past Requests', icon: 'archive', badge: null }
+      ],
+      MANAGER: [
+        { id: 'present', label: 'Team Audit Queue', icon: 'inbox', badge: 4, badgeType: 'warning' },
+        { id: 'revisions', label: 'Revised Requests', icon: 'rotate-ccw', badge: 2, badgeType: 'danger' },
+        { id: 'past', label: 'Past Team History', icon: 'users', badge: null },
+        { id: 'personal', label: 'My Personal Travel', icon: 'user-check', badge: 1, badgeType: 'neutral' },
+        { id: 'drafts', label: 'Travel Drafts', icon: 'file-edit', badge: null }
+      ],
+      ADMIN: [
+        { id: 'present', label: 'Clearance Queue', icon: 'shield-check', badge: 5, badgeType: 'warning' },
+        { id: 'revisions', label: 'Revised Requests', icon: 'git-fork', badge: 2, badgeType: 'danger' },
+        { id: 'past', label: 'Past Requests', icon: 'archive', badge: null },
+        { id: 'budgets', label: 'Department Budgets', icon: 'pie-chart', badge: null }
+      ]
+    };
+
+    let currentRole = 'EMPLOYEE';
+    let currentTab = 'present';
+    let isPinned = false;
+
+    function renderNav(role) {
+      const items = NAV_CONFIGS[role] || NAV_CONFIGS.EMPLOYEE;
+      const navList = document.getElementById('roleNavList');
+      navList.innerHTML = '';
+
+      items.forEach((item, index) => {
+        const isChecked = item.id === currentTab ? 'checked' : (index === 0 && !items.some(i => i.id === currentTab) ? 'checked' : '');
+        if (isChecked) currentTab = item.id;
+
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <input
+            type="radio"
+            name="nav"
+            id="nav-${item.id}"
+            class="nav-radio"
+            ${isChecked}
+            onchange="handleTabClick('${item.id}', '${item.label}')"
+          />
+          <label for="nav-${item.id}">
+            <span class="icon-wrap">
+              <i data-lucide="${item.icon}"></i>
+            </span>
+            <p>${item.label}</p>
+            ${item.badge ? `<span class="nav-badge ${item.badgeType || 'neutral'}">${item.badge}</span>` : ''}
+          </label>
+        `;
+        navList.appendChild(li);
+      });
+
+      // Update role subtitle & header
+      const subLabels = {
+        EMPLOYEE: 'Employee Portal',
+        MANAGER: 'Team Manager Hub',
+        ADMIN: 'Executive & Finance'
+      };
+      document.getElementById('brandSubRole').textContent = subLabels[role] || 'Travel Portal';
+      document.getElementById('roleBadgeHeader').textContent = role;
+
+      // Update User profile details for demo authenticity
+      const userProfiles = {
+        EMPLOYEE: { initials: 'SK', name: 'Sudalaimani K.', role: 'Software Engineer • IT' },
+        MANAGER: { initials: 'RK', name: 'Rajesh Kumar', role: 'Engineering Lead • Tier 1' },
+        ADMIN: { initials: 'VD', name: 'Vikram Deshmukh', role: 'Finance Controller • Tier 2' }
+      };
+      const user = userProfiles[role];
+      if (user) {
+        document.getElementById('userAvatar').textContent = user.initials;
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userRoleTitle').textContent = user.role;
+      }
+
+      renderIcons();
+    }
+
+    function switchRole(role) {
+      currentRole = role;
+      document.querySelectorAll('.role-btn').forEach(btn => {
+        if (btn.textContent.toUpperCase().includes(role)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      renderNav(role);
+      updateWorkstationView(currentTab);
+    }
+
+    function handleTabClick(tabId, label) {
+      currentTab = tabId;
+      updateWorkstationView(tabId, label);
+    }
+
+    function updateWorkstationView(tabId, label) {
+      const titleElem = document.getElementById('currentViewTitle');
+      const tableLabel = document.getElementById('tableHeaderLabel');
+      
+      const matched = NAV_CONFIGS[currentRole].find(i => i.id === tabId);
+      const displayLabel = label || (matched ? matched.label : 'Travel Requests');
+      titleElem.textContent = displayLabel;
+      tableLabel.textContent = `${displayLabel} — Active Ledger Records`;
+
+      // Update metrics based on role / tab
+      if (currentRole === 'EMPLOYEE') {
+        document.getElementById('metricActiveQueue').textContent = '3 Trips';
+        document.getElementById('metricRevisionCount').textContent = '1 Action';
+        document.getElementById('metricCommittedSpend').textContent = '₹1,48,500.00';
+      } else if (currentRole === 'MANAGER') {
+        document.getElementById('metricActiveQueue').textContent = '4 Awaiting Audit';
+        document.getElementById('metricRevisionCount').textContent = '2 Resubmissions';
+        document.getElementById('metricCommittedSpend').textContent = '₹4,12,000.00';
+      } else if (currentRole === 'ADMIN') {
+        document.getElementById('metricActiveQueue').textContent = '5 For Clearance';
+        document.getElementById('metricRevisionCount').textContent = '2 Route Audits';
+        document.getElementById('metricCommittedSpend').textContent = '₹11,48,500.00';
+      }
+    }
+
+    function togglePin() {
+      const sidebar = document.getElementById('sidebarElement');
+      const pinBtn = document.getElementById('pinToggle');
+      const pinText = document.getElementById('pinText');
+      isPinned = !isPinned;
+
+      if (isPinned) {
+        sidebar.classList.add('pinned');
+        pinBtn.style.background = '#8A582B';
+        pinBtn.style.color = '#FFFFFF';
+        pinBtn.style.borderColor = '#8A582B';
+        pinText.textContent = 'Unpin Sidebar';
+      } else {
+        sidebar.classList.remove('pinned');
+        pinBtn.style.background = 'rgba(212, 163, 115, 0.15)';
+        pinBtn.style.color = '#D4A373';
+        pinBtn.style.borderColor = '#D4A373';
+        pinText.textContent = 'Pin Open';
+      }
+    }
+
+    function handleNewRequest() {
+      alert('TripFlow Action: Opening New Travel Request Modal / Wizard (Supports Pre-Trip Authorization & Post-Trip Reimbursement with Itemized INR Expenses & Proof Uploads).');
+    }
+
+    // Initial Render
+    window.addEventListener('DOMContentLoaded', () => {
+      renderNav(currentRole);
+      renderIcons();
+    });
+  </script>
+</body>
+</html>

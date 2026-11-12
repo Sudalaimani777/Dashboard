@@ -7,6 +7,7 @@ import { SignUpCard } from '../features/auth/components/SignUpCard';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { DashboardLayout } from '../features/travel/layout/DashboardLayout';
 import { NewTravelRequestPage } from '../features/travel/pages/NewTravelRequestPage';
+import { ResubmitTravelRequestPage } from '../features/travel/pages/ResubmitTravelRequestPage';
 import { ManagerAuditPage } from '../features/travel/pages/ManagerAuditPage';
 import { AdminClearancePage } from '../features/travel/pages/AdminClearancePage';
 import { TravelDetailPage } from '../features/travel/pages/TravelDetailPage';
@@ -28,6 +29,7 @@ export const AppRoutes: React.FC = () => {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/travel/new" element={<NewTravelRequestPage />} />
             <Route path="/travel/requests/:id" element={<TravelDetailPage />} />
+            <Route path="/travel/requests/:id/edit" element={<ResubmitTravelRequestPage />} />
             <Route path="/travel/audit/:id" element={<ManagerAuditPage />} />
             <Route path="/travel/clearance/:id" element={<AdminClearancePage />} />
           </Route>

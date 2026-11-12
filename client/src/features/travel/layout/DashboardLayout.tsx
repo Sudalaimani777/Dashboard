@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { useTravel } from '../hooks/useTravel';
 import { DynamicRoleSidebar } from './DynamicRoleSidebar';
+import { ErrorBoundary } from '../../../shared/components/ErrorBoundary';
 
 export interface DashboardLayoutProps {
   children?: React.ReactNode;
@@ -9,7 +11,8 @@ export interface DashboardLayoutProps {
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { user, signout } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { requests, managerQueue, adminQueue } = useTravel();
+  const [isPinned, setIsPinned] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -17,8 +20,33 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get('tab') || 'present';
 
+  const badgeCounts: Record<string, number> = useMemo(() => {
+    const counts: Record<string, number> = {};
+    if (!user) return counts;
+    if (user.role === 'EMPLOYEE') {
+      counts.revisions = requests.filter((r) => r.status.includes('REVISION_REQUESTED')).length;
+      counts.drafts = requests.filter((r) => r.status === 'DRAFT').length;
+    } else if (user.role === 'MANAGER') {
+      counts.present = managerQueue.filter((r) => r.status === 'PENDING_MANAGER_REVIEW').length;
+      counts.revisions = managerQueue.filter(
+        (r) =>
+          r.status === 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER' ||
+          (r.status === 'PENDING_MANAGER_REVIEW' &&
+            r.timeline?.some(
+              (t) =>
+                Boolean((t.eventType || t.event_type || '')?.includes('RESUBMIT')) ||
+                Boolean((t.remarks || '')?.includes('Resubmit'))
+            ))
+      ).length;
+      counts.drafts = requests.filter((r) => r.status === 'DRAFT').length;
+    } else if (user.role === 'ADMIN') {
+      counts.present = adminQueue.filter((r) => r.status === 'PENDING_ADMIN_APPROVAL').length;
+      counts.revisions = adminQueue.filter((r) => r.status.includes('REVISION')).length;
+    }
+    return counts;
+  }, [user, requests, managerQueue, adminQueue]);
+
   const handleTabChange = (tabId: string) => {
-    // Navigate to /dashboard?tab=<tabId>
     navigate(`/dashboard?tab=${tabId}`);
   };
 
@@ -27,20 +55,27 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F7F4EE] text-[#2B231D]">
-      {/* Persistent Dynamic Role Sidebar */}
+    <div className="flex h-screen w-screen overflow-hidden bg-canvas text-ink relative">
+      {/* Floating Dynamic Role Sidebar */}
       <DynamicRoleSidebar
         user={user}
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        isCollapsed={isCollapsed}
-        onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
+        isPinned={isPinned}
+        onTogglePin={() => setIsPinned((prev) => !prev)}
         onSignOut={signout}
+        badgeCounts={badgeCounts}
       />
 
       {/* Main View Area */}
-      <main className="flex-1 overflow-y-auto min-w-0">
-        {children || <Outlet />}
+      <main
+        className={`flex-1 overflow-y-auto min-w-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          isPinned ? 'pl-[296px]' : 'pl-[116px]'
+        } pr-6 py-6`}
+      >
+        <ErrorBoundary fallbackTitle="Workstation Error" fallbackMessage="There was a problem loading this workstation view. Try reloading or return to the dashboard.">
+          {children || <Outlet />}
+        </ErrorBoundary>
       </main>
     </div>
   );

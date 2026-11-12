@@ -31,17 +31,25 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-[#2B231D]">
-          Itemized Expenses & Estimates <span className="text-[#9E2A2B]">*</span>
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-center justify-between pb-1">
+        <label className="text-xs font-semibold text-ink">
+          Itemized Expenses & Estimates <span className="text-destructive">*</span>
         </label>
-        <span className="text-xs font-mono tabular-nums font-semibold text-[#8A582B]">
+        <span className="text-xs font-mono tabular-nums font-semibold text-primary">
           Subtotal: {formatINR(totalAmount)}
         </span>
       </div>
 
-      <div className="flex flex-col gap-2.5">
+      {/* Desktop Column Header */}
+      <div className="hidden sm:grid grid-cols-12 gap-3 px-3 text-[11px] font-semibold text-muted uppercase tracking-wider">
+        <span className="col-span-3">Category</span>
+        <span className="col-span-5">Merchant / Vendor</span>
+        <span className="col-span-3">Amount (₹)</span>
+        <span className="col-span-1 text-center">Action</span>
+      </div>
+
+      <div className="flex flex-col gap-2">
         {fields.map((field, idx) => (
           <ExpenseRowItem
             key={field.id}
@@ -57,9 +65,9 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
       <button
         type="button"
         onClick={handleAddRow}
-        className="self-start flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-[#8A582B] text-[#8A582B] text-xs font-semibold hover:bg-[#F5EBE1] transition-colors cursor-pointer mt-1"
+        className="self-start flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-primary text-primary text-xs font-semibold hover:bg-primary/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all cursor-pointer mt-1"
       >
-        <Plus className="w-3.5 h-3.5" />
+        <Plus className="size-3.5" />
         Add Expense Line Item
       </button>
     </div>

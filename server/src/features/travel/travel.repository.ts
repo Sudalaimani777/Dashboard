@@ -123,12 +123,16 @@ export class TravelRepository {
       }
 
       // Insert initial timeline event
+      const initialRemarks = initialStatus === 'DRAFT'
+        ? 'Created travel draft'
+        : 'Submitted initial travel request with itemized expenses';
+
       const timelineRes = await client.query(
         `INSERT INTO request_timeline_events (
           travel_request_id, actor_id, actor_role, event_type, from_status, to_status, remarks
-        ) VALUES ($1, $2, 'EMPLOYEE', 'SUBMITTED', NULL, $3, 'Submitted initial travel request with itemized expenses')
+        ) VALUES ($1, $2, 'EMPLOYEE', 'SUBMITTED', NULL, $3, $4)
         RETURNING *`,
-        [requestRow.id, data.userId, initialStatus]
+        [requestRow.id, data.userId, initialStatus, initialRemarks]
       );
 
       await client.query('COMMIT');
@@ -263,7 +267,7 @@ export class TravelRepository {
         u.department AS requester_department
       FROM travel_requests tr
       JOIN users u ON tr.user_id = u.id
-      WHERE tr.status = 'PENDING_MANAGER_REVIEW'
+      WHERE tr.status != 'DRAFT'
     `;
     const params: any[] = [];
 
@@ -272,7 +276,7 @@ export class TravelRepository {
       sql += ` AND (tr.manager_id = $1 OR u.manager_id = $1 OR (tr.manager_id IS NULL AND u.manager_id IS NULL))`;
     }
 
-    sql += ' ORDER BY tr.created_at ASC';
+    sql += ' ORDER BY tr.created_at DESC';
 
     const res = await query(sql, params);
     return res.rows.map(this.mapRowToRequest);
@@ -292,8 +296,8 @@ export class TravelRepository {
       FROM travel_requests tr
       JOIN users u ON tr.user_id = u.id
       LEFT JOIN users mgr ON tr.manager_id = mgr.id
-      WHERE tr.status = 'PENDING_ADMIN_APPROVAL'
-      ORDER BY tr.created_at ASC`
+      WHERE tr.status != 'DRAFT'
+      ORDER BY tr.created_at DESC`
     );
     return res.rows.map(this.mapRowToRequest);
   }
@@ -452,6 +456,47 @@ export class TravelRepository {
   }
 
   /**
+   * Updates core travel request metadata fields.
+   */
+  async updateRequestFields(
+    id: string,
+    fields: Partial<{
+      title: string;
+      purpose: string;
+      origin: string;
+      destination: string;
+      departureDate: string;
+      returnDate: string;
+      supportingDocUrl: string;
+      emergencyContactName: string;
+      emergencyContactPhone: string;
+    }>
+  ): Promise<void> {
+    const sets: string[] = ['updated_at = CURRENT_TIMESTAMP'];
+    const values: any[] = [];
+
+    const addSet = (col: string, val: any) => {
+      if (val !== undefined && val !== null) {
+        values.push(val);
+        sets.push(`${col} = $${values.length}`);
+      }
+    };
+
+    addSet('title', fields.title);
+    addSet('purpose', fields.purpose);
+    addSet('origin', fields.origin);
+    addSet('destination', fields.destination);
+    addSet('departure_date', fields.departureDate);
+    addSet('return_date', fields.returnDate);
+    addSet('supporting_doc_url', fields.supportingDocUrl);
+    addSet('emergency_contact_name', fields.emergencyContactName);
+    addSet('emergency_contact_phone', fields.emergencyContactPhone);
+
+    values.push(id);
+    await query(`UPDATE travel_requests SET ${sets.join(', ')} WHERE id = $${values.length}`, values);
+  }
+
+  /**
    * Fetches the department budget for the given fiscal year and quarter
    * with calculated available headroom and utilization percentage.
    */
@@ -467,7 +512,25 @@ export class TravelRepository {
     );
 
     if (res.rows.length === 0) return null;
-    return this.mapRowToBudget(res.rows[0]);
+    const budget = this.mapRowToBudget(res.rows[0]);
+
+    // Fetch actual category breakdown for this department's approved/settled trips
+    const catRes = await query(
+      `SELECT te.category, SUM(te.amount) AS total
+       FROM travel_expenses te
+       JOIN travel_requests tr ON te.travel_request_id = tr.id
+       JOIN users u ON tr.user_id = u.id
+       WHERE LOWER(u.department) = LOWER($1) AND tr.status IN ('APPROVED', 'SETTLED')
+       GROUP BY te.category`,
+      [department]
+    );
+
+    budget.categoryBreakdown = catRes.rows.map((r: any) => ({
+      category: r.category,
+      total: Number(r.total)
+    }));
+
+    return budget;
   }
 
   /**
@@ -578,14 +641,22 @@ export class TravelRepository {
     return {
       id: row.id,
       travel_request_id: row.travel_request_id,
+      travelRequestId: row.travel_request_id,
       actor_id: row.actor_id,
+      actorId: row.actor_id,
       actor_role: row.actor_role,
+      actorRole: row.actor_role,
       actor_name: row.actor_name,
+      actorName: row.actor_name,
       event_type: row.event_type,
+      eventType: row.event_type,
       from_status: row.from_status,
+      fromStatus: row.from_status,
       to_status: row.to_status,
+      toStatus: row.to_status,
       remarks: row.remarks,
-      created_at: row.created_at
+      created_at: row.created_at,
+      createdAt: row.created_at
     };
   }
 

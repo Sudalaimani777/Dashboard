@@ -97,14 +97,22 @@ export interface TravelRequest {
 export interface TimelineEvent {
   id: string;
   travel_request_id: string;
+  travelRequestId?: string;
   actor_id: string;
+  actorId?: string;
   actor_role: string;
+  actorRole?: string;
   actor_name?: string;
+  actorName?: string;
   event_type: string;
+  eventType?: string;
   from_status?: string | null;
+  fromStatus?: string | null;
   to_status: string;
+  toStatus?: string;
   remarks?: string | null;
   created_at: string;
+  createdAt?: string;
 }
 
 export interface DepartmentBudget {
@@ -116,6 +124,7 @@ export interface DepartmentBudget {
   utilized_amount: number;
   available_headroom?: number;
   utilization_percentage?: number;
+  categoryBreakdown?: Array<{ category: string; total: number }>;
   created_at: string;
   updated_at: string;
 }
@@ -132,7 +141,8 @@ export const ALLOWED_TRANSITIONS: Record<TravelStatus, TravelStatus[]> = {
   PENDING_MANAGER_REVIEW: [
     'PENDING_ADMIN_APPROVAL', 
     'REVISION_REQUESTED_BY_MANAGER', 
-    'REJECTED'
+    'REJECTED',
+    'CANCELLED'
   ],
   REVISION_REQUESTED_BY_MANAGER: [
     'PENDING_MANAGER_REVIEW', 

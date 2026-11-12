@@ -18,11 +18,12 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
   canRemove,
 }) => {
   return (
-    <div className="grid grid-cols-12 gap-3 items-center bg-[#FAF8F5] p-3 rounded-xl border border-[#E8DFD3]">
-      <div className="col-span-3">
+    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 items-center bg-surface-subtle p-3 rounded-xl border border-border-warm transition-all">
+      <div className="sm:col-span-3">
+        <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Category</label>
         <select
           {...register(`expenses.${index}.category`)}
-          className="w-full bg-white border border-[#E8DFD3] rounded-lg px-2.5 py-2 text-xs font-medium text-[#2B231D] focus:outline-none focus:border-[#8A582B]"
+          className="w-full bg-surface border border-border-warm rounded-lg px-2.5 py-2 text-xs font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all cursor-pointer"
         >
           <option value="FLIGHT">Flight</option>
           <option value="HOTEL">Hotel</option>
@@ -32,37 +33,40 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
         </select>
       </div>
 
-      <div className="col-span-5">
+      <div className="sm:col-span-5">
+        <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Merchant / Vendor</label>
         <input
           type="text"
           placeholder="Merchant (e.g. Air India, Marriott)"
           {...register(`expenses.${index}.merchant`)}
-          className="w-full bg-white border border-[#E8DFD3] rounded-lg px-3 py-2 text-xs text-[#2B231D] placeholder:text-[#A0988E] focus:outline-none focus:border-[#8A582B]"
+          className="w-full bg-surface border border-border-warm rounded-lg px-3 py-2 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
         />
       </div>
 
-      <div className="col-span-3">
+      <div className="sm:col-span-3">
+        <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Amount (INR)</label>
         <div className="relative">
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[#756F68]">₹</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-muted">₹</span>
           <input
             type="number"
             step="100"
             placeholder="0.00"
             {...register(`expenses.${index}.amount`, { valueAsNumber: true })}
-            className="w-full bg-white border border-[#E8DFD3] rounded-lg pl-6 pr-2.5 py-2 text-xs font-mono tabular-nums text-[#2B231D] focus:outline-none focus:border-[#8A582B]"
+            className="w-full bg-surface border border-border-warm rounded-lg pl-6 pr-2.5 py-2 text-xs font-mono tabular-nums text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
           />
         </div>
       </div>
 
-      <div className="col-span-1 flex justify-center">
+      <div className="sm:col-span-1 flex justify-end sm:justify-center">
         <button
           type="button"
           onClick={onRemove}
           disabled={!canRemove}
-          className="p-1.5 rounded text-[#A0988E] hover:text-[#9E2A2B] hover:bg-[#FDF2F2] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          aria-label={`Remove expense item ${index + 1}`}
+          className="p-1.5 rounded-lg text-faint hover:text-destructive hover:bg-destructive/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           title="Remove row"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="size-4" />
         </button>
       </div>
     </div>

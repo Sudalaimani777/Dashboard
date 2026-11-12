@@ -14,30 +14,27 @@ export const TripFlowHeader: React.FC<TripFlowHeaderProps> = ({
   const getRoleBadgeStyle = (role?: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'border-[#5C241C]/30 bg-[#5C241C]/10 text-[#5C241C]';
+        return 'border-destructive/30 bg-destructive/10 text-destructive';
       case 'MANAGER':
-        return 'border-[#8A582B]/30 bg-[#8A582B]/10 text-[#8A582B]';
+        return 'border-primary/30 bg-primary/10 text-primary';
       case 'EMPLOYEE':
       default:
-        return 'border-[#756F68]/30 bg-[#756F68]/10 text-[#2B231D]';
+        return 'border-border-warm bg-surface-subtle text-ink';
     }
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-[#E8DFD3] bg-white/90 backdrop-blur-md transition-all">
+    <header className="sticky top-0 z-30 w-full border-b border-border-warm bg-surface/90 backdrop-blur-md transition-all">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Identity */}
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-[#2B231D] text-white font-bold text-xs shadow-sm ring-1 ring-[#8A582B]/20">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-ink text-white font-bold text-xs shadow-xs ring-1 ring-primary/20">
             TF
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-bold tracking-tight text-[#2B231D]">
-                TripFlow
-              </span>
-            </div>
-           
+            <span className="text-base font-bold tracking-tight text-ink">
+              TripFlow
+            </span>
           </div>
         </div>
 
@@ -46,12 +43,14 @@ export const TripFlowHeader: React.FC<TripFlowHeaderProps> = ({
           {user ? (
             <div className="flex items-center gap-2.5 text-right">
               <div className="hidden sm:block">
-                <p className="text-xs font-semibold text-[#2B231D] leading-tight">
+                <p className="text-xs font-semibold text-ink leading-tight">
                   {user.name}
                 </p>
-                {/* <p className="text-[11px] text-[#756F68] leading-tight">
-                  {user.department || 'Engineering'}
-                </p> */}
+                {user.department && (
+                  <p className="text-[11px] text-muted leading-tight">
+                    {user.department}
+                  </p>
+                )}
               </div>
 
               {/* Typographic Role Badge */}
@@ -70,7 +69,7 @@ export const TripFlowHeader: React.FC<TripFlowHeaderProps> = ({
             type="button"
             onClick={onSignOut}
             aria-label="Sign out"
-            className="flex items-center gap-1.5 rounded-xl border border-[#E8DFD3] bg-[#F7F4EE] px-3 py-1.5 text-xs font-medium text-[#756F68] transition-colors hover:border-[#D4C4B5] hover:bg-white hover:text-[#2B231D] cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-border-warm bg-canvas px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-border-warm hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 cursor-pointer"
           >
             <LogOut className="size-3.5" />
             <span className="hidden sm:inline">Sign out</span>
