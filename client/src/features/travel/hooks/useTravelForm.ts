@@ -13,8 +13,8 @@ export const travelFormSchema = z.object({
   destination: z.string().min(2, 'Destination is required'),
   departure_date: z.string().min(1, 'Departure date is required'),
   return_date: z.string().min(1, 'Return date is required'),
-  emergency_contact_name: z.string(),
-  emergency_contact_phone: z.string(),
+  emergency_contact_name: z.string().min(2, 'Emergency contact name is required'),
+  emergency_contact_phone: z.string().min(5, 'Emergency contact phone is required'),
   supporting_doc_url: z.string().url('Must be a valid document or receipt URL'),
   expenses: z.array(
     z.object({

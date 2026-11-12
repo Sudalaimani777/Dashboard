@@ -22,7 +22,7 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
   const placeholder = isCase1 ? 'https://proofs.corp.com/receipt-oct.png' : 'https://proofs.corp.com/flight-quote.pdf';
 
   return (
-    <div className="rounded-xl border border-border-warm bg-surface-subtle/50 p-4 flex flex-col gap-3">
+    <div className="rounded-lg border border-border-warm bg-surface-subtle/50 p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <label className="text-xs font-semibold text-ink flex items-center gap-1.5">
           <Paperclip className="size-3.5 text-primary" />
@@ -40,7 +40,7 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
           type="url"
           placeholder={placeholder}
           {...register('supporting_doc_url')}
-          className={`w-full bg-surface border rounded-xl px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all ${
+          className={`w-full bg-surface border rounded-lg px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all ${
             errors.supporting_doc_url ? 'border-destructive/40 bg-destructive/5' : 'border-border-warm'
           }`}
         />

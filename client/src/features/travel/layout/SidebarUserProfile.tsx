@@ -32,11 +32,11 @@ export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
   return (
     <div className="mt-auto pt-3 border-t border-border-warm flex items-center justify-between shrink-0 select-none">
       <div
-        className="flex items-center min-w-0 overflow-hidden cursor-pointer"
+        className="flex items-center min-w-0 overflow-hidden"
         title={isCollapsed ? `${user.name} (${roleLabel})` : undefined}
       >
-        {/* 36px Circular Initials Avatar matching reference */}
-        <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+        {/* 36px Circular Initials Avatar */}
+        <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
           {initials}
         </div>
 
@@ -58,7 +58,7 @@ export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
         <button
           type="button"
           onClick={onSignOut}
-          className="p-1.5 text-muted hover:text-destructive hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
+          className="p-1.5 text-muted hover:text-destructive hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0 ml-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98]"
           title="Sign Out of TripFlow"
           aria-label="Sign Out"
         >

@@ -127,8 +127,10 @@ export interface AdminReviewInput {
 export interface ResubmitRequestInput {
   remarks?: string;
   employee_response_notes?: string;
+  isDraft?: boolean;
   title?: string;
   purpose?: string;
+  projectCode?: string;
   origin?: string;
   destination?: string;
   departureDate?: string;

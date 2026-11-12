@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --color-canvas: #F7F4EE;
   --color-surface: #FFFFFF;
   --color-surface-subtle: #FAF8F5;
@@ -11,14 +11,14 @@
   --color-primary-hover: #754820;
   --color-secondary: #996735;
   --color-tertiary: #D4A373;
-  --color-muted: #756F68;
-  --color-faint: #A0988E;
+  --color-muted: #575049;
+  --color-faint: #6E655C;
   --color-ink: #2B231D;
   --color-destructive: #9E2A2B;
 }
 
 :root {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
   background-color: #F7F4EE;
   color: #2B231D;
   text-rendering: optimizeLegibility;
@@ -27,52 +27,9 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100dvh;
   background-color: #F7F4EE;
   color: #2B231D;
-}
-
-@keyframes appear {
-  0% {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes appear-zoom {
-  0% {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-appear {
-  animation: appear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-appear-zoom {
-  animation: appear-zoom 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes wave {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-wave {
-  animation: wave 18s linear infinite;
 }
 
 

@@ -58,7 +58,7 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
         disabled={isRefreshing}
         aria-label="Refresh data"
         title={timeText || 'Refresh current data'}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-warm bg-surface hover:bg-surface-subtle active:scale-[0.98] text-xs font-semibold text-ink shadow-xs transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border-warm bg-surface hover:bg-surface-subtle active:scale-[0.98] text-xs font-semibold text-ink transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
       >
         <RotateCw
           className={`size-3.5 text-muted transition-transform ${

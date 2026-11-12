@@ -12,16 +12,16 @@ export const TravelTypeToggle: React.FC<TravelTypeToggleProps> = ({ value, onCha
     <div
       role="radiogroup"
       aria-label="Travel request category"
-      className="flex bg-surface-subtle p-1.5 rounded-xl border border-border-warm gap-2 max-w-lg shadow-2xs"
+      className="flex bg-surface-subtle p-1 rounded-lg border border-border-warm gap-1.5 max-w-lg"
     >
       <button
         type="button"
         role="radio"
         aria-checked={value === 'UPCOMING'}
         onClick={() => onChange('UPCOMING')}
-        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 active:scale-[0.98] ${
+        className={`flex-1 flex items-center justify-center gap-2 py-2 px-3.5 rounded-md text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] ${
           value === 'UPCOMING'
-            ? 'bg-surface text-ink shadow-xs border border-border-warm ring-1 ring-primary/10'
+            ? 'bg-surface text-ink shadow-2xs border border-border-warm'
             : 'text-muted hover:text-ink'
         }`}
       >
@@ -34,9 +34,9 @@ export const TravelTypeToggle: React.FC<TravelTypeToggleProps> = ({ value, onCha
         role="radio"
         aria-checked={value === 'ALREADY_TRAVELLED'}
         onClick={() => onChange('ALREADY_TRAVELLED')}
-        className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 active:scale-[0.98] ${
+        className={`flex-1 flex items-center justify-center gap-2 py-2 px-3.5 rounded-md text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] ${
           value === 'ALREADY_TRAVELLED'
-            ? 'bg-surface text-ink shadow-xs border border-border-warm ring-1 ring-primary/10'
+            ? 'bg-surface text-ink shadow-2xs border border-border-warm'
             : 'text-muted hover:text-ink'
         }`}
       >
