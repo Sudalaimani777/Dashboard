@@ -34,7 +34,7 @@ export const AuditTimelineLog: React.FC<AuditTimelineLogProps> = ({ timeline = [
           return (
             <div key={event.id || idx} className="relative pl-4 flex flex-col gap-1 text-xs">
               {/* Timeline node */}
-              <span className="absolute -left-[19px] top-1 size-2.5 rounded-full bg-primary ring-4 ring-primary/10" />
+              <span className="absolute -left-[18px] top-1.5 size-2 rounded-full bg-primary ring-2 ring-surface" />
 
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">

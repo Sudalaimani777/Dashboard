@@ -187,6 +187,11 @@ export class TravelService {
   ): Promise<TravelRequest> {
     const request = await this.getRequestById(requestId);
 
+    const requestOwnerId = request.userId || request.user_id;
+    if (requestOwnerId && requestOwnerId === managerId) {
+      throw new Error('Self-review blocked: Managers cannot audit or approve their own personal travel requests');
+    }
+
     const reviewableStatuses: TravelStatus[] = ['PENDING_MANAGER_REVIEW', 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER'];
     if (!reviewableStatuses.includes(request.status)) {
       throw new Error(`Cannot review request: current status is ${request.status}, expected one of: ${reviewableStatuses.join(', ')}`);

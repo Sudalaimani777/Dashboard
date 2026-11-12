@@ -33,7 +33,7 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
   showRequester = false,
   showRemarksPreview = false,
   emptyMessage = 'No travel requests found in this view.',
-  emptyDescription = 'Requests assigned to this queue will appear here in real-time as workflows advance.',
+  emptyDescription = 'Use Refresh to check for updates or adjust your active filters.',
   emptyAction,
   compactEmpty = false,
   headerActions,
