@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { TravelType } from '../types/travel.types';
@@ -61,13 +61,19 @@ export function useTravelForm(initialType: TravelType = 'UPCOMING') {
     name: 'expenses',
   });
 
-  const watchedExpenses = form.watch('expenses');
+  const watchedExpenses = useWatch({
+    control: form.control,
+    name: 'expenses',
+  });
   const watchedType = form.watch('travel_type');
   const watchedProof = form.watch('supporting_doc_url');
 
   const totalAmount = useMemo(() => {
     if (!watchedExpenses || !Array.isArray(watchedExpenses)) return 0;
-    return watchedExpenses.reduce((sum, item) => sum + (Number(item?.amount) || 0), 0);
+    return watchedExpenses.reduce((sum, item) => {
+      const val = typeof item?.amount === 'number' ? item.amount : parseFloat(item?.amount as any);
+      return sum + (Number.isFinite(val) && val > 0 ? val : 0);
+    }, 0);
   }, [watchedExpenses]);
 
   return {
@@ -75,6 +81,7 @@ export function useTravelForm(initialType: TravelType = 'UPCOMING') {
     fieldArray,
     watchedType,
     watchedProof,
+    watchedExpenses,
     totalAmount,
   };
 }

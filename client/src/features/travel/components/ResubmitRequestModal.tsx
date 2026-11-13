@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Plus, Trash2, Loader2 } from 'lucide-react';
@@ -50,7 +50,7 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const { register, control, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, control, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(resubmitSchema),
     values: request ? {
       remarks: '',
@@ -69,8 +69,14 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'expenses' });
-  const watchedExpenses = watch('expenses') || [];
-  const totalAmount = watchedExpenses.reduce((sum, exp) => sum + (Number(exp?.amount) || 0), 0);
+  const watchedExpenses = useWatch({ control, name: 'expenses' }) || [];
+  const totalAmount = useMemo(() => {
+    if (!watchedExpenses || !Array.isArray(watchedExpenses)) return 0;
+    return watchedExpenses.reduce((sum, exp) => {
+      const val = typeof exp?.amount === 'number' ? exp.amount : parseFloat(exp?.amount as any);
+      return sum + (Number.isFinite(val) && val > 0 ? val : 0);
+    }, 0);
+  }, [watchedExpenses]);
 
   const handleFormSubmit = async (values: FormValues) => {
     if (!request) return;

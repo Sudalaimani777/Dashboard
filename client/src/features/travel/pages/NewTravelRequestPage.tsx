@@ -32,7 +32,7 @@ export const NewTravelRequestPage: React.FC = () => {
   const backPath = `/dashboard?tab=${fromTab || defaultReturnTab}`;
 
   const { requests, loadRequests, loadRequestDetails, createRequest } = useTravel();
-  const { form, fieldArray, watchedType, watchedProof, totalAmount } = useTravelForm(
+  const { form, fieldArray, watchedType, watchedProof, watchedExpenses, totalAmount } = useTravelForm(
     initialTypeParam === 'ALREADY_TRAVELLED' ? 'ALREADY_TRAVELLED' : 'UPCOMING'
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +45,6 @@ export const NewTravelRequestPage: React.FC = () => {
   const watchedDep = form.watch('departure_date');
   const watchedRet = form.watch('return_date');
   const watchedContactName = form.watch('emergency_contact_name');
-  const watchedExpenses = form.watch('expenses');
 
   useEffect(() => {
     if (requests.length === 0) {
@@ -293,6 +292,7 @@ export const NewTravelRequestPage: React.FC = () => {
             register={form.register}
             errors={form.formState.errors}
             totalAmount={totalAmount}
+            control={form.control}
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border-warm">

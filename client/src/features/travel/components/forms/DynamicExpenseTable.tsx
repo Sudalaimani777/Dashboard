@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Plus } from 'lucide-react';
-import type { UseFormRegister, FieldErrors, UseFieldArrayReturn } from 'react-hook-form';
+import type { UseFormRegister, FieldErrors, UseFieldArrayReturn, Control } from 'react-hook-form';
+import { useWatch } from 'react-hook-form';
 import type { TravelFormValues } from '../../hooks/useTravelForm';
 import { ExpenseRowItem } from './ExpenseRowItem';
 import { formatINR } from '../../utils/currency';
@@ -9,7 +10,8 @@ export interface DynamicExpenseTableProps {
   fieldArray: UseFieldArrayReturn<TravelFormValues, 'expenses', 'id'>;
   register: UseFormRegister<TravelFormValues>;
   errors: FieldErrors<TravelFormValues>;
-  totalAmount: number;
+  totalAmount?: number;
+  control?: Control<TravelFormValues>;
 }
 
 export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
@@ -17,8 +19,27 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
   register,
   errors,
   totalAmount,
+  control,
 }) => {
   const { fields, append, remove } = fieldArray;
+
+  // Reactively watch expenses changes so subtotal recalculates instantly on keystroke
+  const watchedExpenses = useWatch({
+    control,
+    name: 'expenses',
+    defaultValue: fields,
+  });
+
+  const computedTotal = useMemo(() => {
+    const list = watchedExpenses || fields;
+    if (!list || !Array.isArray(list)) return 0;
+    return list.reduce((sum, item) => {
+      const val = typeof item?.amount === 'number' ? item.amount : parseFloat(item?.amount as any);
+      return sum + (Number.isFinite(val) && val > 0 ? val : 0);
+    }, 0);
+  }, [watchedExpenses, fields]);
+
+  const displayTotal = control ? computedTotal : (totalAmount ?? computedTotal);
 
   const handleAddRow = () => {
     append({
@@ -37,7 +58,7 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
           Itemized Expenses & Estimates <span className="text-destructive">*</span>
         </label>
         <span className="text-xs font-mono tabular-nums font-semibold text-primary">
-          Subtotal: {formatINR(totalAmount)}
+          Subtotal: {formatINR(displayTotal)}
         </span>
       </div>
 

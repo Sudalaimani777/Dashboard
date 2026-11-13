@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -111,7 +111,10 @@ export const ResubmitTravelRequestPage: React.FC = () => {
     name: 'expenses',
   });
 
-  const watchedExpenses = form.watch('expenses');
+  const watchedExpenses = useWatch({
+    control: form.control,
+    name: 'expenses',
+  });
   const watchedProof = form.watch('supporting_doc_url');
   const watchedTitle = form.watch('title');
   const watchedPurpose = form.watch('purpose');
@@ -122,7 +125,10 @@ export const ResubmitTravelRequestPage: React.FC = () => {
 
   const totalAmount = useMemo(() => {
     if (!watchedExpenses || !Array.isArray(watchedExpenses)) return 0;
-    return watchedExpenses.reduce((sum, item) => sum + (Number(item?.amount) || 0), 0);
+    return watchedExpenses.reduce((sum, item) => {
+      const val = typeof item?.amount === 'number' ? item.amount : parseFloat(item?.amount as any);
+      return sum + (Number.isFinite(val) && val > 0 ? val : 0);
+    }, 0);
   }, [watchedExpenses]);
 
   const liveBreakdown = useMemo(
@@ -448,6 +454,7 @@ export const ResubmitTravelRequestPage: React.FC = () => {
               register={form.register as any}
               errors={form.formState.errors as any}
               totalAmount={totalAmount}
+              control={form.control as any}
             />
           </div>
 
