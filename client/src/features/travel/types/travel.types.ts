@@ -20,6 +20,16 @@ export type ExpenseCategory = 'FLIGHT' | 'HOTEL' | 'MEALS_PER_DIEM' | 'TRANSIT' 
 
 export type RevisionTarget = 'MANAGER' | 'EMPLOYEE';
 
+export interface SupportingDoc {
+  id: string;
+  type: 'LINK' | 'FILE';
+  name: string;
+  url: string;
+  format?: string;
+  size?: number;
+  uploadedAt?: string;
+}
+
 export interface TravelExpenseItem {
   id?: string;
   category: ExpenseCategory;
@@ -67,6 +77,9 @@ export interface TravelRequest {
   emergencyContactName: string;
   emergencyContactPhone: string;
   supportingDocUrl?: string | null;
+  supporting_doc_url?: string | null;
+  supportingDocs?: SupportingDoc[];
+  supporting_docs?: SupportingDoc[];
   totalExpenses: number;
   status: TravelStatus;
   revisionTarget?: RevisionTarget | null;
@@ -100,6 +113,8 @@ export interface CreateTravelRequestInput {
   emergencyContactName: string;
   emergencyContactPhone: string;
   supportingDocUrl?: string | null;
+  supportingDocs?: SupportingDoc[];
+  supporting_docs?: SupportingDoc[];
   expenses: Array<{
     category: ExpenseCategory;
     merchant: string;
@@ -137,6 +152,8 @@ export interface ResubmitRequestInput {
   departureDate?: string;
   returnDate?: string;
   supportingDocUrl?: string;
+  supportingDocs?: SupportingDoc[];
+  supporting_docs?: SupportingDoc[];
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   expenses?: Array<{

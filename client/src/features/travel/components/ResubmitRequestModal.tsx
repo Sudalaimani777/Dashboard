@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, Plus, Trash2, Loader2 } from 'lucide-react';
+import { X, Plus, Trash2, Loader2, UploadCloud } from 'lucide-react';
 import { formatINR } from '../utils/currency';
+import { travelApi } from '../services/travel.api';
 import type { TravelRequest, ResubmitRequestInput } from '../types/travel.types';
 
 const resubmitSchema = z.object({
@@ -40,6 +41,8 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
   onSubmit,
 }) => {
   const [error, setError] = useState<string | null>(null);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -50,7 +53,7 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const { register, control, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(resubmitSchema),
     values: request ? {
       remarks: '',
@@ -160,12 +163,43 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-ink">
-                  Updated Proof URL <span className="text-destructive">*</span>
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-ink">
+                    Updated Proof <span className="text-destructive">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    disabled={isUploadingProof}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline cursor-pointer disabled:opacity-50"
+                  >
+                    {isUploadingProof ? <Loader2 className="size-3 animate-spin" /> : <UploadCloud className="size-3" />}
+                    <span>{isUploadingProof ? 'Uploading...' : 'Upload File (Cloudinary)'}</span>
+                  </button>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setIsUploadingProof(true);
+                    try {
+                      const res = await travelApi.uploadProofFile(f);
+                      setValue('supportingDocUrl', res.url, { shouldValidate: true });
+                    } catch (err: any) {
+                      setError(err.message || 'File upload failed');
+                    } finally {
+                      setIsUploadingProof(false);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }
+                  }}
+                />
                 <input
                   type="url"
-                  placeholder="https://proofs.corp.com/updated-receipt.pdf"
+                  placeholder="https://proofs.corp.com/updated-receipt.pdf or uploaded URL"
                   {...register('supportingDocUrl')}
                   className="p-2.5 rounded-xl border border-border-warm bg-surface-subtle text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                 />

@@ -28,6 +28,7 @@ import { TravelDetailSkeleton } from '../components/shared/TravelDetailSkeleton'
 import { InlineConfirmBar } from '../components/shared/InlineConfirmBar';
 import { formatINR } from '../utils/currency';
 import { aggregateExpenseItems, computeTripDuration } from '../utils/travelAnalytics';
+import { supportingDocSchema } from '../hooks/useTravelForm';
 import type { TravelRequest } from '../types/travel.types';
 
 const resubmitFormSchema = z.object({
@@ -41,7 +42,8 @@ const resubmitFormSchema = z.object({
   return_date: z.string().min(1, 'Return date is required'),
   emergency_contact_name: z.string().optional(),
   emergency_contact_phone: z.string().optional(),
-  supporting_doc_url: z.string().url('Must be a valid document or receipt URL'),
+  supporting_doc_url: z.string().optional(),
+  supporting_docs: z.array(supportingDocSchema).optional(),
   expenses: z
     .array(
       z.object({
@@ -94,6 +96,7 @@ export const ResubmitTravelRequestPage: React.FC = () => {
       emergency_contact_name: '',
       emergency_contact_phone: '',
       supporting_doc_url: '',
+      supporting_docs: [],
       expenses: [
         {
           category: 'FLIGHT',
@@ -115,6 +118,10 @@ export const ResubmitTravelRequestPage: React.FC = () => {
     control: form.control,
     name: 'expenses',
   });
+  const watchedDocs = useWatch({
+    control: form.control,
+    name: 'supporting_docs',
+  }) || [];
   const watchedProof = form.watch('supporting_doc_url');
   const watchedTitle = form.watch('title');
   const watchedPurpose = form.watch('purpose');
@@ -167,6 +174,12 @@ export const ResubmitTravelRequestPage: React.FC = () => {
           emergency_contact_name: req.emergencyContactName || '',
           emergency_contact_phone: req.emergencyContactPhone || '',
           supporting_doc_url: req.supportingDocUrl || '',
+          supporting_docs:
+            req.supportingDocs && req.supportingDocs.length > 0
+              ? req.supportingDocs
+              : req.supportingDocUrl
+              ? [{ id: 'resubmit-1', type: 'LINK', name: 'Primary Itinerary Proof', url: req.supportingDocUrl }]
+              : [],
           expenses:
             req.expenses && req.expenses.length > 0
               ? req.expenses.map((e) => ({
@@ -219,7 +232,8 @@ export const ResubmitTravelRequestPage: React.FC = () => {
         destination: values.destination,
         departureDate: values.departure_date,
         returnDate: values.return_date,
-        supportingDocUrl: values.supporting_doc_url,
+        supportingDocUrl: values.supporting_doc_url || values.supporting_docs?.[0]?.url,
+        supportingDocs: values.supporting_docs || [],
         emergencyContactName: values.emergency_contact_name,
         emergencyContactPhone: values.emergency_contact_phone,
         expenses: values.expenses.map((e) => ({
@@ -253,7 +267,8 @@ export const ResubmitTravelRequestPage: React.FC = () => {
         destination: values.destination,
         departureDate: values.departure_date,
         returnDate: values.return_date,
-        supportingDocUrl: values.supporting_doc_url,
+        supportingDocUrl: values.supporting_doc_url || values.supporting_docs?.[0]?.url,
+        supportingDocs: values.supporting_docs || [],
         emergencyContactName: values.emergency_contact_name,
         emergencyContactPhone: values.emergency_contact_phone,
         expenses: (values.expenses || []).map((e) => ({
@@ -334,7 +349,10 @@ export const ResubmitTravelRequestPage: React.FC = () => {
     { label: 'Title (min 3 chars)', ok: Boolean(watchedTitle && watchedTitle.trim().length >= 3) },
     { label: 'Purpose (min 5 chars)', ok: Boolean(watchedPurpose && watchedPurpose.trim().length >= 5) },
     { label: 'Origin & destination', ok: Boolean(watchedOrigin && watchedOrigin !== 'TBD' && watchedDest && watchedDest !== 'TBD') },
-    { label: 'Valid proof URL', ok: Boolean(watchedProof && /^https?:\/\/.+/i.test(watchedProof)) },
+    {
+      label: 'Valid proof attached',
+      ok: Boolean((watchedDocs && watchedDocs.length > 0) || (watchedProof && /^https?:\/\/.+/i.test(watchedProof))),
+    },
     { label: 'Expense > ₹0', ok: Boolean(watchedExpenses && watchedExpenses.some((e) => Number(e.amount) > 0)) },
   ];
 
@@ -441,7 +459,8 @@ export const ResubmitTravelRequestPage: React.FC = () => {
             <h2 className="text-sm font-semibold text-ink">Supporting Quotation / Receipts</h2>
             <ProofAttachmentField
               travelType={request.travelType}
-              register={form.register as any}
+              setValue={form.setValue as any}
+              docs={watchedDocs}
               errors={form.formState.errors as any}
               proofUrlValue={watchedProof}
             />
