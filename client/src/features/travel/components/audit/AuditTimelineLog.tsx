@@ -12,7 +12,7 @@ export const AuditTimelineLog: React.FC<AuditTimelineLogProps> = ({ timeline = [
   return (
     <div className="bg-surface rounded-xl border border-border-warm p-5 flex flex-col gap-4 shadow-xs">
       <h3 className="text-sm font-semibold text-ink flex items-center gap-2 border-b border-border-warm pb-3">
-        <History className="size-4 text-primary" /> Audit Ledger & Event History
+        <History className="size-4 text-primary" /> Event History
       </h3>
 
       <div className="relative pl-3 flex flex-col gap-4 border-l-2 border-border-warm ml-2">

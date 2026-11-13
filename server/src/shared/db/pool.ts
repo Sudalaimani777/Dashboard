@@ -1,6 +1,10 @@
 import pg from 'pg';
 import { config } from '../../config/env.js';
 
+// PostgreSQL DATE parser (OID 1082): return as raw string 'YYYY-MM-DD'
+// rather than JavaScript Date object, to avoid timezone shifts when converted to ISO strings
+pg.types.setTypeParser(1082, (val: string) => val);
+
 const { Pool } = pg;
 
 export const pool = new Pool(

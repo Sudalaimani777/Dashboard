@@ -12,6 +12,20 @@ import {
   RevisionTarget
 } from './travel.types.js';
 
+export function formatDateOnly(val: any): string {
+  if (!val) return '';
+  if (typeof val === 'string') {
+    return val.split('T')[0];
+  }
+  if (val instanceof Date) {
+    const year = val.getFullYear();
+    const month = String(val.getMonth() + 1).padStart(2, '0');
+    const day = String(val.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return String(val);
+}
+
 export interface CreateTravelRequestData {
   userId: string;
   managerId?: string | null;
@@ -729,7 +743,7 @@ export class TravelRepository {
 
   // --- Row Mappers with snake_case and camelCase compatibility ---
 
-  private mapRowToRequest(row: any): TravelRequest {
+  private mapRowToRequest = (row: any): TravelRequest => {
     const total = Number(row.total_expenses);
     return {
       id: row.id,
@@ -747,10 +761,10 @@ export class TravelRepository {
       projectCode: row.project_code,
       origin: row.origin,
       destination: row.destination,
-      departure_date: row.departure_date ? row.departure_date.toISOString?.().split('T')[0] || String(row.departure_date) : '',
-      departureDate: row.departure_date ? row.departure_date.toISOString?.().split('T')[0] || String(row.departure_date) : '',
-      return_date: row.return_date ? row.return_date.toISOString?.().split('T')[0] || String(row.return_date) : '',
-      returnDate: row.return_date ? row.return_date.toISOString?.().split('T')[0] || String(row.return_date) : '',
+      departure_date: formatDateOnly(row.departure_date),
+      departureDate: formatDateOnly(row.departure_date),
+      return_date: formatDateOnly(row.return_date),
+      returnDate: formatDateOnly(row.return_date),
       emergency_contact_name: row.emergency_contact_name,
       emergencyContactName: row.emergency_contact_name,
       emergency_contact_phone: row.emergency_contact_phone,
@@ -790,7 +804,7 @@ export class TravelRepository {
     };
   }
 
-  private mapRowToExpense(row: any): TravelExpense {
+  private mapRowToExpense = (row: any): TravelExpense => {
     const amt = Number(row.amount);
     return {
       id: row.id,
@@ -799,14 +813,14 @@ export class TravelRepository {
       category: row.category,
       merchant: row.merchant,
       amount: amt,
-      expense_date: row.expense_date ? row.expense_date.toISOString?.().split('T')[0] || String(row.expense_date) : '',
-      expenseDate: row.expense_date ? row.expense_date.toISOString?.().split('T')[0] || String(row.expense_date) : '',
+      expense_date: formatDateOnly(row.expense_date),
+      expenseDate: formatDateOnly(row.expense_date),
       receipt_image_url: row.receipt_image_url,
       receiptImageUrl: row.receipt_image_url,
       notes: row.notes,
       created_at: row.created_at
     };
-  }
+  };
 
   private mapRowToTimeline(row: any): TimelineEvent {
     return {
