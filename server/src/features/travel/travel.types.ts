@@ -20,6 +20,16 @@ export type TravelStatus =
 
 export type RevisionTarget = 'MANAGER' | 'EMPLOYEE';
 
+export interface SupportingDoc {
+  id: string;
+  type: 'LINK' | 'FILE';
+  name: string;
+  url: string;
+  format?: string;
+  size?: number;
+  uploadedAt?: string;
+}
+
 export interface TravelExpense {
   id?: string;
   travel_request_id?: string;
@@ -61,6 +71,8 @@ export interface TravelRequest {
   emergencyContactPhone?: string;
   supporting_doc_url?: string | null;
   supportingDocUrl?: string | null;
+  supporting_docs?: SupportingDoc[];
+  supportingDocs?: SupportingDoc[];
   total_expenses: number;
   totalExpenses?: number;
   status: TravelStatus;

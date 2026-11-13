@@ -1,4 +1,5 @@
 // server/src/features/travel/travel.service.ts
+import crypto from 'node:crypto';
 import { TravelRepository, CreateTravelRequestData } from './travel.repository.js';
 import {
   TravelRequest,
@@ -6,9 +7,11 @@ import {
   TravelStatus,
   TravelType,
   RevisionTarget,
+  SupportingDoc,
   validateStatusTransition,
   canEmployeeModify
 } from './travel.types.js';
+import { cloudinaryService } from '../../shared/services/cloudinary.service.js';
 import {
   validateCreateRequestPayload,
   validateManagerReviewPayload,
@@ -47,6 +50,8 @@ export interface EmployeeResubmitOptions {
   return_date?: string;
   supportingDocUrl?: string;
   supporting_doc_url?: string;
+  supportingDocs?: SupportingDoc[];
+  supporting_docs?: SupportingDoc[];
   emergencyContactName?: string;
   emergency_contact_name?: string;
   emergencyContactPhone?: string;
@@ -79,6 +84,14 @@ export class TravelService {
       emergency_contact_name: rawInput.emergency_contact_name || rawInput.emergencyContactName,
       emergency_contact_phone: rawInput.emergency_contact_phone || rawInput.emergencyContactPhone,
       supporting_doc_url: rawInput.supporting_doc_url || rawInput.supportingDocUrl,
+      supporting_docs: rawInput.supporting_docs || rawInput.supportingDocs || (
+        (rawInput.supporting_doc_url || rawInput.supportingDocUrl) ? [{
+          id: 'initial-1',
+          type: 'LINK',
+          name: 'Primary Proof',
+          url: rawInput.supporting_doc_url || rawInput.supportingDocUrl,
+        }] : []
+      ),
       expenses: (rawInput.expenses || []).map((exp: any) => ({
         category: exp.category,
         merchant: exp.merchant,
@@ -115,7 +128,8 @@ export class TravelService {
       returnDate: normalizedValidation.return_date || new Date().toISOString().split('T')[0],
       emergencyContactName: normalizedValidation.emergency_contact_name,
       emergencyContactPhone: normalizedValidation.emergency_contact_phone,
-      supportingDocUrl: normalizedValidation.supporting_doc_url,
+      supportingDocUrl: normalizedValidation.supporting_doc_url || normalizedValidation.supporting_docs?.[0]?.url,
+      supportingDocs: normalizedValidation.supporting_docs,
       expenses: normalizedValidation.expenses.map((e: any) => ({
         category: e.category || 'MISC',
         merchant: e.merchant || 'Pending',
@@ -378,7 +392,8 @@ export class TravelService {
       destination: options.destination,
       departureDate: options.departure_date || options.departureDate,
       returnDate: options.return_date || options.returnDate,
-      supportingDocUrl: options.supporting_doc_url || options.supportingDocUrl,
+      supportingDocUrl: options.supporting_doc_url || options.supportingDocUrl || (options.supporting_docs || options.supportingDocs)?.[0]?.url,
+      supportingDocs: options.supporting_docs || options.supportingDocs,
       emergencyContactName: options.emergency_contact_name || options.emergencyContactName,
       emergencyContactPhone: options.emergency_contact_phone || options.emergencyContactPhone,
     });
@@ -485,6 +500,33 @@ export class TravelService {
       fiscalQuarter,
       totalAllocation
     });
+  }
+
+  /**
+   * Uploads an itinerary or quotation proof to Cloudinary and returns a SupportingDoc entity.
+   */
+  async uploadProof(file?: Express.Multer.File, userId?: string): Promise<SupportingDoc> {
+    if (!file || !file.buffer) {
+      throw new Error('No file provided for upload.');
+    }
+
+    const uploadResult = await cloudinaryService.uploadBuffer(
+      file.buffer,
+      file.originalname || 'proof-document.pdf',
+      file.mimetype || 'application/pdf'
+    );
+
+    const doc: SupportingDoc = {
+      id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type: 'FILE',
+      name: uploadResult.name,
+      url: uploadResult.url,
+      format: uploadResult.format,
+      size: uploadResult.size,
+      uploadedAt: new Date().toISOString(),
+    };
+
+    return doc;
   }
 
   private getFiscalQuarter(dateOrStr: Date | string): string {

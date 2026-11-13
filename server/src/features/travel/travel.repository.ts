@@ -9,7 +9,8 @@ import {
   TravelStatus,
   TravelType,
   ExpenseCategory,
-  RevisionTarget
+  RevisionTarget,
+  SupportingDoc
 } from './travel.types.js';
 
 export function formatDateOnly(val: any): string {
@@ -41,6 +42,7 @@ export interface CreateTravelRequestData {
   emergencyContactName: string;
   emergencyContactPhone: string;
   supportingDocUrl?: string | null;
+  supportingDocs?: SupportingDoc[];
   expenses: Array<{
     category: ExpenseCategory;
     merchant: string;
@@ -84,13 +86,20 @@ export class TravelRepository {
       const totalExpenses = data.expenses.reduce((sum, e) => sum + Number(e.amount), 0);
       const initialStatus: TravelStatus = data.status || 'PENDING_MANAGER_REVIEW';
       const currency = data.currency || 'INR';
+      const docsJson = JSON.stringify(data.supportingDocs || (data.supportingDocUrl ? [{
+        id: 'initial-1',
+        type: 'LINK',
+        name: 'Primary Proof',
+        url: data.supportingDocUrl,
+      }] : []));
+      const primaryDocUrl = data.supportingDocUrl || data.supportingDocs?.[0]?.url || null;
 
       const insertReqRes = await client.query(
         `INSERT INTO travel_requests (
           user_id, manager_id, admin_id, travel_type, title, purpose, project_code,
           origin, destination, departure_date, return_date, emergency_contact_name,
-          emergency_contact_phone, supporting_doc_url, total_expenses, status, currency
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+          emergency_contact_phone, supporting_doc_url, supporting_docs, total_expenses, status, currency
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         RETURNING *`,
         [
           data.userId,
@@ -106,7 +115,8 @@ export class TravelRepository {
           data.returnDate,
           data.emergencyContactName,
           data.emergencyContactPhone,
-          data.supportingDocUrl || null,
+          primaryDocUrl,
+          docsJson,
           totalExpenses,
           initialStatus,
           currency
@@ -563,6 +573,7 @@ export class TravelRepository {
       departureDate: string;
       returnDate: string;
       supportingDocUrl: string;
+      supportingDocs: SupportingDoc[];
       emergencyContactName: string;
       emergencyContactPhone: string;
     }>
@@ -584,7 +595,10 @@ export class TravelRepository {
     addSet('destination', fields.destination);
     addSet('departure_date', fields.departureDate);
     addSet('return_date', fields.returnDate);
-    addSet('supporting_doc_url', fields.supportingDocUrl);
+    addSet('supporting_doc_url', fields.supportingDocUrl || (fields.supportingDocs?.[0]?.url));
+    if (fields.supportingDocs !== undefined) {
+      addSet('supporting_docs', JSON.stringify(fields.supportingDocs));
+    }
     addSet('emergency_contact_name', fields.emergencyContactName);
     addSet('emergency_contact_phone', fields.emergencyContactPhone);
 
@@ -771,6 +785,16 @@ export class TravelRepository {
       emergencyContactPhone: row.emergency_contact_phone,
       supporting_doc_url: row.supporting_doc_url,
       supportingDocUrl: row.supporting_doc_url,
+      supporting_docs: Array.isArray(row.supporting_docs)
+        ? row.supporting_docs
+        : (typeof row.supporting_docs === 'string'
+            ? JSON.parse(row.supporting_docs)
+            : (row.supporting_doc_url ? [{ id: 'legacy-1', type: 'LINK', name: 'Primary Itinerary Proof', url: row.supporting_doc_url }] : [])),
+      supportingDocs: Array.isArray(row.supporting_docs)
+        ? row.supporting_docs
+        : (typeof row.supporting_docs === 'string'
+            ? JSON.parse(row.supporting_docs)
+            : (row.supporting_doc_url ? [{ id: 'legacy-1', type: 'LINK', name: 'Primary Itinerary Proof', url: row.supporting_doc_url }] : [])),
       total_expenses: total,
       totalExpenses: total,
       status: row.status,

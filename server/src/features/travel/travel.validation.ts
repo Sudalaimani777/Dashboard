@@ -2,7 +2,8 @@
 import { 
   TravelType, 
   ExpenseCategory, 
-  RevisionTarget 
+  RevisionTarget,
+  SupportingDoc
 } from './travel.types.js';
 
 export interface CreateExpenseInput {
@@ -26,6 +27,8 @@ export interface CreateTravelRequestInput {
   emergency_contact_name: string;
   emergency_contact_phone: string;
   supporting_doc_url?: string | null;
+  supporting_docs?: SupportingDoc[];
+  supportingDocs?: SupportingDoc[];
   expenses: CreateExpenseInput[];
   submit_now?: boolean;
 }
@@ -46,6 +49,8 @@ export interface ResubmitTravelRequestInput {
   departure_date?: string;
   return_date?: string;
   supporting_doc_url?: string;
+  supporting_docs?: SupportingDoc[];
+  supportingDocs?: SupportingDoc[];
   updated_expenses?: CreateExpenseInput[];
 }
 
