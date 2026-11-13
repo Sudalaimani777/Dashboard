@@ -285,8 +285,10 @@ export class TravelService {
 
       // Check and update department budget headroom
       const dept = request.requesterDepartment || 'Engineering';
-      const year = request.departureDate ? new Date(request.departureDate).getFullYear() : 2026;
-      const quarter = this.getFiscalQuarter(request.departureDate ? new Date(request.departureDate) : new Date());
+      const year = request.departureDate
+        ? (parseInt(request.departureDate.split('-')[0], 10) || new Date(request.departureDate).getFullYear())
+        : 2026;
+      const quarter = this.getFiscalQuarter(request.departureDate || new Date());
 
       const budget = await this.repo.getDepartmentBudget(dept, year, quarter);
       if (budget) {
@@ -485,8 +487,19 @@ export class TravelService {
     });
   }
 
-  private getFiscalQuarter(date: Date): string {
-    const month = date.getMonth() + 1; // 1-12
+  private getFiscalQuarter(dateOrStr: Date | string): string {
+    if (typeof dateOrStr === 'string' && dateOrStr.includes('-')) {
+      const parts = dateOrStr.split('-');
+      if (parts.length >= 2) {
+        const month = parseInt(parts[1], 10);
+        if (month >= 1 && month <= 3) return 'Q1';
+        if (month >= 4 && month <= 6) return 'Q2';
+        if (month >= 7 && month <= 9) return 'Q3';
+        return 'Q4';
+      }
+    }
+    const d = typeof dateOrStr === 'string' ? new Date(dateOrStr) : dateOrStr;
+    const month = d.getMonth() + 1; // 1-12
     if (month >= 1 && month <= 3) return 'Q1';
     if (month >= 4 && month <= 6) return 'Q2';
     if (month >= 7 && month <= 9) return 'Q3';

@@ -25,9 +25,13 @@ import type { DepartmentBudget } from '../../types/travel.types';
 
 export interface HeadroomRadialGaugeProps {
   budget: DepartmentBudget | null;
+  embedded?: boolean;
 }
 
-export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({ budget }) => {
+export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({
+  budget,
+  embedded = false,
+}) => {
   const totalAllocation = budget?.totalAllocation ?? 0;
   const utilizedAmount = budget?.utilizedAmount ?? 0;
   const availableHeadroom = budget?.availableHeadroom ?? Math.max(0, totalAllocation - utilizedAmount);
@@ -54,8 +58,16 @@ export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({ budget
   }) satisfies ChartConfig, [isHeadroomLow]);
 
   return (
-    <Card className="flex flex-col bg-surface border border-border-warm rounded-xl shadow-xs">
-      <CardHeader className="items-start border-b border-border-warm pb-3">
+    <Card
+      className={
+        embedded
+          ? 'flex flex-col border-0 bg-transparent shadow-none rounded-none'
+          : 'flex flex-col bg-surface border border-border-warm rounded-xl shadow-xs'
+      }
+    >
+      <CardHeader
+        className={`items-start border-b border-border-warm pb-3 ${embedded ? 'px-0 pt-0' : ''}`}
+      >
         <CardTitle className="text-sm font-semibold text-ink">Quarterly Budget Headroom</CardTitle>
         <CardDescription className="text-xs text-muted">
           {budget?.department || 'Engineering'} • {budget?.fiscalQuarter || 'Q4'} {budget?.fiscalYear || 2026}
@@ -129,7 +141,11 @@ export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({ budget
         </ChartContainer>
       </CardContent>
 
-      <CardFooter className="flex-col items-start gap-1 text-xs pt-3 border-t border-border-warm/60">
+      <CardFooter
+        className={`flex-col items-start gap-1 text-xs pt-3 border-t border-border-warm/60 ${
+          embedded ? 'px-0 pb-0' : ''
+        }`}
+      >
         <div className="flex items-center gap-1.5 leading-none font-semibold text-ink">
           {isHeadroomLow ? (
             <>

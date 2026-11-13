@@ -197,6 +197,20 @@ export function getFiscalQuarterFromDate(dateStr?: string): {
   year: number;
   quarter: FiscalQuarter;
 } {
+  if (dateStr && dateStr.includes('-')) {
+    const parts = dateStr.split('T')[0].split('-');
+    if (parts.length >= 2) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      if (!Number.isNaN(year) && !Number.isNaN(month)) {
+        let quarter: FiscalQuarter = 'Q4';
+        if (month >= 1 && month <= 3) quarter = 'Q1';
+        else if (month >= 4 && month <= 6) quarter = 'Q2';
+        else if (month >= 7 && month <= 9) quarter = 'Q3';
+        return { year, quarter };
+      }
+    }
+  }
   const parsed = dateStr ? new Date(dateStr) : new Date();
   const safeDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   const year = safeDate.getFullYear();

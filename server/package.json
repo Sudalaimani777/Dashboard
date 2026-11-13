@@ -13,6 +13,7 @@
     "test:repo": "tsx tests/travel-repo.test.ts",
     "test:service": "tsx tests/travel-service.test.ts",
     "test:api": "tsx tests/travel-api.test.ts",
+    "test:dates": "tsx tests/travel-date-timezone.test.ts",
     "test": "tsx test-day1.ts",
     "test:day2": "tsx test-day2-backend.ts",
     "test:e2e": "tsx test-e2e-full-flow.ts",
