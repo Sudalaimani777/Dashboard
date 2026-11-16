@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   Paperclip,
   UploadCloud,
@@ -25,6 +25,8 @@ export interface ProofAttachmentFieldProps {
   proofUrlValue?: string;
 }
 
+const ALLOWED_EXTENSIONS = new Set(['pdf', 'png', 'jpg', 'jpeg', 'webp']);
+
 export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
   travelType,
   setValue,
@@ -37,41 +39,58 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [showAddLink, setShowAddLink] = useState(false);
   const [linkTitle, setLinkTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
+
+  const dragCounter = useRef(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Synchronize supporting_doc_url for legacy backward compatibility whenever docs change
-  const syncDocs = (updated: SupportingDoc[]) => {
-    setValue('supporting_docs', updated, { shouldValidate: true, shouldDirty: true });
-    setValue('supporting_doc_url', updated[0]?.url || '', { shouldValidate: true, shouldDirty: true });
-  };
+  const syncDocs = useCallback(
+    (updated: SupportingDoc[]) => {
+      setValue('supporting_docs', updated, { shouldValidate: true, shouldDirty: true });
+      setValue('supporting_doc_url', updated[0]?.url || '', { shouldValidate: true, shouldDirty: true });
+    },
+    [setValue]
+  );
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processFiles = async (files: File[]) => {
+    if (!files || files.length === 0) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError('File size exceeds 10MB limit. Please upload a smaller document.');
-      return;
+    // Validate size and format
+    for (const file of files) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      if (!ALLOWED_EXTENSIONS.has(ext)) {
+        setUploadError(`File "${file.name}" is not supported. Allowed formats: PDF, PNG, JPG, WEBP`);
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setUploadError(`File "${file.name}" exceeds 10MB limit. Please upload a smaller document.`);
+        return;
+      }
     }
 
     setIsUploading(true);
     setUploadError(null);
 
     try {
-      const uploadedDoc = await travelApi.uploadProofFile(file);
-      const newDoc: SupportingDoc = {
-        id: uploadedDoc.id || `doc-${Date.now()}`,
-        type: 'FILE',
-        name: uploadedDoc.name || file.name,
-        url: uploadedDoc.url,
-        format: uploadedDoc.format,
-        size: uploadedDoc.size || file.size,
-        uploadedAt: new Date().toISOString(),
-      };
-      syncDocs([...docs, newDoc]);
+      const uploadedDocs: SupportingDoc[] = [];
+      for (const file of files) {
+        const uploadedDoc = await travelApi.uploadProofFile(file);
+        uploadedDocs.push({
+          id: uploadedDoc.id || `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          type: 'FILE',
+          name: uploadedDoc.name || file.name,
+          url: uploadedDoc.url,
+          format: uploadedDoc.format || file.name.split('.').pop()?.toLowerCase(),
+          size: uploadedDoc.size || file.size,
+          uploadedAt: new Date().toISOString(),
+        });
+      }
+
+      syncDocs([...docs, ...uploadedDocs]);
     } catch (err: any) {
       setUploadError(err.message || 'Failed to upload document. Please try again.');
     } finally {
@@ -79,6 +98,50 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(Array.from(e.target.files));
+    }
+  };
+
+  // Drag-and-drop event handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(Array.from(e.dataTransfer.files));
+      e.dataTransfer.clearData();
     }
   };
 
@@ -133,7 +196,26 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
       : [];
 
   return (
-    <div className="rounded-xl border border-border-warm bg-surface p-4 flex flex-col gap-3 shadow-2xs">
+    <div
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`rounded-xl border transition-all duration-200 bg-surface p-4 flex flex-col gap-3 shadow-2xs relative ${
+        isDragging
+          ? 'border-2 border-dashed border-primary bg-primary/10 ring-4 ring-primary/20 scale-[1.002]'
+          : 'border-border-warm'
+      }`}
+    >
+      {/* Drag Over Overlay Alert */}
+      {isDragging && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-primary/10 backdrop-blur-[1px] rounded-xl pointer-events-none border-2 border-dashed border-primary">
+          <UploadCloud className="size-10 text-primary animate-bounce mb-2" />
+          <span className="text-sm font-bold text-ink">Drop your file(s) here</span>
+          <span className="text-xs text-muted font-medium">Instantly uploads PDF, PNG, JPG, or WEBP to Cloudinary</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-border-warm">
         <label className="text-xs font-semibold text-ink flex items-center gap-1.5">
@@ -207,11 +289,16 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
           })}
         </div>
       ) : (
-        <div className="p-4 rounded-lg border border-dashed border-border-warm bg-surface-subtle/30 flex flex-col items-center justify-center gap-1.5 text-center">
-          <UploadCloud className="size-5 text-muted/60" />
-          <span className="text-xs font-medium text-ink">No proofs attached yet</span>
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="p-5 rounded-lg border border-dashed border-border-warm bg-surface-subtle/30 flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group"
+        >
+          <UploadCloud className="size-6 text-primary group-hover:scale-110 transition-transform" />
+          <span className="text-xs font-semibold text-ink">
+            Drag & drop your files here, or <span className="text-primary underline">browse</span>
+          </span>
           <span className="text-[11px] text-muted max-w-sm">
-            Attach official quotations, airline itineraries, or tax invoices. You can upload local files or add web links.
+            Supports PDF, PNG, JPG, and WEBP (up to 10MB). Uploads directly to Cloudinary.
           </span>
         </div>
       )}
@@ -220,8 +307,9 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
       <input
         ref={fileInputRef}
         type="file"
+        multiple
         accept=".pdf,image/png,image/jpeg,image/webp"
-        onChange={handleFileUpload}
+        onChange={handleFileInputChange}
         className="hidden"
         id="proof-file-input"
       />
@@ -237,7 +325,7 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
           {isUploading ? (
             <>
               <Loader2 className="size-3.5 animate-spin text-primary" />
-              <span>Uploading to Cloudinary...</span>
+              <span>Uploading...</span>
             </>
           ) : (
             <>
@@ -289,13 +377,13 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
             <button
               type="button"
               onClick={() => setShowAddLink(false)}
-              className="px-2.5 py-2 rounded-md text-xs font-semibold text-muted hover:text-ink cursor-pointer"
+              className="px-2.5 py-1 rounded-md text-xs font-semibold text-muted hover:text-ink cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1 px-3 py-2 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-semibold cursor-pointer transition-all"
+              className="flex items-center gap-1 px-3 py-1 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-semibold cursor-pointer transition-all"
             >
               <CheckCircle2 className="size-3.5" /> Attach Link
             </button>

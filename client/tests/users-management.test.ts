@@ -7,7 +7,10 @@ import {
   validateNewUserForm,
   type DirectoryUser,
 } from '../src/features/users/utils/users.utils';
-import { updateUserSchema } from '../src/features/users/schemas/users.schema';
+import {
+  createUserSchema,
+  updateUserSchema,
+} from '../src/features/users/schemas/users.schema';
 
 async function run() {
   console.log('🧪 Testing Admin User Management helpers & invite-only auth...');
@@ -47,6 +50,10 @@ async function run() {
     newUserPageSource.includes('useForm') && newUserPageSource.includes('zodResolver'),
     'NewUserPage.tsx must use react-hook-form with zodResolver'
   );
+  assert.ok(
+    newUserPageSource.includes('<select') && newUserPageSource.includes('id="new-user-role"'),
+    'NewUserPage.tsx must use select dropdown for role'
+  );
 
   const userFormModalSource = fs.readFileSync(
     path.join(clientSrc, 'features/users/components/UserFormModal.tsx'),
@@ -55,6 +62,15 @@ async function run() {
   assert.ok(
     userFormModalSource.includes('useForm') && userFormModalSource.includes('zodResolver'),
     'UserFormModal.tsx must use react-hook-form with zodResolver'
+  );
+
+  const adminUsersPageSource = fs.readFileSync(
+    path.join(clientSrc, 'features/users/pages/AdminUsersPage.tsx'),
+    'utf8'
+  );
+  assert.ok(
+    adminUsersPageSource.includes("navigate('/admin/users/new')"),
+    'AdminUsersPage must navigate to /admin/users/new on Add Member'
   );
 
   // 2. Directory filtering & KPI stats
@@ -131,6 +147,34 @@ async function run() {
   });
   assert.equal(valid.valid, true);
 
+  // 3b. Admin provisioning validation (rejected)
+  const invalidAdmin = validateNewUserForm({
+    name: 'Co Admin',
+    email: 'coadmin@corp.com',
+    password: 'Password@123',
+    role: 'ADMIN' as any,
+    department: 'Executive',
+  });
+  assert.equal(invalidAdmin.valid, false, 'Admin role creation must be rejected by schema');
+
+  // 3c. Status filtering
+  const sampleWithStatus: DirectoryUser[] = [
+    { ...sampleUsers[0], is_active: true },
+    { ...sampleUsers[1], is_active: false },
+    { ...sampleUsers[2], is_active: true },
+    { ...sampleUsers[3], is_active: false },
+  ];
+  assert.equal(
+    filterDirectoryUsers(sampleWithStatus, { statusFilter: 'ACTIVE' } as any).length,
+    2,
+    'Status filter ACTIVE must return 2 users'
+  );
+  assert.equal(
+    filterDirectoryUsers(sampleWithStatus, { statusFilter: 'INACTIVE' } as any).length,
+    2,
+    'Status filter INACTIVE must return 2 users'
+  );
+
   // 4. Update user schema validation
   assert.equal(
     updateUserSchema.safeParse({ role: 'MANAGER', department: 'E', managerId: '' }).success,
@@ -139,6 +183,59 @@ async function run() {
   assert.equal(
     updateUserSchema.safeParse({ role: 'MANAGER', department: 'Product', managerId: '' }).success,
     true
+  );
+
+  // 5. Admin deletion warning & travel records erasure notice
+  assert.ok(
+    adminUsersPageSource.includes('erase') &&
+      adminUsersPageSource.includes("can't bring back"),
+    'AdminUsersPage must explicitly warn the admin that deleting the employee or manager will erase their travel records and cannot be brought back'
+  );
+  assert.ok(
+    adminUsersPageSource.includes('confirmDeleteChecked') ||
+      adminUsersPageSource.includes('confirmRecordErasure') ||
+      adminUsersPageSource.includes('deleteAcknowledged'),
+    'AdminUsersPage must include a confirmation acknowledgment checkbox for erasing records'
+  );
+
+  // 6. Admin creation feature must be removed
+  assert.equal(
+    createUserSchema.safeParse({
+      name: 'Secondary Admin',
+      email: 'sec_admin@corp.com',
+      password: 'Password@123',
+      role: 'ADMIN',
+      department: 'Operations',
+    }).success,
+    false,
+    'createUserSchema must reject role ADMIN'
+  );
+  assert.equal(
+    createUserSchema.safeParse({
+      name: 'Manager User',
+      email: 'mgr@corp.com',
+      password: 'Password@123',
+      role: 'MANAGER',
+      department: 'Operations',
+    }).success,
+    true,
+    'createUserSchema must accept role MANAGER'
+  );
+  assert.equal(
+    createUserSchema.safeParse({
+      name: 'Employee User',
+      email: 'emp@corp.com',
+      password: 'Password@123',
+      role: 'EMPLOYEE',
+      department: 'Operations',
+    }).success,
+    true,
+    'createUserSchema must accept role EMPLOYEE'
+  );
+
+  assert.ok(
+    !newUserPageSource.includes('value="ADMIN"'),
+    'NewUserPage must not offer ADMIN role option in dropdown'
   );
 
   console.log('✅ ALL ADMIN USER MANAGEMENT & INVITE-ONLY TESTS PASSED!');

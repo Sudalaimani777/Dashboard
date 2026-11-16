@@ -102,11 +102,11 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
     () =>
       filterAdminRequests(classified.ledgerArchive, {
         query: searchQuery,
-        typeFilter,
+        typeFilter: 'ALL',
         departmentFilter,
         statusFilter: ledgerStatusFilter,
       }),
-    [classified.ledgerArchive, searchQuery, typeFilter, departmentFilter, ledgerStatusFilter]
+    [classified.ledgerArchive, searchQuery, departmentFilter, ledgerStatusFilter]
   );
 
   const executiveQueueValue = useMemo(
@@ -149,7 +149,7 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
 
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
-    typeFilter !== 'ALL' ||
+    (activeTab !== 'past' && typeFilter !== 'ALL') ||
     departmentFilter !== 'ALL' ||
     (activeTab === 'past' && ledgerStatusFilter !== 'ALL');
 
@@ -236,31 +236,33 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div
-            role="group"
-            aria-label="Filter by trip type"
-            className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5"
-          >
-            {(
-              [
-                { id: 'ALL', label: 'All Types' },
-                { id: 'UPCOMING', label: 'Upcoming' },
-                { id: 'ALREADY_TRAVELLED', label: 'Claims' },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                aria-pressed={typeFilter === opt.id}
-                onClick={() => setTypeFilter(opt.id)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
-                  typeFilter === opt.id ? 'bg-primary text-white shadow-2xs' : 'text-muted hover:text-ink'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          {activeTab !== 'past' && (
+            <div
+              role="group"
+              aria-label="Filter by trip type"
+              className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5"
+            >
+              {(
+                [
+                  { id: 'ALL', label: 'All Types' },
+                  { id: 'UPCOMING', label: 'Upcoming' },
+                  { id: 'ALREADY_TRAVELLED', label: 'Claims' },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  aria-pressed={typeFilter === opt.id}
+                  onClick={() => setTypeFilter(opt.id)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
+                    typeFilter === opt.id ? 'bg-primary text-white shadow-2xs' : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <select
             value={departmentFilter}

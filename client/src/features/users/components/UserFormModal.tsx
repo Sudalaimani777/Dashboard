@@ -43,7 +43,7 @@ const EditUserForm: React.FC<{
   } = useForm<UpdateUserFormValues>({
     resolver: zodResolver(updateUserSchema),
     defaultValues: {
-      role: initialUser.role === 'MANAGER' ? 'MANAGER' : 'EMPLOYEE',
+      role: initialUser.role || 'EMPLOYEE',
       department: initialUser.department || departments[0] || 'Engineering',
       managerId: initialUser.manager_id || '',
     },
@@ -84,11 +84,18 @@ const EditUserForm: React.FC<{
           </label>
           <select
             id="user-role"
-            className="w-full h-11 px-3 rounded-xl border border-border-warm bg-surface text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary cursor-pointer"
+            disabled={initialUser.role === 'ADMIN'}
+            className="w-full h-11 px-3 rounded-xl border border-border-warm bg-surface text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             {...register('role')}
           >
-            <option value="EMPLOYEE">Employee</option>
-            <option value="MANAGER">Manager</option>
+            {initialUser.role === 'ADMIN' ? (
+              <option value="ADMIN">Admin</option>
+            ) : (
+              <>
+                <option value="EMPLOYEE">Employee</option>
+                <option value="MANAGER">Manager</option>
+              </>
+            )}
           </select>
         </div>
 

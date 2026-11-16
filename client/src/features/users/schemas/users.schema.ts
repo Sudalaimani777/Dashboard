@@ -32,7 +32,7 @@ export const createUserSchema = z.object({
 export type CreateUserFormValues = z.infer<typeof createUserSchema>;
 
 export const updateUserSchema = z.object({
-  role: z.enum(['EMPLOYEE', 'MANAGER']),
+  role: z.enum(['EMPLOYEE', 'MANAGER', 'ADMIN']),
   department: z
     .string()
     .trim()

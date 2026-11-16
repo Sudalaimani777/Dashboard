@@ -36,8 +36,10 @@ export class UsersService {
       throw new UserValidationError('An account with this email already exists.', 409);
     }
 
-    const effectiveManagerId = dto.role === 'EMPLOYEE' ? dto.managerId ?? null : dto.managerId ?? null;
-    await this.assertValidManager(effectiveManagerId);
+    const effectiveManagerId = dto.managerId ?? null;
+    if (effectiveManagerId) {
+      await this.assertValidManager(effectiveManagerId);
+    }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
     return this.repo.createUser({
@@ -79,6 +81,57 @@ export class UsersService {
       throw new UserValidationError('User not found.', 404);
     }
     return updated;
+  }
+
+  async updateUserStatus(
+    targetUserId: string,
+    actorUserId: string,
+    isActive: boolean
+  ): Promise<UserDirectoryItem> {
+    const existing = await this.repo.findById(targetUserId);
+    if (!existing) {
+      throw new UserValidationError('User not found.', 404);
+    }
+
+    if (targetUserId === actorUserId && !isActive) {
+      throw new UserValidationError('Administrators cannot deactivate their own account.', 400);
+    }
+
+    if (existing.role === 'ADMIN' && !isActive) {
+      const activeAdmins = await this.repo.countActiveAdmins();
+      if (activeAdmins <= 1) {
+        throw new UserValidationError('Cannot deactivate the sole active Administrator account.', 400);
+      }
+    }
+
+    const updated = await this.repo.updateUserStatus(targetUserId, isActive);
+    if (!updated) {
+      throw new UserValidationError('Failed to update user status.', 500);
+    }
+    return updated;
+  }
+
+  async deleteUser(targetUserId: string, actorUserId: string): Promise<void> {
+    const existing = await this.repo.findById(targetUserId);
+    if (!existing) {
+      throw new UserValidationError('User not found.', 404);
+    }
+
+    if (targetUserId === actorUserId) {
+      throw new UserValidationError('Administrators cannot delete their own account.', 400);
+    }
+
+    if (existing.role === 'ADMIN') {
+      const activeAdmins = await this.repo.countActiveAdmins();
+      if (activeAdmins <= 1) {
+        throw new UserValidationError('Cannot delete the sole Administrator account.', 400);
+      }
+    }
+
+    const deleted = await this.repo.deleteUser(targetUserId);
+    if (!deleted) {
+      throw new UserValidationError('Failed to delete user.', 500);
+    }
   }
 }
 

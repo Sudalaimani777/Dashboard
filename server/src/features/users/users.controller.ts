@@ -37,6 +37,32 @@ export class UsersController {
       return sendError(res, (err as Error).message, statusCode);
     }
   };
+
+  updateUserStatus = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const targetId = String(req.params.id || '');
+      const actorId = req.user?.userId || '';
+      const isActive = Boolean(req.body?.isActive);
+      const user = await this.service.updateUserStatus(targetId, actorId, isActive);
+      const actionText = isActive ? 'reactivated' : 'deactivated';
+      return sendSuccess(res, { user }, `User ${actionText} successfully`);
+    } catch (err) {
+      const statusCode = err instanceof UserValidationError ? err.statusCode : 400;
+      return sendError(res, (err as Error).message, statusCode);
+    }
+  };
+
+  deleteUser = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const targetId = String(req.params.id || '');
+      const actorId = req.user?.userId || '';
+      await this.service.deleteUser(targetId, actorId);
+      return sendSuccess(res, { id: targetId }, 'User deleted successfully');
+    } catch (err) {
+      const statusCode = err instanceof UserValidationError ? err.statusCode : 400;
+      return sendError(res, (err as Error).message, statusCode);
+    }
+  };
 }
 
 export const usersController = new UsersController();

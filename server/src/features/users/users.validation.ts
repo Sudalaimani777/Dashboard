@@ -38,11 +38,12 @@ export function validateCreateUserInput(raw: any): CreateManagedUserDto {
   if (department.length < 2 || department.length > 80) {
     throw new UserValidationError('Department must be between 2 and 80 characters.');
   }
-  if (managerId !== null && !UUID_REGEX.test(managerId)) {
+  const effectiveManagerId = role === 'EMPLOYEE' ? managerId : null;
+  if (effectiveManagerId !== null && !UUID_REGEX.test(effectiveManagerId)) {
     throw new UserValidationError('Invalid reporting manager ID format.');
   }
 
-  return { name, email, password, role, department, managerId };
+  return { name, email, password, role, department, managerId: effectiveManagerId };
 }
 
 export function validateUpdateUserInput(raw: any): UpdateManagedUserDto {

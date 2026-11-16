@@ -47,4 +47,24 @@ export const usersApi = {
       throw extractError(err, 'Failed to update member.');
     }
   },
+
+  async toggleStatus(id: string, isActive: boolean): Promise<DirectoryUser> {
+    try {
+      const res = await travelApiClient.patch<{ data: { user: DirectoryUser } }>(
+        `/users/${id}/status`,
+        { isActive }
+      );
+      return res.data.data.user;
+    } catch (err) {
+      throw extractError(err, `Failed to ${isActive ? 'reactivate' : 'deactivate'} user.`);
+    }
+  },
+
+  async deleteUser(id: string): Promise<void> {
+    try {
+      await travelApiClient.delete(`/users/${id}`);
+    } catch (err) {
+      throw extractError(err, 'Failed to delete user.');
+    }
+  },
 };

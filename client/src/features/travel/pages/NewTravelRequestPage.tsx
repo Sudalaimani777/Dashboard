@@ -282,7 +282,7 @@ export const NewTravelRequestPage: React.FC = () => {
           onSubmit={form.handleSubmit(onSubmit)}
           className="lg:col-span-8 flex flex-col gap-5 bg-surface p-6 rounded-xl border border-border-warm shadow-xs"
         >
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-4 border-b border-border-warm">
+          <div className="w-full pb-4 border-b border-border-warm">
             <TravelTypeToggle
               value={watchedType}
               onChange={(t) => form.setValue('travel_type', t)}

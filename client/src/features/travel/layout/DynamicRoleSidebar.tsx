@@ -15,6 +15,7 @@ import {
   Pin,
   PinOff,
   PlusCircle,
+  UserPlus,
   type LucideIcon,
 } from 'lucide-react';
 import type { User } from '../../auth/types/auth.types';
@@ -58,6 +59,34 @@ export function getRoleNavItems(role: string): NavItemConfig[] {
   }
 }
 
+export interface QuickActionConfig {
+  label: string;
+  tooltip: string;
+  icon: LucideIcon;
+  path: string;
+}
+
+export function getRoleQuickAction(role: string): QuickActionConfig {
+  switch (role) {
+    case 'ADMIN':
+      return {
+        label: 'Add Member',
+        tooltip: 'Add Team Member',
+        icon: UserPlus,
+        path: '/admin/users/new',
+      };
+    case 'MANAGER':
+    case 'EMPLOYEE':
+    default:
+      return {
+        label: 'New Request',
+        tooltip: 'New Travel Request',
+        icon: PlusCircle,
+        path: '/travel/new',
+      };
+  }
+}
+
 export interface DynamicRoleSidebarProps {
   user: User;
   activeTab: string;
@@ -94,7 +123,7 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
   const isItemCollapsed = !isExpanded;
 
   const navItems = getRoleNavItems(user.role || 'EMPLOYEE');
-  const canCreate = user.role === 'EMPLOYEE' || user.role === 'MANAGER';
+  const quickAction = getRoleQuickAction(user.role || 'EMPLOYEE');
 
   const roleSubtitle =
     user.role === 'ADMIN'
@@ -156,28 +185,27 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
         )}
       </div>
 
-      {/* 2. Quick Action: + New Request Button (For Employee & Manager) */}
-      {canCreate && (
-        <div className="mt-3.5 mb-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => navigate('/travel/new')}
-            className={`w-full flex items-center h-10 rounded-lg bg-primary text-white hover:bg-primary-hover font-semibold text-xs transition-all cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-[0.98] ${
-              isItemCollapsed ? 'justify-center px-0' : 'px-1'
-            }`}
-            title={isItemCollapsed ? 'New Travel Request' : undefined}
-          >
-            <span className="w-[42px] h-[42px] flex items-center justify-center shrink-0">
-              <PlusCircle className="w-5 h-5 text-white" />
+      {/* 2. Quick Action CTA Button (New Request for Employee/Manager, Add Member for Admin) */}
+      <div className="mt-3.5 mb-1.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => navigate(quickAction.path)}
+          className={`w-full flex items-center h-10 rounded-lg bg-primary text-white hover:bg-primary-hover font-semibold text-xs transition-all cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-[0.98] ${
+            isItemCollapsed ? 'justify-center px-0' : 'px-1'
+          }`}
+          title={isItemCollapsed ? quickAction.tooltip : undefined}
+          aria-label={quickAction.tooltip}
+        >
+          <span className="w-[42px] h-[42px] flex items-center justify-center shrink-0">
+            <quickAction.icon className="w-5 h-5 text-white" />
+          </span>
+          {!isItemCollapsed && (
+            <span className="truncate font-semibold text-[13px] ml-1 pr-3">
+              {quickAction.label}
             </span>
-            {!isItemCollapsed && (
-              <span className="truncate font-semibold text-[13px] ml-1 pr-3">
-                New Request
-              </span>
-            )}
-          </button>
-        </div>
-      )}
+          )}
+        </button>
+      </div>
 
       {/* 3. Section Label */}
       {!isItemCollapsed && (
