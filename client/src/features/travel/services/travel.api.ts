@@ -11,6 +11,7 @@ import type {
   DepartmentBudgetOverview,
   UpsertBudgetInput,
   TravelStatus,
+  SupportingDoc,
 } from '../types/travel.types';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -202,6 +203,24 @@ class TravelApiService {
       return res.data.data;
     } catch (err) {
       this.handleError(err, 'Failed to save department budget allocation');
+    }
+  }
+
+  /**
+   * Upload an itinerary or quotation proof document (PDF/Image) to Cloudinary via backend.
+   */
+  async uploadProofFile(file: File): Promise<SupportingDoc> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await travelApiClient.post<ApiResponse<SupportingDoc>>('/travel/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return res.data.data;
+    } catch (err) {
+      this.handleError(err, 'Failed to upload document proof');
     }
   }
 }

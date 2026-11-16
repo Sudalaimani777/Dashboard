@@ -1,6 +1,7 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import path from 'path';
 import { config } from './config/env.js';
 import { authRoutes } from './features/auth/auth.routes.js';
 import { travelRoutes } from './features/travel/travel.routes.js';
@@ -19,6 +20,7 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.json());
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
 // Base Route
 app.get('/', (_req, res) => {

@@ -1,5 +1,16 @@
 import React from 'react';
-import { IndianRupee, Clock, CheckCircle2, AlertTriangle, FileEdit, Plane } from 'lucide-react';
+import {
+  IndianRupee,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  FileEdit,
+  Plane,
+  Users,
+  ShieldCheck,
+  UserCheck,
+  UserX,
+} from 'lucide-react';
 
 export interface MetricPill {
   label: string;
@@ -16,6 +27,7 @@ export interface MetricItem {
   label: string;
   value: string | number;
   subtext?: string;
+  icon?: React.ReactNode;
   isCurrency?: boolean;
   tone?: 'default' | 'primary' | 'amber' | 'emerald';
   badge?: string;
@@ -30,6 +42,8 @@ export interface TravelMetricsGridProps {
 
 export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics }) => {
   const getIcon = (m: MetricItem) => {
+    if (m.icon) return m.icon;
+
     const lower = m.label.toLowerCase();
     const iconTone =
       m.isCurrency || m.tone === 'primary'
@@ -41,6 +55,24 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
     if (m.isCurrency) return <IndianRupee className={`size-4 ${iconTone}`} />;
     if (m.tone === 'amber' || lower.includes('revision') || lower.includes('attention')) {
       return <AlertTriangle className={`size-4 ${iconTone}`} />;
+    }
+    if (lower.includes('unassigned')) {
+      return Number(m.value) > 0 ? (
+        <UserX className="size-4 text-amber-700" />
+      ) : (
+        <UserCheck className="size-4 text-emerald-700" />
+      );
+    }
+    if (
+      lower.includes('manager') ||
+      lower.includes('admin') ||
+      lower.includes('clearance') ||
+      lower.includes('governance')
+    ) {
+      return <ShieldCheck className={`size-4 ${iconTone}`} />;
+    }
+    if (lower.includes('member') || lower.includes('employee') || lower.includes('user')) {
+      return <Users className={`size-4 ${iconTone}`} />;
     }
     if (lower.includes('draft')) return <FileEdit className={`size-4 ${iconTone}`} />;
     if (lower.includes('pending') || lower.includes('active')) {

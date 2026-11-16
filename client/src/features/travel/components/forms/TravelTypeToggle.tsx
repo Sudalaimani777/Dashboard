@@ -5,14 +5,15 @@ import type { TravelType } from '../../types/travel.types';
 export interface TravelTypeToggleProps {
   value: TravelType;
   onChange: (type: TravelType) => void;
+  className?: string;
 }
 
-export const TravelTypeToggle: React.FC<TravelTypeToggleProps> = ({ value, onChange }) => {
+export const TravelTypeToggle: React.FC<TravelTypeToggleProps> = ({ value, onChange, className = '' }) => {
   return (
     <div
       role="radiogroup"
       aria-label="Travel request category"
-      className="flex bg-surface-subtle p-1 rounded-lg border border-border-warm gap-1.5 max-w-lg"
+      className={`flex w-full bg-surface-subtle p-1 rounded-lg border border-border-warm gap-1.5 ${className}`}
     >
       <button
         type="button"

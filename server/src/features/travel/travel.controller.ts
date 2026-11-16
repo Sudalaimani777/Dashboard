@@ -201,6 +201,28 @@ export class TravelController {
   };
 
   /**
+   * POST /api/travel/upload
+   * Uploads an itinerary or quotation proof file to Cloudinary and returns metadata.
+   */
+  uploadProof = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return sendError(res, 'Authentication required', 401);
+      }
+
+      if (!req.file) {
+        return sendError(res, 'No file uploaded. Please attach a PDF, PNG, JPG, or WEBP document.', 400);
+      }
+
+      const doc = await this.service.uploadProof(req.file, userId);
+      return sendSuccess(res, doc, 'File uploaded successfully', 201);
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
+    }
+  };
+
+  /**
    * GET /api/travel/budgets/overview
    * Lists all configured department budgets and known departments for executive oversight.
    */

@@ -1,8 +1,18 @@
 import { useMemo } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { TravelType } from '../types/travel.types';
+
+export const supportingDocSchema = z.object({
+  id: z.string(),
+  type: z.enum(['LINK', 'FILE']),
+  name: z.string().min(1, 'Name or title required'),
+  url: z.string().min(1, 'Valid URL is required'),
+  format: z.string().optional(),
+  size: z.number().optional(),
+  uploadedAt: z.string().optional(),
+});
 
 export const travelFormSchema = z.object({
   travel_type: z.enum(['UPCOMING', 'ALREADY_TRAVELLED']),
@@ -15,7 +25,8 @@ export const travelFormSchema = z.object({
   return_date: z.string().min(1, 'Return date is required'),
   emergency_contact_name: z.string().min(2, 'Emergency contact name is required'),
   emergency_contact_phone: z.string().min(5, 'Emergency contact phone is required'),
-  supporting_doc_url: z.string().url('Must be a valid document or receipt URL'),
+  supporting_doc_url: z.string().optional(),
+  supporting_docs: z.array(supportingDocSchema).min(1, 'At least one quotation or invoice proof is required'),
   expenses: z.array(
     z.object({
       category: z.enum(['FLIGHT', 'HOTEL', 'MEALS_PER_DIEM', 'TRANSIT', 'MISC']),
@@ -44,6 +55,7 @@ export function useTravelForm(initialType: TravelType = 'UPCOMING') {
       emergency_contact_name: 'HR Operations',
       emergency_contact_phone: '+91 9876543210',
       supporting_doc_url: '',
+      supporting_docs: [],
       expenses: [
         {
           category: 'FLIGHT',
@@ -61,13 +73,23 @@ export function useTravelForm(initialType: TravelType = 'UPCOMING') {
     name: 'expenses',
   });
 
-  const watchedExpenses = form.watch('expenses');
+  const watchedExpenses = useWatch({
+    control: form.control,
+    name: 'expenses',
+  });
+  const watchedDocs = useWatch({
+    control: form.control,
+    name: 'supporting_docs',
+  }) || [];
   const watchedType = form.watch('travel_type');
   const watchedProof = form.watch('supporting_doc_url');
 
   const totalAmount = useMemo(() => {
     if (!watchedExpenses || !Array.isArray(watchedExpenses)) return 0;
-    return watchedExpenses.reduce((sum, item) => sum + (Number(item?.amount) || 0), 0);
+    return watchedExpenses.reduce((sum, item) => {
+      const val = typeof item?.amount === 'number' ? item.amount : parseFloat(item?.amount as any);
+      return sum + (Number.isFinite(val) && val > 0 ? val : 0);
+    }, 0);
   }, [watchedExpenses]);
 
   return {
@@ -75,6 +97,8 @@ export function useTravelForm(initialType: TravelType = 'UPCOMING') {
     fieldArray,
     watchedType,
     watchedProof,
+    watchedDocs,
+    watchedExpenses,
     totalAmount,
   };
 }

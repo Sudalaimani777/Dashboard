@@ -69,6 +69,7 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
             <input
               type="number"
               step="100"
+              min="0"
               placeholder="0.00"
               {...register(`expenses.${index}.amount`, { valueAsNumber: true })}
               className="w-full bg-surface border border-border-warm rounded-lg pl-6 pr-2 py-2 text-xs font-mono tabular-nums text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"

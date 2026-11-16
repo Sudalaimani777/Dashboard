@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict';
-import { getRoleNavItems, NavItemConfig } from '../src/features/travel/layout/DynamicRoleSidebar';
+import fs from 'node:fs';
+import path from 'node:path';
+import {
+  getRoleNavItems,
+  getRoleQuickAction,
+  NavItemConfig,
+} from '../src/features/travel/layout/DynamicRoleSidebar';
 
 async function run() {
-  console.log('🧪 Testing DynamicRoleSidebar navigation mapping...');
+  console.log('🧪 Testing DynamicRoleSidebar navigation mapping & quick action...');
 
   // 1. Employee Navigation Items
   const empItems = getRoleNavItems('EMPLOYEE');
@@ -40,7 +46,30 @@ async function run() {
   assert.equal(admItems[3].label, 'Department Budgets');
   assert.equal(admItems[4].label, 'Team & Access');
 
-  console.log('✅ ALL DYNAMIC ROLE SIDEBAR NAVIGATION TESTS PASSED!');
+  // 4. Role Quick Actions
+  const empAction = getRoleQuickAction('EMPLOYEE');
+  assert.equal(empAction.label, 'New Request');
+  assert.equal(empAction.path, '/travel/new');
+
+  const mgrAction = getRoleQuickAction('MANAGER');
+  assert.equal(mgrAction.label, 'New Request');
+  assert.equal(mgrAction.path, '/travel/new');
+
+  const admAction = getRoleQuickAction('ADMIN');
+  assert.equal(admAction.label, 'Add Member');
+  assert.equal(admAction.path, '/admin/users/new');
+
+  // 5. Source code validation for DynamicRoleSidebar
+  const sidebarSource = fs.readFileSync(
+    path.resolve(import.meta.dirname, '../src/features/travel/layout/DynamicRoleSidebar.tsx'),
+    'utf8'
+  );
+  assert.ok(
+    sidebarSource.includes('/admin/users/new') && sidebarSource.includes('Add Member'),
+    'DynamicRoleSidebar must include quick action for Admin to Add Member via /admin/users/new'
+  );
+
+  console.log('✅ ALL DYNAMIC ROLE SIDEBAR NAVIGATION & QUICK ACTION TESTS PASSED!');
 }
 
 run().catch((err) => {

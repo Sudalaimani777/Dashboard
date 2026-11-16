@@ -364,7 +364,7 @@ export const TravelDetailPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         <div className="lg:col-span-7 flex flex-col gap-5">
-          <ProofInspectorViewer proofUrl={request.supportingDocUrl} title={request.title} />
+          <ProofInspectorViewer proofUrl={request.supportingDocUrl} docs={request.supportingDocs} title={request.title} />
           <AuditTimelineLog timeline={request.timeline} />
         </div>
 

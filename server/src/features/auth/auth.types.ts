@@ -6,6 +6,7 @@ export interface User {
   role: 'EMPLOYEE' | 'MANAGER' | 'ADMIN';
   department: string;
   manager_id?: string | null;
+  is_active?: boolean;
   reset_token?: string | null;
   reset_token_expires_at?: Date | null;
   created_at: Date;

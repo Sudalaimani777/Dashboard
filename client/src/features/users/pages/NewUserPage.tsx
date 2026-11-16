@@ -30,7 +30,6 @@ export const NewUserPage: React.FC = () => {
   const {
     register,
     handleSubmit,
-    setValue,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<CreateUserFormValues>({
@@ -140,56 +139,6 @@ export const NewUserPage: React.FC = () => {
             </div>
           )}
 
-          {/* Role Selection */}
-          <div className="space-y-2">
-            <span className="block text-xs font-semibold text-ink">Account Role</span>
-            <div
-              role="group"
-              aria-label="Select member role"
-              className="grid grid-cols-2 gap-3"
-            >
-              {(
-                [
-                  {
-                    id: 'EMPLOYEE',
-                    title: 'Employee',
-                    desc: 'Submits travel requests & expense claims',
-                  },
-                  {
-                    id: 'MANAGER',
-                    title: 'Manager',
-                    desc: 'Audits & approves direct reports',
-                  },
-                ] as const
-              ).map((opt) => {
-                const active = role === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() =>
-                      setValue('role', opt.id, { shouldValidate: true, shouldDirty: true })
-                    }
-                    className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
-                      active
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                        : 'border-border-warm bg-surface hover:bg-surface-subtle'
-                    }`}
-                  >
-                    <div className="text-xs font-bold text-ink">{opt.title}</div>
-                    <div className="text-[11px] text-muted mt-0.5">{opt.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-            {errors.role?.message && (
-              <p role="alert" className="text-xs text-destructive font-medium">
-                {errors.role.message}
-              </p>
-            )}
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <AuthField
               id="new-user-name"
@@ -228,6 +177,25 @@ export const NewUserPage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
+              <label htmlFor="new-user-role" className="block text-xs font-semibold text-ink">
+                Account Role
+              </label>
+              <select
+                id="new-user-role"
+                className="w-full h-11 px-3.5 rounded-xl border border-border-warm bg-surface text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary cursor-pointer"
+                {...register('role')}
+              >
+                <option value="EMPLOYEE">Employee</option>
+                <option value="MANAGER">Manager</option>
+              </select>
+              {errors.role?.message && (
+                <p role="alert" className="text-xs text-destructive font-medium">
+                  {errors.role.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
               <label htmlFor="new-user-department" className="block text-xs font-semibold text-ink">
                 Department
               </label>
@@ -255,27 +223,27 @@ export const NewUserPage: React.FC = () => {
                 </p>
               )}
             </div>
-
-            {role === 'EMPLOYEE' && (
-              <div className="space-y-1.5">
-                <label htmlFor="new-user-manager" className="block text-xs font-semibold text-ink">
-                  Reporting Manager
-                </label>
-                <select
-                  id="new-user-manager"
-                  className="w-full h-11 px-3 rounded-xl border border-border-warm bg-surface text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary cursor-pointer"
-                  {...register('managerId')}
-                >
-                  <option value="">Unassigned (any manager)</option>
-                  {managers.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.department})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
+
+          {role === 'EMPLOYEE' && (
+            <div className="space-y-1.5">
+              <label htmlFor="new-user-manager" className="block text-xs font-semibold text-ink">
+                Reporting Manager
+              </label>
+              <select
+                id="new-user-manager"
+                className="w-full h-11 px-3 rounded-xl border border-border-warm bg-surface text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary cursor-pointer"
+                {...register('managerId')}
+              >
+                <option value="">Unassigned (any manager)</option>
+                {managers.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.department})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border-warm">
             <button

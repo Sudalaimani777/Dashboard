@@ -9,6 +9,7 @@ const USER_DIRECTORY_SELECT = `
     u.role,
     u.department,
     u.manager_id,
+    u.is_active,
     m.name AS manager_name,
     u.created_at,
     u.updated_at
@@ -96,6 +97,36 @@ export class UsersRepository {
       return null;
     }
     return this.findById(id);
+  }
+
+  async countActiveAdmins(): Promise<number> {
+    const res = await query(`SELECT COUNT(*)::int AS count FROM users WHERE role = 'ADMIN' AND is_active = true`);
+    return Number(res.rows[0]?.count || 0);
+  }
+
+  async updateUserStatus(id: string, isActive: boolean): Promise<UserDirectoryItem | null> {
+    const res = await query(
+      `UPDATE users SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id`,
+      [isActive, id]
+    );
+    if (res.rowCount === 0) {
+      return null;
+    }
+    return this.findById(id);
+  }
+
+  async countUserTravelRecords(userId: string): Promise<number> {
+    const res = await query(
+      `SELECT COUNT(*)::int AS count FROM travel_requests WHERE user_id = $1 OR manager_id = $1 OR admin_id = $1`,
+      [userId]
+    );
+    return Number(res.rows[0]?.count || 0);
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    await query(`UPDATE users SET manager_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE manager_id = $1`, [id]);
+    const res = await query(`DELETE FROM users WHERE id = $1`, [id]);
+    return (res.rowCount ?? 0) > 0;
   }
 }
 

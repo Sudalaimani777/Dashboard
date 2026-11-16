@@ -33,6 +33,7 @@ export class AuthService {
       role: user.role || 'EMPLOYEE',
       department: user.department || 'Engineering',
       manager_id: user.manager_id || null,
+      is_active: user.is_active !== false,
       created_at: user.created_at,
       updated_at: user.updated_at,
     };
@@ -106,6 +107,10 @@ export class AuthService {
     const user = await this.repo.findByEmail(email);
     if (!user) {
       throw new Error('Invalid email or password');
+    }
+
+    if (user.is_active === false) {
+      throw new Error('Your account has been deactivated. Please contact your administrator.');
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);

@@ -32,7 +32,7 @@ export const NewTravelRequestPage: React.FC = () => {
   const backPath = `/dashboard?tab=${fromTab || defaultReturnTab}`;
 
   const { requests, loadRequests, loadRequestDetails, createRequest } = useTravel();
-  const { form, fieldArray, watchedType, watchedProof, totalAmount } = useTravelForm(
+  const { form, fieldArray, watchedType, watchedProof, watchedDocs, watchedExpenses, totalAmount } = useTravelForm(
     initialTypeParam === 'ALREADY_TRAVELLED' ? 'ALREADY_TRAVELLED' : 'UPCOMING'
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +45,6 @@ export const NewTravelRequestPage: React.FC = () => {
   const watchedDep = form.watch('departure_date');
   const watchedRet = form.watch('return_date');
   const watchedContactName = form.watch('emergency_contact_name');
-  const watchedExpenses = form.watch('expenses');
 
   useEffect(() => {
     if (requests.length === 0) {
@@ -72,7 +71,13 @@ export const NewTravelRequestPage: React.FC = () => {
         return_date: returnDefault,
         emergency_contact_name: source.emergencyContactName || 'HR Operations',
         emergency_contact_phone: source.emergencyContactPhone || '+91 9876543210',
-        supporting_doc_url: '',
+        supporting_doc_url: source.supportingDocUrl || '',
+        supporting_docs:
+          source.supportingDocs && source.supportingDocs.length > 0
+            ? source.supportingDocs
+            : source.supportingDocUrl
+            ? [{ id: 'clone-1', type: 'LINK', name: 'Primary Itinerary Proof', url: source.supportingDocUrl }]
+            : [],
         expenses:
           source.expenses && source.expenses.length > 0
             ? source.expenses.map((e) => ({
@@ -132,13 +137,16 @@ export const NewTravelRequestPage: React.FC = () => {
         ),
       },
       { label: 'Emergency contact specified', ok: Boolean(watchedContactName && watchedContactName.trim().length >= 2) },
-      { label: 'Valid proof / itinerary URL', ok: Boolean(watchedProof && /^https?:\/\/.+/i.test(watchedProof)) },
+      {
+        label: 'Valid proof / itinerary quotation attached',
+        ok: Boolean((watchedDocs && watchedDocs.length > 0) || (watchedProof && /^https?:\/\/.+/i.test(watchedProof))),
+      },
       {
         label: 'At least 1 expense > ₹0',
         ok: Boolean(watchedExpenses && watchedExpenses.some((e) => Number(e.amount) > 0)),
       },
     ],
-    [watchedTitle, watchedPurpose, watchedOrigin, watchedDest, watchedDep, watchedRet, watchedContactName, watchedProof, watchedExpenses]
+    [watchedTitle, watchedPurpose, watchedOrigin, watchedDest, watchedDep, watchedRet, watchedContactName, watchedProof, watchedDocs, watchedExpenses]
   );
 
   const readyCount = readinessChecks.filter((c) => c.ok).length;
@@ -158,7 +166,8 @@ export const NewTravelRequestPage: React.FC = () => {
         returnDate: values.return_date,
         emergencyContactName: values.emergency_contact_name,
         emergencyContactPhone: values.emergency_contact_phone,
-        supportingDocUrl: values.supporting_doc_url,
+        supportingDocUrl: values.supporting_doc_url || values.supporting_docs?.[0]?.url,
+        supportingDocs: values.supporting_docs || [],
         expenses: values.expenses.map((e) => ({
           category: e.category,
           merchant: e.merchant,
@@ -191,7 +200,8 @@ export const NewTravelRequestPage: React.FC = () => {
         returnDate: values.return_date,
         emergencyContactName: values.emergency_contact_name,
         emergencyContactPhone: values.emergency_contact_phone,
-        supportingDocUrl: values.supporting_doc_url,
+        supportingDocUrl: values.supporting_doc_url || values.supporting_docs?.[0]?.url,
+        supportingDocs: values.supporting_docs || [],
         isDraft: true,
         expenses: (values.expenses || []).map((e) => ({
           category: e.category,
@@ -272,7 +282,7 @@ export const NewTravelRequestPage: React.FC = () => {
           onSubmit={form.handleSubmit(onSubmit)}
           className="lg:col-span-8 flex flex-col gap-5 bg-surface p-6 rounded-xl border border-border-warm shadow-xs"
         >
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-4 border-b border-border-warm">
+          <div className="w-full pb-4 border-b border-border-warm">
             <TravelTypeToggle
               value={watchedType}
               onChange={(t) => form.setValue('travel_type', t)}
@@ -283,7 +293,8 @@ export const NewTravelRequestPage: React.FC = () => {
 
           <ProofAttachmentField
             travelType={watchedType}
-            register={form.register}
+            setValue={form.setValue}
+            docs={watchedDocs}
             errors={form.formState.errors}
             proofUrlValue={watchedProof}
           />
@@ -293,6 +304,7 @@ export const NewTravelRequestPage: React.FC = () => {
             register={form.register}
             errors={form.formState.errors}
             totalAmount={totalAmount}
+            control={form.control}
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border-warm">

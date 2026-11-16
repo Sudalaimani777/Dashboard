@@ -204,7 +204,7 @@ export const AdminClearancePage: React.FC = () => {
             </div>
           </div>
 
-          <ProofInspectorViewer proofUrl={request.supportingDocUrl} title={request.title} />
+          <ProofInspectorViewer proofUrl={request.supportingDocUrl} docs={request.supportingDocs} title={request.title} />
           <AuditTimelineLog timeline={request.timeline} />
         </div>
 

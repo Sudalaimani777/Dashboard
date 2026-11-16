@@ -52,8 +52,9 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
 
   const filteredRequests = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    const effectiveType = activeTab === 'past' ? 'ALL' : typeFilter;
     return requests.filter((r) => {
-      if (typeFilter !== 'ALL' && r.travelType !== typeFilter) return false;
+      if (effectiveType !== 'ALL' && r.travelType !== effectiveType) return false;
       if (!q) return true;
       return (
         r.title.toLowerCase().includes(q) ||
@@ -62,7 +63,7 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
         r.projectCode.toLowerCase().includes(q)
       );
     });
-  }, [requests, searchQuery, typeFilter]);
+  }, [requests, searchQuery, typeFilter, activeTab]);
 
   const presentRequests = useMemo(
     () =>
@@ -128,7 +129,11 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
     [nonDraftRequests]
   );
 
-  const hasActiveFilter = Boolean(searchQuery.trim() || typeFilter !== 'ALL');
+  const hasActiveFilter = Boolean(
+    searchQuery.trim() ||
+      (activeTab !== 'past' && typeFilter !== 'ALL') ||
+      (activeTab === 'past' && pastStatusFilter !== 'ALL')
+  );
 
   const recentNonActive = useMemo(
     () =>
@@ -253,33 +258,35 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search title, city, project..."
               aria-label="Search travel requests"
-              className="pl-8 pr-3 py-2 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint w-48 sm:w-56 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
+              className="pl-8 pr-3 py-2 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint w-64 sm:w-72 md:w-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
             />
           </div>
 
-          <div className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5 text-[11px]">
-            {(
-              [
-                { id: 'ALL', label: 'All' },
-                { id: 'UPCOMING', label: 'Upcoming' },
-                { id: 'ALREADY_TRAVELLED', label: 'Claims' },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                aria-pressed={typeFilter === opt.id}
-                onClick={() => setTypeFilter(opt.id)}
-                className={`px-2.5 py-1.5 rounded-md font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
-                  typeFilter === opt.id
-                    ? 'bg-primary text-white'
-                    : 'text-muted hover:text-ink'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          {activeTab !== 'past' && (
+            <div className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5 text-[11px]">
+              {(
+                [
+                  { id: 'ALL', label: 'All' },
+                  { id: 'UPCOMING', label: 'Upcoming' },
+                  { id: 'ALREADY_TRAVELLED', label: 'Claims' },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  aria-pressed={typeFilter === opt.id}
+                  onClick={() => setTypeFilter(opt.id)}
+                  className={`px-2.5 py-1.5 rounded-md font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
+                    typeFilter === opt.id
+                      ? 'bg-primary text-white'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
