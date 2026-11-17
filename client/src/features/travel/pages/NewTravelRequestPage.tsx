@@ -8,16 +8,18 @@ import {
   Loader2,
   CheckCircle2,
   Circle,
-  Copy,
   GitMerge,
 } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
-import { useTravelForm, type TravelFormValues } from '../hooks/useTravelForm';
+import { useTravelForm, getLocalDateString, type TravelFormValues } from '../hooks/useTravelForm';
+import type { TravelType } from '../types/travel.types';
+import { isValidEmergencyPhone } from '../utils/countryDialCodes';
 import { TravelTypeToggle } from '../components/forms/TravelTypeToggle';
 import { TravelLogisticsFields } from '../components/forms/TravelLogisticsFields';
 import { ProofAttachmentField } from '../components/forms/ProofAttachmentField';
 import { DynamicExpenseTable } from '../components/forms/DynamicExpenseTable';
+import { CloneTripDropdown } from '../components/forms/CloneTripDropdown';
 import { CategorySpendBreakdownCard } from '../components/employee/CategorySpendBreakdownCard';
 import { aggregateExpenseItems } from '../utils/travelAnalytics';
 
@@ -45,6 +47,7 @@ export const NewTravelRequestPage: React.FC = () => {
   const watchedDep = form.watch('departure_date');
   const watchedRet = form.watch('return_date');
   const watchedContactName = form.watch('emergency_contact_name');
+  const watchedContactPhone = form.watch('emergency_contact_phone');
 
   useEffect(() => {
     if (requests.length === 0) {
@@ -58,8 +61,18 @@ export const NewTravelRequestPage: React.FC = () => {
       const source =
         requests.find((r) => r.id === reqId && r.expenses && r.expenses.length > 0) ||
         (await loadRequestDetails(reqId));
-      const today = new Date().toISOString().split('T')[0];
-      const returnDefault = new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
+      const today = getLocalDateString();
+      const pastThreeDays = new Date();
+      pastThreeDays.setDate(pastThreeDays.getDate() - 3);
+      const pastThreeDaysStr = getLocalDateString(pastThreeDays);
+
+      const depDefault = source.travelType === 'ALREADY_TRAVELLED' ? pastThreeDaysStr : today;
+      const retDefault =
+        source.travelType === 'ALREADY_TRAVELLED'
+          ? today
+          : getLocalDateString(new Date(Date.now() + 86400000 * 3));
+      const expenseDateDefault = source.travelType === 'ALREADY_TRAVELLED' ? pastThreeDaysStr : today;
+
       form.reset({
         travel_type: source.travelType,
         title: `${source.title} (Copy)`,
@@ -67,10 +80,10 @@ export const NewTravelRequestPage: React.FC = () => {
         project_code: source.projectCode || 'ENG-2026',
         origin: source.origin,
         destination: source.destination,
-        departure_date: today,
-        return_date: returnDefault,
+        departure_date: depDefault,
+        return_date: retDefault,
         emergency_contact_name: source.emergencyContactName || 'HR Operations',
-        emergency_contact_phone: source.emergencyContactPhone || '+91 9876543210',
+        emergency_contact_phone: source.emergencyContactPhone || '+91',
         supporting_doc_url: source.supportingDocUrl || '',
         supporting_docs:
           source.supportingDocs && source.supportingDocs.length > 0
@@ -84,7 +97,7 @@ export const NewTravelRequestPage: React.FC = () => {
                 category: e.category,
                 merchant: e.merchant,
                 amount: Number(e.amount) || 0,
-                expenseDate: today,
+                expenseDate: source.travelType === 'ALREADY_TRAVELLED' && e.expenseDate > today ? today : (e.expenseDate || expenseDateDefault),
                 notes: e.notes || '',
               }))
             : [
@@ -92,7 +105,7 @@ export const NewTravelRequestPage: React.FC = () => {
                   category: 'FLIGHT',
                   merchant: '',
                   amount: 0,
-                  expenseDate: today,
+                  expenseDate: expenseDateDefault,
                   notes: '',
                 },
               ],
@@ -122,31 +135,88 @@ export const NewTravelRequestPage: React.FC = () => {
     [watchedExpenses]
   );
 
+  const handleTypeChange = (t: TravelType) => {
+    form.setValue('travel_type', t, { shouldValidate: true });
+    const todayStr = getLocalDateString();
+    const currentDep = form.getValues('departure_date');
+    const currentRet = form.getValues('return_date');
+
+    if (t === 'ALREADY_TRAVELLED') {
+      if (!currentRet || currentRet > todayStr) {
+        const pastThreeDays = new Date();
+        pastThreeDays.setDate(pastThreeDays.getDate() - 3);
+        const pastThreeDaysStr = getLocalDateString(pastThreeDays);
+        form.setValue('return_date', todayStr, { shouldValidate: true });
+        form.setValue('departure_date', pastThreeDaysStr, { shouldValidate: true });
+      }
+      // Sanitize expense dates to not exceed today
+      const currentExpenses = form.getValues('expenses') || [];
+      const sanitizedExpenses = currentExpenses.map((exp) => ({
+        ...exp,
+        expenseDate: exp.expenseDate && exp.expenseDate > todayStr ? todayStr : exp.expenseDate,
+      }));
+      form.setValue('expenses', sanitizedExpenses, { shouldValidate: true });
+    } else if (t === 'UPCOMING') {
+      if (!currentDep || currentDep < todayStr) {
+        const futureThreeDays = new Date();
+        futureThreeDays.setDate(futureThreeDays.getDate() + 3);
+        form.setValue('departure_date', todayStr, { shouldValidate: true });
+        form.setValue('return_date', getLocalDateString(futureThreeDays), { shouldValidate: true });
+      }
+    }
+  };
+
   const readinessChecks = useMemo(
-    () => [
-      { label: 'Trip title (min 5 chars)', ok: Boolean(watchedTitle && watchedTitle.trim().length >= 5) },
-      { label: 'Business purpose (min 10 chars)', ok: Boolean(watchedPurpose && watchedPurpose.trim().length >= 10) },
-      {
-        label: 'Route & valid dates',
-        ok: Boolean(
-          watchedOrigin &&
-            watchedDest &&
-            watchedDep &&
-            watchedRet &&
-            new Date(watchedRet) >= new Date(watchedDep)
-        ),
-      },
-      { label: 'Emergency contact specified', ok: Boolean(watchedContactName && watchedContactName.trim().length >= 2) },
-      {
-        label: 'Valid proof / itinerary quotation attached',
-        ok: Boolean((watchedDocs && watchedDocs.length > 0) || (watchedProof && /^https?:\/\/.+/i.test(watchedProof))),
-      },
-      {
-        label: 'At least 1 expense > ₹0',
-        ok: Boolean(watchedExpenses && watchedExpenses.some((e) => Number(e.amount) > 0)),
-      },
-    ],
-    [watchedTitle, watchedPurpose, watchedOrigin, watchedDest, watchedDep, watchedRet, watchedContactName, watchedProof, watchedDocs, watchedExpenses]
+    () => {
+      const todayStr = getLocalDateString();
+      const datesValid = Boolean(
+        watchedOrigin &&
+          watchedDest &&
+          watchedDep &&
+          watchedRet &&
+          new Date(watchedRet) >= new Date(watchedDep) &&
+          (watchedType === 'UPCOMING'
+            ? watchedDep >= todayStr
+            : watchedRet <= todayStr && watchedDep <= todayStr)
+      );
+
+      return [
+        { label: 'Trip title (min 5 chars)', ok: Boolean(watchedTitle && watchedTitle.trim().length >= 5) },
+        { label: 'Business purpose (min 10 chars)', ok: Boolean(watchedPurpose && watchedPurpose.trim().length >= 10) },
+        {
+          label: 'Route & valid dates',
+          ok: datesValid,
+        },
+        {
+          label: 'Emergency contact specified',
+          ok: Boolean(
+            watchedContactName &&
+              watchedContactName.trim().length >= 2 &&
+              isValidEmergencyPhone(watchedContactPhone)
+          ),
+        },
+        {
+          label: 'Valid proof / itinerary quotation attached',
+          ok: Boolean((watchedDocs && watchedDocs.length > 0) || (watchedProof && /^https?:\/\/.+/i.test(watchedProof))),
+        },
+        {
+          label: 'At least 1 expense > ₹0 (within trip dates)',
+          ok: Boolean(
+            watchedExpenses &&
+              watchedExpenses.length > 0 &&
+              watchedExpenses.some((e) => Number(e.amount) > 0) &&
+              watchedExpenses.every(
+                (e) =>
+                  !e.expenseDate ||
+                  ((!watchedDep || e.expenseDate >= watchedDep) &&
+                    (!watchedRet || e.expenseDate <= watchedRet) &&
+                    (watchedType !== 'ALREADY_TRAVELLED' || e.expenseDate <= todayStr))
+              )
+          ),
+        },
+      ];
+    },
+    [watchedTitle, watchedPurpose, watchedOrigin, watchedDest, watchedDep, watchedRet, watchedType, watchedContactName, watchedContactPhone, watchedProof, watchedDocs, watchedExpenses]
   );
 
   const readyCount = readinessChecks.filter((c) => c.ok).length;
@@ -220,7 +290,7 @@ export const NewTravelRequestPage: React.FC = () => {
   };
 
   const clonableTrips = useMemo(
-    () => requests.filter((r) => r.status !== 'DRAFT').slice(0, 6),
+    () => requests.filter((r) => r.status !== 'DRAFT'),
     [requests]
   );
 
@@ -239,34 +309,16 @@ export const NewTravelRequestPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {clonableTrips.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-surface border border-border-warm rounded-lg px-2.5 py-1.5">
-              <Copy className="size-3.5 text-primary shrink-0" />
-              <select
-                aria-label="Clone from previous trip"
-                defaultValue={cloneIdParam || ''}
-                onChange={(e) => applyClonedRequest(e.target.value)}
-                className="text-xs font-medium text-ink bg-transparent focus-visible:outline-none cursor-pointer"
-              >
-                <option value="" disabled>
-                  Clone from past trip...
-                </option>
-                {clonableTrips.map((trip) => (
-                  <option key={trip.id} value={trip.id}>
-                    {trip.title} ({trip.destination})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CloneTripDropdown
+              trips={clonableTrips}
+              onSelectTrip={applyClonedRequest}
+            />
           )}
-
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-ink tracking-tight">Create Travel Request</h1>
-        <p className="text-xs text-muted">
-          Submit a new pre-trip authorization or post-trip reimbursement claim, or save a draft to finish later.
-        </p>
       </div>
 
       {apiError && (
@@ -285,11 +337,20 @@ export const NewTravelRequestPage: React.FC = () => {
           <div className="w-full pb-4 border-b border-border-warm">
             <TravelTypeToggle
               value={watchedType}
-              onChange={(t) => form.setValue('travel_type', t)}
+              onChange={handleTypeChange}
             />
           </div>
 
-          <TravelLogisticsFields register={form.register} errors={form.formState.errors} />
+          <TravelLogisticsFields
+            register={form.register}
+            errors={form.formState.errors}
+            travelType={watchedType}
+            departureDate={watchedDep}
+            returnDate={watchedRet}
+            phoneValue={watchedContactPhone}
+            onPhoneChange={(val) => form.setValue('emergency_contact_phone', val, { shouldValidate: true })}
+            onPhoneBlur={() => form.trigger('emergency_contact_phone')}
+          />
 
           <ProofAttachmentField
             travelType={watchedType}
@@ -305,6 +366,9 @@ export const NewTravelRequestPage: React.FC = () => {
             errors={form.formState.errors}
             totalAmount={totalAmount}
             control={form.control}
+            travelType={watchedType}
+            departureDate={watchedDep}
+            returnDate={watchedRet}
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border-warm">
@@ -340,7 +404,7 @@ export const NewTravelRequestPage: React.FC = () => {
         {/* Sticky Live Summary & Readiness Sidebar (4 cols) */}
         <aside className="lg:col-span-4 lg:sticky lg:top-5 flex flex-col gap-4">
           <CategorySpendBreakdownCard
-            title="Live Expense Split"
+            title="Expense Split"
             subtitle="Updates automatically from your table"
             totalSpend={liveBreakdown.totalSpend}
             categories={liveBreakdown.categories}

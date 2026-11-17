@@ -174,25 +174,25 @@ function runStateMachineAndValidationTests() {
   };
   assert(validateAdminReviewPayload(validAdminApprove).valid, 'Valid admin approval passes');
 
-  const validAdminRevisionRouteA = {
+  const invalidAdminRevisionRouteA = {
     action: 'REQUEST_REVISION' as const,
     revision_target: 'MANAGER' as const,
     remarks: 'Please recheck flight options.'
   };
-  assert(validateAdminReviewPayload(validAdminRevisionRouteA).valid, 'Valid admin revision Route A passes');
+  assert(!validateAdminReviewPayload(invalidAdminRevisionRouteA).valid, 'Admin revision Route A (MANAGER) is rejected');
 
   const validAdminRevisionRouteB = {
     action: 'REQUEST_REVISION' as const,
     revision_target: 'EMPLOYEE' as const,
     remarks: 'Please upload tax invoice.'
   };
-  assert(validateAdminReviewPayload(validAdminRevisionRouteB).valid, 'Valid admin revision Route B passes');
+  assert(validateAdminReviewPayload(validAdminRevisionRouteB).valid, 'Valid admin revision to Employee passes');
 
-  const invalidAdminRevisionNoTarget = {
+  const validAdminRevisionOmittedTarget = {
     action: 'REQUEST_REVISION' as const,
-    remarks: 'Needs revision'
+    remarks: 'Needs employee revision.'
   };
-  assert(!validateAdminReviewPayload(invalidAdminRevisionNoTarget).valid, 'Admin revision without revision_target rejected');
+  assert(validateAdminReviewPayload(validAdminRevisionOmittedTarget).valid, 'Admin revision with omitted target defaults and passes');
 
   // Resubmit Validation
   const validResubmit = {

@@ -3,6 +3,7 @@ import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { TravelType } from '../types/travel.types';
+import { getPhoneValidationError } from '../utils/countryDialCodes';
 
 export const supportingDocSchema = z.object({
   id: z.string(),
@@ -14,35 +15,150 @@ export const supportingDocSchema = z.object({
   uploadedAt: z.string().optional(),
 });
 
-export const travelFormSchema = z.object({
-  travel_type: z.enum(['UPCOMING', 'ALREADY_TRAVELLED']),
-  title: z.string().min(5, 'Title must be at least 5 characters'),
-  purpose: z.string().min(10, 'Business purpose must be at least 10 characters'),
-  project_code: z.string(),
-  origin: z.string().min(2, 'Origin city is required'),
-  destination: z.string().min(2, 'Destination is required'),
-  departure_date: z.string().min(1, 'Departure date is required'),
-  return_date: z.string().min(1, 'Return date is required'),
-  emergency_contact_name: z.string().min(2, 'Emergency contact name is required'),
-  emergency_contact_phone: z.string().min(5, 'Emergency contact phone is required'),
-  supporting_doc_url: z.string().optional(),
-  supporting_docs: z.array(supportingDocSchema).min(1, 'At least one quotation or invoice proof is required'),
-  expenses: z.array(
-    z.object({
-      category: z.enum(['FLIGHT', 'HOTEL', 'MEALS_PER_DIEM', 'TRANSIT', 'MISC']),
-      merchant: z.string().min(2, 'Merchant required'),
-      amount: z.number().positive('Amount must be positive'),
-      expenseDate: z.string(),
-      notes: z.string().optional(),
-    })
-  ).min(1, 'At least one expense line item is required'),
-});
+const pad = (n: number) => String(n).padStart(2, '0');
+export function getLocalDateString(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/**
+ * Sanitizes and parses text input amount into a valid number for form submission
+ */
+export function parseExpenseAmount(val: unknown): number {
+  if (val === '' || val === null || val === undefined) return 0;
+  const num = Number(val);
+  return Number.isFinite(num) ? num : 0;
+}
+
+export const travelFormSchema = z
+  .object({
+    travel_type: z.enum(['UPCOMING', 'ALREADY_TRAVELLED']),
+    title: z.string().min(5, 'Title must be at least 5 characters'),
+    purpose: z.string().min(10, 'Business purpose must be at least 10 characters'),
+    project_code: z.string(),
+    origin: z.string().min(2, 'Origin city is required'),
+    destination: z.string().min(2, 'Destination is required'),
+    departure_date: z.string().min(1, 'Departure date is required'),
+    return_date: z.string().min(1, 'Return date is required'),
+    emergency_contact_name: z.string().min(2, 'Emergency contact name is required'),
+    emergency_contact_phone: z
+      .string()
+      .min(1, 'Emergency contact phone is required')
+      .superRefine((val, ctx) => {
+        const error = getPhoneValidationError(val);
+        if (error) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: error,
+          });
+        }
+      }),
+    supporting_doc_url: z.string().optional(),
+    supporting_docs: z.array(supportingDocSchema).min(1, 'At least one quotation or invoice proof is required'),
+    expenses: z.array(
+      z.object({
+        category: z.enum(['FLIGHT', 'HOTEL', 'MEALS_PER_DIEM', 'TRANSIT', 'MISC']),
+        merchant: z
+          .string()
+          .min(2, 'Merchant name is required')
+          .refine(
+            (val) => /^(?=.*[a-zA-Z].*[a-zA-Z]).{2,}$/.test(val.trim()),
+            'Merchant name must be a valid vendor (cannot be numbers only)'
+          ),
+        amount: z.number().positive('Amount must be positive'),
+        expenseDate: z.string(),
+        notes: z.string().optional(),
+      })
+    ).min(1, 'At least one expense line item is required'),
+  })
+  .superRefine((data, ctx) => {
+    const todayStr = getLocalDateString();
+
+    if (data.departure_date && data.return_date && data.return_date < data.departure_date) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Return date cannot be earlier than departure date',
+        path: ['return_date'],
+      });
+    }
+
+    if (data.travel_type === 'UPCOMING') {
+      if (data.departure_date && data.departure_date < todayStr) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Upcoming travel departure date cannot be in the past',
+          path: ['departure_date'],
+        });
+      }
+    } else if (data.travel_type === 'ALREADY_TRAVELLED') {
+      if (data.return_date && data.return_date > todayStr) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Past travel return date cannot be in the future',
+          path: ['return_date'],
+        });
+      }
+      if (data.departure_date && data.departure_date > todayStr) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Past travel departure date cannot be in the future',
+          path: ['departure_date'],
+        });
+      }
+    }
+
+    if (Array.isArray(data.expenses)) {
+      data.expenses.forEach((item, idx) => {
+        if (item.expenseDate) {
+          if (data.departure_date && item.expenseDate < data.departure_date) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Expense date cannot be earlier than departure date',
+              path: ['expenses', idx, 'expenseDate'],
+            });
+          }
+          if (data.return_date && item.expenseDate > data.return_date) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Expense date cannot be later than return date',
+              path: ['expenses', idx, 'expenseDate'],
+            });
+          }
+          if (data.travel_type === 'ALREADY_TRAVELLED' && item.expenseDate > todayStr) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Expense date cannot be in the future for past travel claims',
+              path: ['expenses', idx, 'expenseDate'],
+            });
+          }
+        }
+      });
+    }
+  });
 
 export type TravelFormValues = z.infer<typeof travelFormSchema>;
 
+export const TRAVEL_FORM_CONFIG = {
+  mode: 'onTouched' as const,
+  reValidateMode: 'onChange' as const,
+};
+
 export function useTravelForm(initialType: TravelType = 'UPCOMING') {
+  const todayStr = getLocalDateString();
+  const pastThreeDays = new Date();
+  pastThreeDays.setDate(pastThreeDays.getDate() - 3);
+  const pastThreeDaysStr = getLocalDateString(pastThreeDays);
+
+  const defaultDeparture = initialType === 'ALREADY_TRAVELLED' ? pastThreeDaysStr : todayStr;
+  const defaultReturn =
+    initialType === 'ALREADY_TRAVELLED'
+      ? todayStr
+      : getLocalDateString(new Date(Date.now() + 86400000 * 3));
+  const defaultExpenseDate = defaultDeparture;
+
   const form = useForm<TravelFormValues>({
     resolver: zodResolver(travelFormSchema),
+    mode: TRAVEL_FORM_CONFIG.mode,
+    reValidateMode: TRAVEL_FORM_CONFIG.reValidateMode,
     defaultValues: {
       travel_type: initialType,
       title: '',
@@ -50,10 +166,10 @@ export function useTravelForm(initialType: TravelType = 'UPCOMING') {
       project_code: 'ENG-2026',
       origin: 'Bengaluru',
       destination: '',
-      departure_date: new Date().toISOString().split('T')[0],
-      return_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+      departure_date: defaultDeparture,
+      return_date: defaultReturn,
       emergency_contact_name: 'HR Operations',
-      emergency_contact_phone: '+91 9876543210',
+      emergency_contact_phone: '+91',
       supporting_doc_url: '',
       supporting_docs: [],
       expenses: [
@@ -61,7 +177,7 @@ export function useTravelForm(initialType: TravelType = 'UPCOMING') {
           category: 'FLIGHT',
           merchant: '',
           amount: 0,
-          expenseDate: new Date().toISOString().split('T')[0],
+          expenseDate: defaultExpenseDate,
           notes: '',
         },
       ],

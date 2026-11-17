@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,6 +29,7 @@ import { InlineConfirmBar } from '../components/shared/InlineConfirmBar';
 import { formatINR } from '../utils/currency';
 import { aggregateExpenseItems, computeTripDuration } from '../utils/travelAnalytics';
 import { supportingDocSchema } from '../hooks/useTravelForm';
+import { getPhoneValidationError } from '../utils/countryDialCodes';
 import type { TravelRequest } from '../types/travel.types';
 
 const resubmitFormSchema = z.object({
@@ -41,14 +42,33 @@ const resubmitFormSchema = z.object({
   departure_date: z.string().min(1, 'Departure date is required'),
   return_date: z.string().min(1, 'Return date is required'),
   emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().optional(),
+  emergency_contact_phone: z
+    .string()
+    .optional()
+    .superRefine((val, ctx) => {
+      if (val && val.trim() && val.trim() !== '+91') {
+        const error = getPhoneValidationError(val);
+        if (error) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: error,
+          });
+        }
+      }
+    }),
   supporting_doc_url: z.string().optional(),
   supporting_docs: z.array(supportingDocSchema).optional(),
   expenses: z
     .array(
       z.object({
         category: z.enum(['FLIGHT', 'HOTEL', 'MEALS_PER_DIEM', 'TRANSIT', 'MISC']),
-        merchant: z.string().min(2, 'Merchant required'),
+        merchant: z
+          .string()
+          .min(2, 'Merchant name is required')
+          .refine(
+            (val) => /^(?=.*[a-zA-Z].*[a-zA-Z]).{2,}$/.test(val.trim()),
+            'Merchant name must be a valid vendor (cannot be numbers only)'
+          ),
         amount: z.number().positive('Amount must be positive'),
         expenseDate: z.string(),
         notes: z.string().optional(),
@@ -57,14 +77,12 @@ const resubmitFormSchema = z.object({
     .min(1, 'At least one expense line item is required'),
 });
 
-type ResubmitFormValues = z.infer<typeof resubmitFormSchema>;
+export type ResubmitFormValues = z.infer<typeof resubmitFormSchema>;
 
-const QUICK_ALTERATION_TAGS = [
-  'Attached updated receipt/quote URL',
-  'Reduced hotel/flight estimate',
-  'Updated travel dates',
-  'Clarified business justification',
-];
+export const RESUBMIT_FORM_CONFIG = {
+  mode: 'onTouched' as const,
+  reValidateMode: 'onChange' as const,
+};
 
 export const ResubmitTravelRequestPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -76,6 +94,8 @@ export const ResubmitTravelRequestPage: React.FC = () => {
   const isManagerUser = user?.role === 'MANAGER';
   const postSubmitTab = isManagerUser ? 'personal' : 'present';
 
+  const alterationsRef = useRef<HTMLDivElement>(null);
+
   const [request, setRequest] = useState<TravelRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,6 +104,8 @@ export const ResubmitTravelRequestPage: React.FC = () => {
 
   const form = useForm<ResubmitFormValues>({
     resolver: zodResolver(resubmitFormSchema),
+    mode: RESUBMIT_FORM_CONFIG.mode,
+    reValidateMode: RESUBMIT_FORM_CONFIG.reValidateMode,
     defaultValues: {
       alterations_remarks: '',
       title: '',
@@ -129,6 +151,7 @@ export const ResubmitTravelRequestPage: React.FC = () => {
   const watchedDest = form.watch('destination');
   const watchedDep = form.watch('departure_date');
   const watchedRet = form.watch('return_date');
+  const watchedPhone = form.watch('emergency_contact_phone');
 
   const totalAmount = useMemo(() => {
     if (!watchedExpenses || !Array.isArray(watchedExpenses)) return 0;
@@ -216,6 +239,9 @@ export const ResubmitTravelRequestPage: React.FC = () => {
       form.setError('alterations_remarks', {
         message: 'Please describe what alterations you made (minimum 5 characters)',
       });
+      alterationsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const textarea = alterationsRef.current?.querySelector('textarea');
+      textarea?.focus({ preventScroll: true });
       return;
     }
 
@@ -299,14 +325,6 @@ export const ResubmitTravelRequestPage: React.FC = () => {
       setIsSubmitting(false);
       setConfirmCancel(false);
     }
-  };
-
-  const appendAlterationTag = (tag: string) => {
-    const current = form.getValues('alterations_remarks') || '';
-    if (current.includes(tag)) return;
-    form.setValue('alterations_remarks', current.trim() ? `${current.trim()}; ${tag}` : tag, {
-      shouldValidate: true,
-    });
   };
 
   if (isLoading) {
@@ -419,28 +437,16 @@ export const ResubmitTravelRequestPage: React.FC = () => {
           className="lg:col-span-8 flex flex-col gap-6 bg-surface p-6 rounded-xl border border-border-warm shadow-xs"
         >
           {!isDraft && (
-            <div className="flex flex-col gap-2 pb-4 border-b border-border-warm">
+            <div ref={alterationsRef} className="flex flex-col gap-2 pb-4 border-b border-border-warm scroll-mt-6">
               <label className="text-xs font-bold text-ink flex items-center gap-1">
                 Describe Alterations Made <span className="text-destructive">*</span>
               </label>
               <p className="text-[11px] text-muted">
                 Summarize the corrections made so your Line Manager can quickly verify.
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                {QUICK_ALTERATION_TAGS.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => appendAlterationTag(tag)}
-                    className="px-2.5 py-1 rounded-md border border-border-warm bg-surface-subtle hover:border-primary/40 text-[11px] font-medium text-ink cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98]"
-                  >
-                    + {tag}
-                  </button>
-                ))}
-              </div>
               <textarea
                 {...form.register('alterations_remarks')}
-                rows={2}
+                rows={3}
                 placeholder="e.g. Downgraded outbound flight to Economy class, attached updated quote, and adjusted hotel total..."
                 className="p-3 rounded-lg border border-border-warm bg-surface-subtle text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
               />
@@ -452,7 +458,16 @@ export const ResubmitTravelRequestPage: React.FC = () => {
 
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold text-ink">Trip Logistics</h2>
-            <TravelLogisticsFields register={form.register as any} errors={form.formState.errors as any} />
+            <TravelLogisticsFields
+              register={form.register as any}
+              errors={form.formState.errors as any}
+              travelType={request.travelType}
+              departureDate={watchedDep}
+              returnDate={watchedRet}
+              phoneValue={watchedPhone}
+              onPhoneChange={(val) => form.setValue('emergency_contact_phone', val, { shouldValidate: true })}
+              onPhoneBlur={() => form.trigger('emergency_contact_phone')}
+            />
           </div>
 
           <div className="flex flex-col gap-3 pt-4 border-t border-border-warm">
@@ -474,6 +489,9 @@ export const ResubmitTravelRequestPage: React.FC = () => {
               errors={form.formState.errors as any}
               totalAmount={totalAmount}
               control={form.control as any}
+              travelType={request.travelType}
+              departureDate={watchedDep}
+              returnDate={watchedRet}
             />
           </div>
 

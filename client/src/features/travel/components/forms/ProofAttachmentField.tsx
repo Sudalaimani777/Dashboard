@@ -145,8 +145,11 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
     }
   };
 
-  const handleAddLink = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddLink = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!linkUrl.trim()) return;
 
     let validUrl = linkUrl.trim();
@@ -315,7 +318,7 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
       />
 
       {/* Action Buttons: [+ Upload Document] and [+ Add Web Link] */}
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
         <button
           type="button"
           disabled={isUploading}
@@ -348,10 +351,7 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
 
       {/* Inline Web Link Form */}
       {showAddLink && (
-        <form
-          onSubmit={handleAddLink}
-          className="p-3 rounded-lg border border-primary/20 bg-primary/5 flex flex-col gap-2 mt-1"
-        >
+        <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 flex flex-col gap-2 mt-1">
           <span className="text-xs font-semibold text-ink flex items-center gap-1.5">
             <LinkIcon className="size-3.5 text-primary" />
             Attach External Web Link
@@ -362,6 +362,12 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
               placeholder="Document title (e.g. Google Drive Itinerary)"
               value={linkTitle}
               onChange={(e) => setLinkTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddLink();
+                }
+              }}
               className="sm:col-span-5 px-2.5 py-1.5 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             />
             <input
@@ -370,6 +376,12 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
               placeholder="https://drive.google.com/..."
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddLink();
+                }
+              }}
               className="sm:col-span-7 px-2.5 py-1.5 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             />
           </div>
@@ -382,13 +394,14 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
               Cancel
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleAddLink()}
               className="flex items-center gap-1 px-3 py-1 rounded-md bg-primary hover:bg-primary-hover text-white text-xs font-semibold cursor-pointer transition-all"
             >
               <CheckCircle2 className="size-3.5" /> Attach Link
             </button>
           </div>
-        </form>
+        </div>
       )}
 
       {errors?.supporting_docs && (

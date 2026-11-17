@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { X, Plus, Trash2, Loader2, UploadCloud } from 'lucide-react';
 import { formatINR } from '../utils/currency';
 import { travelApi } from '../services/travel.api';
+import { parseExpenseAmount } from '../hooks/useTravelForm';
 import type { TravelRequest, ResubmitRequestInput } from '../types/travel.types';
 
 const resubmitSchema = z.object({
@@ -55,6 +56,8 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
 
   const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(resubmitSchema),
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
     values: request ? {
       remarks: '',
       departureDate: request.departureDate ? request.departureDate.split('T')[0] : '',
@@ -227,7 +230,15 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
                       <option value="MISC">Misc</option>
                     </select>
                     <input {...register(`expenses.${i}.merchant`)} placeholder="Merchant" className="col-span-4 p-1.5 bg-surface border border-border-warm rounded text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" />
-                    <input {...register(`expenses.${i}.amount`, { valueAsNumber: true })} type="number" placeholder="₹" className="col-span-4 p-1.5 bg-surface border border-border-warm rounded font-mono tabular-nums text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" />
+                    <input
+                      {...register(`expenses.${i}.amount`, {
+                        setValueAs: parseExpenseAmount,
+                      })}
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="₹"
+                      className="col-span-4 p-1.5 bg-surface border border-border-warm rounded font-mono tabular-nums text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                    />
                     <button type="button" onClick={() => remove(i)} disabled={fields.length === 1} aria-label="Remove item" className="col-span-1 text-destructive hover:opacity-80 disabled:opacity-30 cursor-pointer">
                       <Trash2 className="size-4" />
                     </button>

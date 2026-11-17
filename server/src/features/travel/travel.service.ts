@@ -323,11 +323,7 @@ export class TravelService {
         await this.repo.updateBudgetUtilization(dept, year, quarter, totalExpenses);
       }
     } else if (normalizedAction === 'REQUEST_REVISION') {
-      if (revisionTarget === 'MANAGER') {
-        toStatus = 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER';
-      } else {
-        toStatus = 'REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE';
-      }
+      toStatus = 'REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE';
     } else {
       toStatus = 'REJECTED';
     }
@@ -343,7 +339,7 @@ export class TravelService {
       fromStatus: request.status,
       toStatus,
       remarks: options.remarks || null,
-      revisionTarget: revisionTarget || null
+      revisionTarget: normalizedAction === 'REQUEST_REVISION' ? 'EMPLOYEE' : (revisionTarget || null)
     });
   }
 

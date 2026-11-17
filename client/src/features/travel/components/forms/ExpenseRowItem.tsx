@@ -2,6 +2,7 @@ import React from 'react';
 import { Trash2 } from 'lucide-react';
 import type { UseFormRegister, FieldErrors } from 'react-hook-form';
 import type { TravelFormValues } from '../../hooks/useTravelForm';
+import { parseExpenseAmount } from '../../hooks/useTravelForm';
 
 export interface ExpenseRowItemProps {
   index: number;
@@ -9,6 +10,8 @@ export interface ExpenseRowItemProps {
   errors: FieldErrors<TravelFormValues>;
   onRemove: () => void;
   canRemove: boolean;
+  minDate?: string;
+  maxDate?: string;
 }
 
 export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
@@ -17,6 +20,8 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
   errors,
   onRemove,
   canRemove,
+  minDate,
+  maxDate,
 }) => {
   const rowErrors = errors.expenses?.[index];
 
@@ -54,6 +59,8 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
           <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Expense Date</label>
           <input
             type="date"
+            min={minDate}
+            max={maxDate}
             {...register(`expenses.${index}.expenseDate`)}
             className="w-full bg-surface border border-border-warm rounded-lg px-2 py-2 text-xs text-ink font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all cursor-pointer"
           />
@@ -67,11 +74,24 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
           <div className="relative">
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-muted">₹</span>
             <input
-              type="number"
-              step="100"
-              min="0"
+              type="text"
+              inputMode="decimal"
               placeholder="0.00"
-              {...register(`expenses.${index}.amount`, { valueAsNumber: true })}
+              {...register(`expenses.${index}.amount`, {
+                setValueAs: parseExpenseAmount,
+              })}
+              onKeyDown={(e) => {
+                if (
+                  ['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) ||
+                  e.ctrlKey ||
+                  e.metaKey
+                ) {
+                  return;
+                }
+                if (!/^[0-9.]$/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
               className="w-full bg-surface border border-border-warm rounded-lg pl-6 pr-2 py-2 text-xs font-mono tabular-nums text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
             />
           </div>

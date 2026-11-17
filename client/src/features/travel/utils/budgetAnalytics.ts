@@ -1,8 +1,10 @@
 import type {
   DepartmentBudget,
+  ExpenseCategory,
   FiscalQuarter,
   TravelRequest,
 } from '../types/travel.types';
+import { EXPENSE_CATEGORY_META } from './travelAnalytics';
 
 export interface CorporateLedgerStats {
   totalPool: number;
@@ -230,4 +232,102 @@ export function computeDepartmentDrilldown(
     topMembers,
     topTrips: topTrips.slice(0, 8),
   };
+}
+
+export interface DepartmentPoolHealth {
+  status: 'HEALTHY' | 'WARNING' | 'CRITICAL';
+  clampedPct: number;
+  label: string;
+  badgeClass: string;
+  barColor: string;
+}
+
+export function computeDepartmentPoolHealth(utilizationPercentage: number): DepartmentPoolHealth {
+  const clampedPct = Math.min(100, Math.max(0, utilizationPercentage));
+  if (utilizationPercentage > 85) {
+    return {
+      status: 'CRITICAL',
+      clampedPct,
+      label: 'Exceeds Threshold (>85%)',
+      badgeClass: 'bg-red-50 text-destructive border-destructive/30',
+      barColor: 'bg-destructive',
+    };
+  }
+  if (utilizationPercentage >= 70) {
+    return {
+      status: 'WARNING',
+      clampedPct,
+      label: 'Elevated (70-85%)',
+      badgeClass: 'bg-amber-50 text-amber-800 border-amber-300',
+      barColor: 'bg-amber-600',
+    };
+  }
+  return {
+    status: 'HEALTHY',
+    clampedPct,
+    label: 'Healthy (<70%)',
+    badgeClass: 'bg-emerald-50 text-[#2E4B3A] border-[#3F624D]/30',
+    barColor: 'bg-[#3F624D]',
+  };
+}
+
+export interface CategoryShareItem {
+  categoryKey: string;
+  label: string;
+  amount: number;
+  pct: number;
+  color: string;
+}
+
+export function computeCategoryShares(
+  breakdown: Array<{ category: string; total: number }> | undefined,
+  fallbackUtilized: number = 0
+): CategoryShareItem[] {
+  if (breakdown && breakdown.length > 0) {
+    const total = breakdown.reduce((sum, item) => sum + Number(item.total || 0), 0);
+    return breakdown.map((item) => {
+      const meta = EXPENSE_CATEGORY_META[item.category as ExpenseCategory] || EXPENSE_CATEGORY_META.MISC;
+      const amt = Number(item.total || 0);
+      const pct = total > 0 ? Math.round((amt / total) * 100) : 0;
+      return {
+        categoryKey: item.category,
+        label: meta.label,
+        amount: amt,
+        pct,
+        color: meta.color,
+      };
+    }).sort((a, b) => b.amount - a.amount);
+  }
+
+  // Fallback estimation when breakdown array isn't populated
+  if (fallbackUtilized > 0) {
+    const flightAmt = Math.round(fallbackUtilized * 0.74);
+    const hotelAmt = fallbackUtilized - flightAmt;
+    return [
+      {
+        categoryKey: 'FLIGHT',
+        label: EXPENSE_CATEGORY_META.FLIGHT.label,
+        amount: flightAmt,
+        pct: 74,
+        color: EXPENSE_CATEGORY_META.FLIGHT.color,
+      },
+      {
+        categoryKey: 'HOTEL',
+        label: EXPENSE_CATEGORY_META.HOTEL.label,
+        amount: hotelAmt,
+        pct: 26,
+        color: EXPENSE_CATEGORY_META.HOTEL.color,
+      },
+    ];
+  }
+
+  return [
+    {
+      categoryKey: 'UNSPENT',
+      label: 'Uncommitted Headroom',
+      amount: 0,
+      pct: 0,
+      color: '#E8DFD3',
+    },
+  ];
 }

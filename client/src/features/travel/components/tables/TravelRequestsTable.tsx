@@ -43,9 +43,6 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
       <div className="p-4 border-b border-border-warm flex flex-wrap justify-between items-center gap-3 bg-surface-subtle">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-ink">{title}</h3>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-surface border border-border-warm text-muted">
-            {requests.length}
-          </span>
         </div>
         {headerActions && <div className="flex flex-wrap items-center gap-2">{headerActions}</div>}
       </div>

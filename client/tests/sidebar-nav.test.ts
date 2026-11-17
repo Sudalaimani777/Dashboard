@@ -10,41 +10,37 @@ import {
 async function run() {
   console.log('🧪 Testing DynamicRoleSidebar navigation mapping & quick action...');
 
-  // 1. Employee Navigation Items
+  // 1. Employee Navigation Items (My Travel + Spend Analytics)
   const empItems = getRoleNavItems('EMPLOYEE');
-  assert.equal(empItems.length, 4, 'Employee should have 4 navigation items');
+  assert.equal(empItems.length, 2, 'Employee should have 2 navigation items: trips & analytics');
   assert.deepEqual(
     empItems.map((i: NavItemConfig) => i.id),
-    ['present', 'revisions', 'drafts', 'past']
+    ['trips', 'analytics']
   );
-  assert.equal(empItems[0].label, 'Present Requests');
-  assert.equal(empItems[1].label, 'Revised Requests');
-  assert.equal(empItems[2].label, 'Travel Drafts');
-  assert.equal(empItems[3].label, 'Past Requests');
+  assert.equal(empItems[0].label, 'My Travel');
+  assert.equal(empItems[1].label, 'Spend Analytics');
 
-  // 2. Manager Navigation Items
+  // 2. Manager Navigation Items (Team Approvals, Team Analytics, My Travel)
   const mgrItems = getRoleNavItems('MANAGER');
-  assert.equal(mgrItems.length, 5, 'Manager should have 5 navigation items');
+  assert.equal(mgrItems.length, 3, 'Manager should have 3 navigation items: team, analytics, personal');
   assert.deepEqual(
     mgrItems.map((i: NavItemConfig) => i.id),
-    ['present', 'revisions', 'past', 'personal', 'drafts']
+    ['team', 'analytics', 'personal']
   );
-  assert.equal(mgrItems[0].label, 'Team Audit Queue');
-  assert.equal(mgrItems[1].label, 'Revised Requests');
-  assert.equal(mgrItems[2].label, 'Past Team History');
-  assert.equal(mgrItems[3].label, 'My Personal Travel');
-  assert.equal(mgrItems[4].label, 'Travel Drafts');
+  assert.equal(mgrItems[0].label, 'Team Approvals');
+  assert.equal(mgrItems[1].label, 'Team Analytics');
+  assert.equal(mgrItems[2].label, 'My Travel');
 
-  // 3. Admin Navigation Items
+  // 3. Admin Navigation Items (Consolidated to 3 streamlined items)
   const admItems = getRoleNavItems('ADMIN');
-  assert.equal(admItems.length, 5, 'Admin should have 5 navigation items');
+  assert.equal(admItems.length, 3, 'Admin should have 3 consolidated navigation items');
   assert.deepEqual(
     admItems.map((i: NavItemConfig) => i.id),
-    ['present', 'revisions', 'past', 'budgets', 'users']
+    ['governance', 'budgets', 'users']
   );
-  assert.equal(admItems[0].label, 'Clearance Queue');
-  assert.equal(admItems[3].label, 'Department Budgets');
-  assert.equal(admItems[4].label, 'Team & Access');
+  assert.equal(admItems[0].label, 'Travel Governance');
+  assert.equal(admItems[1].label, 'Department Budgets');
+  assert.equal(admItems[2].label, 'Team & Access');
 
   // 4. Role Quick Actions
   const empAction = getRoleQuickAction('EMPLOYEE');

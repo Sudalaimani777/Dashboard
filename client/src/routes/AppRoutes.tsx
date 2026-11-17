@@ -1,13 +1,13 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 
 /** Lazy-loads a named export from a module for route-level code splitting. */
-function lazyNamed<T extends Record<string, React.ComponentType<any>>, K extends keyof T>(
+function lazyNamed<T extends Record<string, any>, K extends keyof T>(
   loader: () => Promise<T>,
   exportName: K,
 ) {
-  return lazy(() => loader().then((mod) => ({ default: mod[exportName] })));
+  return lazy(() => loader().then((mod) => ({ default: mod[exportName] as React.ComponentType<any> })));
 }
 
 const SignInCard = lazyNamed(() => import('../features/auth/components/SignInCard'), 'SignInCard');
@@ -30,13 +30,14 @@ const ResubmitTravelRequestPage = lazyNamed(
   () => import('../features/travel/pages/ResubmitTravelRequestPage'),
   'ResubmitTravelRequestPage',
 );
-const ManagerAuditPage = lazyNamed(() => import('../features/travel/pages/ManagerAuditPage'), 'ManagerAuditPage');
-const AdminClearancePage = lazyNamed(
-  () => import('../features/travel/pages/AdminClearancePage'),
-  'AdminClearancePage',
-);
 const TravelDetailPage = lazyNamed(() => import('../features/travel/pages/TravelDetailPage'), 'TravelDetailPage');
 const NewUserPage = lazyNamed(() => import('../features/users/pages/NewUserPage'), 'NewUserPage');
+
+const LegacyTravelReviewRedirect: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  return <Navigate to={`/travel/requests/${id}${location.search}`} replace />;
+};
 
 const RouteLoadingFallback: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center bg-[#F7F4EE]">
@@ -71,8 +72,8 @@ export const AppRoutes: React.FC = () => {
               <Route path="/travel/new" element={<NewTravelRequestPage />} />
               <Route path="/travel/requests/:id" element={<TravelDetailPage />} />
               <Route path="/travel/requests/:id/edit" element={<ResubmitTravelRequestPage />} />
-              <Route path="/travel/audit/:id" element={<ManagerAuditPage />} />
-              <Route path="/travel/clearance/:id" element={<AdminClearancePage />} />
+              <Route path="/travel/audit/:id" element={<LegacyTravelReviewRedirect />} />
+              <Route path="/travel/clearance/:id" element={<LegacyTravelReviewRedirect />} />
               <Route path="/admin/users/new" element={<NewUserPage />} />
             </Route>
           </Route>

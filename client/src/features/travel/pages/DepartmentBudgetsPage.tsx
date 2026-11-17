@@ -1,18 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { Plus, PencilLine, Check, X, Building2, Search } from 'lucide-react';
+import { Plus, PencilLine, Check, X, Building2, Search, AlertTriangle } from 'lucide-react';
 import { useTravel } from '../hooks/useTravel';
 import { HeadroomRadialGauge } from '../components/charts/HeadroomRadialGauge';
-import { CategorySpendDonut } from '../components/charts/CategorySpendDonut';
 import { MonthlyBurnChart } from '../components/charts/MonthlyBurnChart';
-import { DepartmentComparisonChart } from '../components/charts/DepartmentComparisonChart';
-import { DepartmentBudgetRail } from '../components/DepartmentBudgetRail';
+import { DepartmentCategoryBreakdownCard } from '../components/DepartmentCategoryBreakdownCard';
+import { DepartmentSpendersVelocityCard } from '../components/DepartmentSpendersVelocityCard';
 import { formatINR, formatINRCompact } from '../utils/currency';
 import {
   computeCorporateLedgerStats,
   computeDepartmentDrilldown,
+  computeDepartmentPoolHealth,
   computeMonthlyBurnSeries,
-  filterBudgetsForPeriod,
 } from '../utils/budgetAnalytics';
 import type { FiscalQuarter } from '../types/travel.types';
 
@@ -36,6 +35,10 @@ export const DepartmentBudgetsPage: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState<FiscalQuarter>('Q4');
   const [poolSearch, setPoolSearch] = useState('');
 
+  // DOM Refs for Smooth Scroll Actions
+  const editorRef = useRef<HTMLFormElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+
   // Allocation Editor State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [formDepartment, setFormDepartment] = useState('Engineering');
@@ -45,6 +48,26 @@ export const DepartmentBudgetsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+
+  const scrollToEditor = () => {
+    editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const amountInput = editorRef.current?.querySelector<HTMLInputElement>('#alloc-amount');
+    amountInput?.focus({ preventScroll: true });
+  };
+
+  useEffect(() => {
+    if (isEditorOpen) {
+      const timer = setTimeout(scrollToEditor, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditorOpen]);
+
+  const handleInspectDepartment = (dept: string, yr: number, q: FiscalQuarter) => {
+    setSelectedDepartment(dept);
+    setSelectedYear(yr);
+    setSelectedQuarter(q);
+    heroRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   useEffect(() => {
     loadBudgetOverview();
@@ -67,11 +90,6 @@ export const DepartmentBudgetsPage: React.FC = () => {
   }, [budgetOverview, selectedDepartment]);
 
   const allBudgets = useMemo(() => budgetOverview?.budgets ?? [], [budgetOverview?.budgets]);
-
-  const periodBudgets = useMemo(
-    () => filterBudgetsForPeriod(allBudgets, selectedYear, selectedQuarter),
-    [allBudgets, selectedYear, selectedQuarter]
-  );
 
   const ledgerStats = useMemo(
     () => computeCorporateLedgerStats(allBudgets, adminQueue, selectedYear, selectedQuarter),
@@ -111,6 +129,14 @@ export const DepartmentBudgetsPage: React.FC = () => {
     setSaveError(null);
     setSaveSuccess(null);
     setIsEditorOpen(true);
+
+    if (editorRef.current) {
+      scrollToEditor();
+    } else {
+      requestAnimationFrame(() => {
+        setTimeout(scrollToEditor, 50);
+      });
+    }
   };
 
   const handleSaveAllocation = async (e: React.FormEvent) => {
@@ -148,11 +174,6 @@ export const DepartmentBudgetsPage: React.FC = () => {
     }
   };
 
-  const categoryDisbursedSum = useMemo(
-    () => (budget?.categoryBreakdown || []).reduce((sum, item) => sum + Number(item.total || 0), 0),
-    [budget?.categoryBreakdown]
-  );
-
   return (
     <motion.div
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
@@ -163,9 +184,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-ink tracking-tight">Department Budgets</h1>
-        <p className="text-xs text-muted">
-          Corporate travel allocations, monthly burn velocity, category mix, and member spend.
-        </p>
+
       </div>
 
       {/* Period, Department & Action Strip */}
@@ -325,8 +344,9 @@ export const DepartmentBudgetsPage: React.FC = () => {
       {/* Allocation Upsert Drawer / Card */}
       {isEditorOpen && (
         <form
+          ref={editorRef}
           onSubmit={handleSaveAllocation}
-          className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col gap-4"
+          className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col gap-4 scroll-mt-6"
         >
           <div className="flex items-center justify-between border-b border-border-warm pb-3">
             <h2 className="text-sm font-semibold text-ink">
@@ -411,11 +431,15 @@ export const DepartmentBudgetsPage: React.FC = () => {
               </label>
               <input
                 id="alloc-amount"
-                type="number"
-                min={0}
-                step="1000"
+                type="text"
+                inputMode="decimal"
                 value={formAmount}
-                onChange={(e) => setFormAmount(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                    setFormAmount(val);
+                  }
+                }}
                 className="px-3 py-2 rounded-lg border border-border-warm bg-surface-subtle text-xs font-mono text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
               />
             </div>
@@ -441,200 +465,228 @@ export const DepartmentBudgetsPage: React.FC = () => {
         </form>
       )}
 
-      {/* Asymmetric 2-Column Workspace */}
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.75fr)_340px] gap-5 items-start">
-        {/* LEFT MAIN COLUMN */}
-        <div className="flex flex-col gap-5 min-w-0">
-          {budget ? (
-            <>
-              {/* Cohesive Hero Card: Headroom Gauge + 6-Month Burn Velocity */}
-              <div className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col gap-4">
-                <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-5 items-center">
-                  <HeadroomRadialGauge budget={budget} embedded />
-                  <div className="md:border-l md:border-border-warm md:pl-5">
-                    <MonthlyBurnChart data={monthlyBurn} department={selectedDepartment} />
-                  </div>
+      {/* Dynamic Main Workspace: Full Width Stack without Dead Sidebar Columns */}
+      <div className="flex flex-col gap-5">
+        {budget ? (
+          <>
+            {/* Row 2: Cohesive Hero Card: Headroom Gauge + 6-Month Burn Velocity */}
+            <div
+              ref={heroRef}
+              className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col gap-4 scroll-mt-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-5 items-center">
+                <HeadroomRadialGauge budget={budget} embedded />
+                <div className="md:border-l md:border-border-warm md:pl-5">
+                  <MonthlyBurnChart data={monthlyBurn} department={selectedDepartment} />
                 </div>
-                {budget.utilizedAmount > 0 && Math.abs(budget.utilizedAmount - categoryDisbursedSum) > 1 && (
-                  <p className="text-[11px] text-muted border-t border-border-warm/60 pt-2.5">
-                    Note: Committed pool ({formatINR(budget.utilizedAmount)}) includes prior/seeded
-                    commitments for {budget.department} {budget.fiscalQuarter} {budget.fiscalYear},
-                    while itemized approved/settled vouchers total {formatINR(categoryDisbursedSum)}.
-                  </p>
-                )}
               </div>
+            </div>
 
-              {/* 2-Column Analytics Row: Category Spend Mix + Cross-Department Comparison */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
-                <CategorySpendDonut budget={budget} />
-                <DepartmentComparisonChart
-                  budgets={periodBudgets}
-                  selectedDepartment={selectedDepartment}
-                  selectedYear={selectedYear}
-                  selectedQuarter={selectedQuarter}
-                  onSelectDepartment={(dept, yr, q) => {
-                    setSelectedDepartment(dept);
-                    setSelectedYear(yr);
-                    setSelectedQuarter(q);
-                  }}
-                />
-              </div>
-            </>
-          ) : (
-            <div className="bg-surface rounded-xl border border-border-warm p-10 text-center flex flex-col items-center gap-3 shadow-xs">
-              <div className="size-11 rounded-full bg-surface-subtle border border-border-warm flex items-center justify-center">
-                <Building2 className="size-5 text-muted" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <h3 className="text-sm font-semibold text-ink">
-                  No budget configured for {selectedDepartment} • {selectedQuarter} {selectedYear}
-                </h3>
-                <p className="text-xs text-muted max-w-md">
-                  Set a quarterly pool to enforce headroom checks and track travel commitments for
-                  this department.
-                </p>
-              </div>
+            {/* Row 3: Balanced 50/50 Analytics Duo (Category Mix + Team Spenders/Vouchers) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+              <DepartmentCategoryBreakdownCard
+                budget={budget}
+                selectedDepartment={selectedDepartment}
+                selectedQuarter={selectedQuarter}
+                selectedYear={selectedYear}
+              />
+              <DepartmentSpendersVelocityCard
+                drilldown={drilldown}
+                selectedDepartment={selectedDepartment}
+                selectedQuarter={selectedQuarter}
+                selectedYear={selectedYear}
+              />
+            </div>
+          </>
+        ) : (
+          <div className="bg-surface rounded-xl border border-border-warm p-10 text-center flex flex-col items-center gap-3 shadow-xs">
+            <div className="size-11 rounded-full bg-surface-subtle border border-border-warm flex items-center justify-center">
+              <Building2 className="size-5 text-muted" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <h3 className="text-sm font-semibold text-ink">
+                No budget configured for {selectedDepartment} • {selectedQuarter} {selectedYear}
+              </h3>
+              <p className="text-xs text-muted max-w-md">
+                Set a quarterly pool to enforce headroom checks and track travel commitments for
+                this department.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openEditor(selectedDepartment, selectedYear, selectedQuarter, 1500000)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 cursor-pointer"
+            >
+              <Plus className="size-3.5" />
+              Set {selectedQuarter} {selectedYear} Budget
+            </button>
+          </div>
+        )}
+
+        {/* Row 4: Master Corporate Allocations & Health Ledger (Full-Width) */}
+        <div className="bg-surface rounded-xl border border-border-warm overflow-hidden shadow-xs flex flex-col">
+          {/* Threshold Notice Banner */}
+          {ledgerStats.topAtRiskPool && (
+            <div className="border-b border-amber-200 bg-amber-50/70 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="inline-flex items-center gap-2 text-amber-900 font-semibold">
+                <AlertTriangle className="size-3.5 text-amber-700 shrink-0" />
+                Notice: {ledgerStats.topAtRiskPool.department} has reached{' '}
+                {ledgerStats.topAtRiskPool.utilizationPercentage.toFixed(1)}% utilization ({formatINR(ledgerStats.topAtRiskPool.availableHeadroom)} headroom remaining).
+              </span>
               <button
                 type="button"
-                onClick={() => openEditor(selectedDepartment, selectedYear, selectedQuarter, 1500000)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 cursor-pointer"
+                onClick={() =>
+                  openEditor(
+                    ledgerStats.topAtRiskPool!.department,
+                    ledgerStats.topAtRiskPool!.fiscalYear,
+                    ledgerStats.topAtRiskPool!.fiscalQuarter as FiscalQuarter,
+                    ledgerStats.topAtRiskPool!.totalAllocation
+                  )
+                }
+                className="px-2.5 py-1 rounded-md bg-amber-700 hover:bg-amber-800 text-white text-[11px] font-semibold cursor-pointer transition-colors"
               >
-                <Plus className="size-3.5" />
-                Set {selectedQuarter} {selectedYear} Budget
+                Adjust Allocation
               </button>
             </div>
           )}
 
-          {/* Configured Department Pools Table */}
-          <div className="bg-surface rounded-xl border border-border-warm overflow-hidden shadow-xs">
-            <div className="p-4 border-b border-border-warm bg-surface-subtle flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold text-ink">All Configured Department Pools</h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-surface border border-border-warm text-muted">
-                  {filteredPoolRows.length}
-                </span>
-              </div>
-
-              <div className="relative">
-                <Search className="size-3.5 text-faint absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={poolSearch}
-                  onChange={(e) => setPoolSearch(e.target.value)}
-                  placeholder="Filter pools..."
-                  aria-label="Filter configured department pools"
-                  className="h-8 pl-8 pr-3 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
-                />
-              </div>
+          <div className="p-4 border-b border-border-warm bg-surface-subtle flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-sm font-semibold text-ink">Department Pools &amp; Utilization</h2>
             </div>
 
-            {filteredPoolRows.length === 0 ? (
-              <div className="p-8 text-center text-xs text-muted">
-                No matching quarterly allocations found.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-border-warm text-[11px] font-semibold uppercase tracking-wider text-muted bg-surface-subtle/60">
-                      <th className="p-3.5">Department</th>
-                      <th className="p-3.5">Period</th>
-                      <th className="p-3.5">Total Pool</th>
-                      <th className="p-3.5">Committed</th>
-                      <th className="p-3.5">Headroom</th>
-                      <th className="p-3.5">Utilization</th>
-                      <th className="p-3.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-warm text-xs">
-                    {filteredPoolRows.map((row) => {
-                      const isSelected =
-                        row.department.toLowerCase() === selectedDepartment.toLowerCase() &&
-                        row.fiscalYear === selectedYear &&
-                        row.fiscalQuarter === selectedQuarter;
-                      const isLow = row.utilizationPercentage > 85;
-                      return (
-                        <tr
-                          key={row.id}
-                          className={`hover:bg-surface-subtle/70 transition-colors ${
-                            isSelected ? 'bg-[#FAF5EC]' : ''
+            <div className="relative">
+              <Search className="size-3.5 text-faint absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={poolSearch}
+                onChange={(e) => setPoolSearch(e.target.value)}
+                placeholder="Search department or period..."
+                aria-label="Filter configured department pools"
+                className="h-8 pl-8 pr-3 w-87.5 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+              />
+            </div>
+          </div>
+
+          {filteredPoolRows.length === 0 ? (
+            <div className="p-8 text-center text-xs text-muted">
+              No matching quarterly allocations found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border-warm text-[11px] font-semibold uppercase tracking-wider text-muted bg-surface-subtle/60">
+                    <th className="p-3.5">Department</th>
+                    <th className="p-3.5">Period</th>
+                    <th className="p-3.5">Total Pool</th>
+                    <th className="p-3.5">Committed</th>
+                    <th className="p-3.5">Headroom</th>
+                    <th className="p-3.5">Utilization &amp; Health</th>
+                    <th className="p-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-warm text-xs">
+                  {filteredPoolRows.map((row) => {
+                    const isSelected =
+                      row.department.toLowerCase() === selectedDepartment.toLowerCase() &&
+                      row.fiscalYear === selectedYear &&
+                      row.fiscalQuarter === selectedQuarter;
+                    const health = computeDepartmentPoolHealth(row.utilizationPercentage);
+
+                    return (
+                      <tr
+                        key={row.id}
+                        className={`hover:bg-surface-subtle/70 transition-colors ${
+                          isSelected ? 'bg-[#FAF5EC]' : ''
+                        }`}
+                      >
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-ink">{row.department}</span>
+                          </div>
+                        </td>
+                        <td className="p-3.5 font-mono text-muted">
+                          {row.fiscalQuarter} {row.fiscalYear}
+                        </td>
+                        <td className="p-3.5 font-mono tabular-nums font-semibold text-ink">
+                          {formatINR(row.totalAllocation)}{' '}
+                          <span className="text-[10px] text-faint">
+                            ({formatINRCompact(row.totalAllocation)})
+                          </span>
+                        </td>
+                        <td className="p-3.5 font-mono tabular-nums text-muted">
+                          {formatINR(row.utilizedAmount)}
+                        </td>
+                        <td
+                          className={`p-3.5 font-mono tabular-nums font-semibold ${
+                            row.availableHeadroom < 0
+                              ? 'text-destructive'
+                              : row.utilizationPercentage > 85
+                              ? 'text-amber-700'
+                              : 'text-[#3F624D]'
                           }`}
                         >
-                          <td className="p-3.5 font-semibold text-ink">{row.department}</td>
-                          <td className="p-3.5 font-mono text-muted">
-                            {row.fiscalQuarter} {row.fiscalYear}
-                          </td>
-                          <td className="p-3.5 font-mono tabular-nums font-semibold text-ink">
-                            {formatINR(row.totalAllocation)}{' '}
-                            <span className="text-[10px] text-faint">
-                              ({formatINRCompact(row.totalAllocation)})
-                            </span>
-                          </td>
-                          <td className="p-3.5 font-mono tabular-nums text-muted">
-                            {formatINR(row.utilizedAmount)}
-                          </td>
-                          <td
-                            className={`p-3.5 font-mono tabular-nums font-semibold ${
-                              row.availableHeadroom < 0
-                                ? 'text-destructive'
-                                : isLow
-                                ? 'text-amber-700'
-                                : 'text-[#3F624D]'
-                            }`}
-                          >
-                            {formatINR(row.availableHeadroom)}
-                          </td>
-                          <td className="p-3.5 font-mono tabular-nums text-ink">
-                            {row.utilizationPercentage.toFixed(1)}%
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <div className="inline-flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedDepartment(row.department);
-                                  setSelectedYear(row.fiscalYear);
-                                  setSelectedQuarter(row.fiscalQuarter as FiscalQuarter);
-                                }}
-                                className="px-2.5 py-1 rounded-lg border border-border-warm bg-surface text-[11px] font-semibold text-ink hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
-                              >
-                                View
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openEditor(
-                                    row.department,
-                                    row.fiscalYear,
-                                    row.fiscalQuarter as FiscalQuarter,
-                                    row.totalAllocation
-                                  )
-                                }
-                                className="px-2.5 py-1 rounded-lg border border-border-warm bg-surface text-[11px] font-semibold text-primary hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
-                              >
-                                Edit
-                              </button>
+                          {formatINR(row.availableHeadroom)}
+                        </td>
+                        <td className="p-3.5 min-w-[200px]">
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-mono font-bold text-ink tabular-nums">
+                                {row.utilizationPercentage.toFixed(1)}%
+                              </span>
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                            <div className="h-2 w-full rounded-full bg-[#EFE7D8] overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${health.barColor}`}
+                                style={{ width: `${health.clampedPct}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleInspectDepartment(
+                                  row.department,
+                                  row.fiscalYear,
+                                  row.fiscalQuarter as FiscalQuarter
+                                )
+                              }
+                              className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-primary text-white border-primary'
+                                  : 'bg-surface border-border-warm text-ink hover:border-primary/40'
+                              }`}
+                            >
+                              {isSelected ? 'Viewing' : 'Inspect'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openEditor(
+                                  row.department,
+                                  row.fiscalYear,
+                                  row.fiscalQuarter as FiscalQuarter,
+                                  row.totalAllocation
+                                )
+                              }
+                              className="px-2.5 py-1 rounded-lg border border-border-warm bg-surface text-[11px] font-semibold text-primary hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-
-        {/* RIGHT INSIGHTS RAIL */}
-        <DepartmentBudgetRail
-          selectedDepartment={selectedDepartment}
-          selectedYear={selectedYear}
-          selectedQuarter={selectedQuarter}
-          topAtRiskPool={ledgerStats.topAtRiskPool}
-          drilldown={drilldown}
-          onAdjustPool={(dept, yr, q, amt) => openEditor(dept, yr, q, amt)}
-        />
       </div>
     </motion.div>
   );

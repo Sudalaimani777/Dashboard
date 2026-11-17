@@ -1,16 +1,48 @@
 import React from 'react';
 import type { UseFormRegister, FieldErrors } from 'react-hook-form';
 import type { TravelFormValues } from '../../hooks/useTravelForm';
+import { getLocalDateString } from '../../hooks/useTravelForm';
+import type { TravelType } from '../../types/travel.types';
+import { PhoneInputWithCountry } from './PhoneInputWithCountry';
 
 export interface TravelLogisticsFieldsProps {
   register: UseFormRegister<TravelFormValues>;
   errors: FieldErrors<TravelFormValues>;
+  travelType?: TravelType;
+  departureDate?: string;
+  returnDate?: string;
+  phoneValue?: string;
+  onPhoneChange?: (val: string) => void;
+  onPhoneBlur?: () => void;
 }
 
 export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
   register,
   errors,
+  travelType = 'UPCOMING',
+  departureDate,
+  returnDate,
+  phoneValue,
+  onPhoneChange,
+  onPhoneBlur,
 }) => {
+  const todayStr = React.useMemo(() => getLocalDateString(), []);
+
+  const departureMin = travelType === 'UPCOMING' ? todayStr : undefined;
+  const departureMax =
+    travelType === 'ALREADY_TRAVELLED'
+      ? returnDate && returnDate < todayStr
+        ? returnDate
+        : todayStr
+      : returnDate || undefined;
+
+  const returnMin =
+    travelType === 'UPCOMING'
+      ? departureDate && departureDate > todayStr
+        ? departureDate
+        : todayStr
+      : departureDate || undefined;
+  const returnMax = travelType === 'ALREADY_TRAVELLED' ? todayStr : undefined;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Title */}
@@ -82,6 +114,8 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           <label className="text-xs font-semibold text-ink">Departure <span className="text-destructive">*</span></label>
           <input
             type="date"
+            min={departureMin}
+            max={departureMax}
             {...register('departure_date')}
             className="w-full bg-surface border border-border-warm rounded-lg px-2.5 py-2 text-xs text-ink font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all cursor-pointer"
           />
@@ -91,6 +125,8 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           <label className="text-xs font-semibold text-ink">Return <span className="text-destructive">*</span></label>
           <input
             type="date"
+            min={returnMin}
+            max={returnMax}
             {...register('return_date')}
             className="w-full bg-surface border border-border-warm rounded-lg px-2.5 py-2 text-xs text-ink font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all cursor-pointer"
           />
@@ -116,15 +152,26 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
 
       {/* Emergency Contact Phone */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold text-ink">
+        <label htmlFor="emergency-contact-phone" className="text-xs font-semibold text-ink">
           Emergency Contact Phone <span className="text-destructive">*</span>
         </label>
-        <input
-          type="tel"
-          placeholder="e.g. +91 9876543210"
-          {...register('emergency_contact_phone')}
-          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink font-mono placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
-        />
+        {onPhoneChange ? (
+          <PhoneInputWithCountry
+            id="emergency-contact-phone"
+            value={phoneValue || ''}
+            onChange={onPhoneChange}
+            onBlur={onPhoneBlur}
+            error={errors.emergency_contact_phone?.message}
+          />
+        ) : (
+          <input
+            id="emergency-contact-phone"
+            type="tel"
+            placeholder="e.g. +91 9876543210"
+            {...register('emergency_contact_phone')}
+            className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink font-mono placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
+          />
+        )}
         {errors.emergency_contact_phone && (
           <span className="text-[11px] text-destructive">{errors.emergency_contact_phone.message}</span>
         )}
