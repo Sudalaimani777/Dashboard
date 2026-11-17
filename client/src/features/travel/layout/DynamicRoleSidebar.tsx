@@ -2,16 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plane,
-  AlertCircle,
-  Archive,
-  Inbox,
-  RotateCcw,
   Users,
-  UserCheck,
   ShieldCheck,
-  GitFork,
   PieChart,
-  FileEdit,
   Pin,
   PinOff,
   PlusCircle,
@@ -34,27 +27,21 @@ export function getRoleNavItems(role: string): NavItemConfig[] {
   switch (role) {
     case 'MANAGER':
       return [
-        { id: 'present', label: 'Team Audit Queue', icon: Inbox },
-        { id: 'revisions', label: 'Revised Requests', icon: RotateCcw, countType: 'danger' },
-        { id: 'past', label: 'Past Team History', icon: Users },
-        { id: 'personal', label: 'My Personal Travel', icon: UserCheck },
-        { id: 'drafts', label: 'Travel Drafts', icon: FileEdit },
+        { id: 'team', label: 'Team Approvals', icon: Users },
+        { id: 'analytics', label: 'Team Analytics', icon: PieChart },
+        { id: 'personal', label: 'My Travel', icon: Plane },
       ];
     case 'ADMIN':
       return [
-        { id: 'present', label: 'Clearance Queue', icon: ShieldCheck },
-        { id: 'revisions', label: 'Revised Requests', icon: GitFork },
-        { id: 'past', label: 'Past Requests', icon: Archive },
+        { id: 'governance', label: 'Travel Governance', icon: ShieldCheck },
         { id: 'budgets', label: 'Department Budgets', icon: PieChart },
         { id: 'users', label: 'Team & Access', icon: Users },
       ];
     case 'EMPLOYEE':
     default:
       return [
-        { id: 'present', label: 'Present Requests', icon: Plane },
-        { id: 'revisions', label: 'Revised Requests', icon: AlertCircle, countType: 'danger' },
-        { id: 'drafts', label: 'Travel Drafts', icon: FileEdit },
-        { id: 'past', label: 'Past Requests', icon: Archive },
+        { id: 'trips', label: 'My Travel', icon: Plane },
+        { id: 'analytics', label: 'Spend Analytics', icon: PieChart },
       ];
   }
 }

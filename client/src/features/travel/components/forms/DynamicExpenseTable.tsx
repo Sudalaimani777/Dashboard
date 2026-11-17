@@ -3,6 +3,8 @@ import { Plus } from 'lucide-react';
 import type { UseFormRegister, FieldErrors, UseFieldArrayReturn, Control } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import type { TravelFormValues } from '../../hooks/useTravelForm';
+import { getLocalDateString } from '../../hooks/useTravelForm';
+import type { TravelType } from '../../types/travel.types';
 import { ExpenseRowItem } from './ExpenseRowItem';
 import { formatINR } from '../../utils/currency';
 
@@ -12,6 +14,9 @@ export interface DynamicExpenseTableProps {
   errors: FieldErrors<TravelFormValues>;
   totalAmount?: number;
   control?: Control<TravelFormValues>;
+  travelType?: TravelType;
+  departureDate?: string;
+  returnDate?: string;
 }
 
 export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
@@ -20,8 +25,20 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
   errors,
   totalAmount,
   control,
+  travelType = 'UPCOMING',
+  departureDate,
+  returnDate,
 }) => {
   const { fields, append, remove } = fieldArray;
+  const todayStr = useMemo(() => getLocalDateString(), []);
+  const minExpenseDate = departureDate || undefined;
+  const maxExpenseDate = useMemo(() => {
+    if (travelType === 'ALREADY_TRAVELLED') {
+      if (returnDate && returnDate < todayStr) return returnDate;
+      return todayStr;
+    }
+    return returnDate || undefined;
+  }, [travelType, returnDate, todayStr]);
 
   // Reactively watch expenses changes so subtotal recalculates instantly on keystroke
   const watchedExpenses = useWatch({
@@ -46,7 +63,7 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
       category: 'MISC',
       merchant: '',
       amount: 0,
-      expenseDate: new Date().toISOString().split('T')[0],
+      expenseDate: departureDate || todayStr,
       notes: '',
     });
   };
@@ -80,6 +97,8 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
             errors={errors}
             onRemove={() => remove(idx)}
             canRemove={fields.length > 1}
+            minDate={minExpenseDate}
+            maxDate={maxExpenseDate}
           />
         ))}
       </div>

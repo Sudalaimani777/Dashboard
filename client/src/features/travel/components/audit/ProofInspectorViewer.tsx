@@ -1,11 +1,16 @@
 // client/src/features/travel/components/audit/ProofInspectorViewer.tsx
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   ExternalLink,
   FileText,
   AlertCircle,
   Link as LinkIcon,
   Layers,
+  Eye,
+  EyeOff,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import type { SupportingDoc } from '../../types/travel.types';
 
@@ -20,6 +25,7 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({
   docs,
   title,
 }) => {
+  const prefersReducedMotion = useReducedMotion();
   const allDocs = useMemo<SupportingDoc[]>(() => {
     if (docs && docs.length > 0) return docs;
     if (proofUrl) {
@@ -37,6 +43,8 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [imgError, setImgError] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const activeDoc = allDocs[selectedIndex] || allDocs[0];
   const activeUrl = activeDoc?.url;
@@ -46,6 +54,36 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({
       (activeDoc?.format && ['png', 'jpg', 'jpeg', 'webp'].includes(activeDoc.format.toLowerCase()))
     : false;
 
+  const handleDownload = async () => {
+    if (!activeUrl || isDownloading) return;
+    try {
+      setIsDownloading(true);
+      const res = await fetch(activeUrl);
+      if (!res.ok) throw new Error('Direct fetch failed');
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = activeDoc?.name || 'document';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      // Fallback for cross-origin resources
+      const a = document.createElement('a');
+      a.href = activeUrl;
+      a.download = activeDoc?.name || 'document';
+      a.target = '_blank';
+      a.rel = 'noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="bg-surface rounded-xl border border-border-warm p-5 flex flex-col gap-3.5 shadow-xs">
       {/* Header */}
@@ -53,12 +91,12 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({
         <div className="flex items-center gap-2">
           <FileText className="size-4 text-primary" />
           <h3 className="text-sm font-semibold text-ink">Attached Proofs & Quotations</h3>
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+          {/* <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
             {allDocs.length} {allDocs.length === 1 ? 'doc' : 'docs'}
-          </span>
+          </span> */}
         </div>
 
-        {activeUrl && (
+        {/* {activeUrl && (
           <a
             href={activeUrl}
             target="_blank"
@@ -67,7 +105,7 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({
           >
             Open Original <ExternalLink className="size-3.5" />
           </a>
-        )}
+        )} */}
       </div>
 
       {/* Multi-Document Selector Tabs */}
@@ -85,6 +123,7 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({
                 onClick={() => {
                   setSelectedIndex(idx);
                   setImgError(false);
+                  setShowPreview(false);
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer ${
                   isSelected
@@ -106,80 +145,156 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({
 
       {/* Active Document Viewer Panel */}
       {activeDoc ? (
-        <div className="flex flex-col gap-2">
-          {/* Active doc metadata strip */}
-          <div className="flex items-center justify-between text-[11px] text-muted px-1">
-            <span className="font-semibold text-ink truncate max-w-sm">{activeDoc.name}</span>
-            <div className="flex items-center gap-2">
-              <span className="font-mono uppercase text-[9px] px-1.5 py-0.5 rounded bg-surface-subtle border border-border-warm font-semibold">
+        <div className="flex flex-col gap-2.5">
+          {/* Active doc compact metadata bar with Preview toggle */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-surface-subtle border border-border-warm">
+            <div className="flex items-center gap-2 min-w-0">
+              {activeDoc.type === 'FILE' ? (
+                <FileText className="size-4 text-primary shrink-0" />
+              ) : (
+                <LinkIcon className="size-4 text-emerald-600 shrink-0" />
+              )}
+              <span className="font-semibold text-xs text-ink truncate max-w-xs md:max-w-md">
+                {activeDoc.name}
+              </span>
+              <span className="font-mono uppercase text-[9px] px-1.5 py-0.5 rounded bg-surface border border-border-warm font-semibold shrink-0">
                 {activeDoc.type}
               </span>
               {activeDoc.size ? (
-                <span className="text-[10px] text-faint">
+                <span className="text-[10px] text-faint shrink-0">
                   {(activeDoc.size / 1024).toFixed(1)} KB
                 </span>
               ) : null}
             </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {activeUrl && (
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  aria-label={`Download ${activeDoc.name}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all cursor-pointer bg-surface hover:bg-surface-hover text-ink border-border-warm shadow-2xs hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-50"
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="size-3.5 text-primary animate-spin" />
+                      <span>Downloading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="size-3.5 text-muted hover:text-primary transition-colors" />
+                      <span>Download</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowPreview((prev) => !prev)}
+                aria-expanded={showPreview}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all cursor-pointer bg-surface hover:bg-surface-hover text-ink border-border-warm shadow-2xs hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+              >
+                {showPreview ? (
+                  <>
+                    <EyeOff className="size-3.5 text-muted" />
+                    <span>Hide Preview</span>
+                  </>
+                ) : (
+                  <>
+                    <Eye className="size-3.5 text-primary" />
+                    <span>Preview</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
-          <div
-            className={`rounded-lg border border-border-warm/80 overflow-hidden bg-surface-subtle flex items-center justify-center p-3 ${
-              isImage && !imgError ? 'min-h-[260px]' : 'min-h-[150px]'
-            }`}
-          >
-            {isImage && !imgError ? (
-              <img
-                src={activeUrl}
-                alt={`Proof: ${activeDoc.name} for ${title}`}
-                className="max-h-[380px] w-auto object-contain rounded-md"
-                onError={() => setImgError(true)}
-              />
-            ) : imgError ? (
-              <div className="flex flex-col items-center gap-2 text-muted p-6 text-center">
-                <AlertCircle className="size-8 text-amber-600" />
-                <span className="text-xs font-semibold text-ink">Preview Unavailable in Frame</span>
-                <span className="text-[11px] text-faint max-w-xs break-all">
-                  The file is secured or formatted for external viewing. Use the link below to inspect.
-                </span>
-                <a
-                  href={activeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-border-warm text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+          {/* Smooth Collapsible preview area with AnimatePresence */}
+          <AnimatePresence initial={false}>
+            {showPreview ? (
+              <motion.div
+                key={`preview-${activeDoc.id || selectedIndex}`}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 0.25,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="overflow-hidden"
+              >
+                <div
+                  className={`rounded-lg border border-border-warm/80 overflow-hidden bg-surface-subtle flex items-center justify-center p-3 mt-1 ${
+                    isImage && !imgError ? 'min-h-[260px]' : 'min-h-[150px]'
+                  }`}
                 >
-                  Open in New Window <ExternalLink className="size-3.5" />
-                </a>
-              </div>
-            ) : activeDoc.type === 'FILE' ? (
-              <div className="flex flex-col items-center gap-2 text-muted p-5 text-center">
-                <FileText className="size-8 text-primary/70" />
-                <span className="text-xs font-semibold text-ink">PDF Quotation / Receipt Document</span>
-                <span className="text-[11px] text-faint max-w-xs break-all">{activeDoc.name}</span>
-                <a
-                  href={activeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-colors shadow-2xs"
-                >
-                  View Full PDF <ExternalLink className="size-3.5" />
-                </a>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-muted p-5 text-center">
-                <LinkIcon className="size-8 text-emerald-600" />
-                <span className="text-xs font-semibold text-ink">Attached External Web Link</span>
-                <span className="text-[11px] text-faint max-w-xs truncate">{activeUrl}</span>
-                <a
-                  href={activeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-surface border border-border-warm text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
-                >
-                  Open External Link <ExternalLink className="size-3.5" />
-                </a>
-              </div>
-            )}
-          </div>
+                  {isImage && !imgError ? (
+                    <img
+                      src={activeUrl}
+                      alt={`Proof: ${activeDoc.name} for ${title}`}
+                      className="max-h-[380px] w-auto object-contain rounded-md"
+                      onError={() => setImgError(true)}
+                    />
+                  ) : imgError ? (
+                    <div className="flex flex-col items-center gap-2 text-muted p-6 text-center">
+                      <AlertCircle className="size-8 text-amber-600" />
+                      <span className="text-xs font-semibold text-ink">Preview Unavailable in Frame</span>
+                      <span className="text-[11px] text-faint max-w-xs break-all">
+                        The file is secured or formatted for external viewing. Use the link below to inspect.
+                      </span>
+                      <a
+                        href={activeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-border-warm text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        Open in New Window <ExternalLink className="size-3.5" />
+                      </a>
+                    </div>
+                  ) : activeDoc.type === 'FILE' ? (
+                    <div className="flex flex-col items-center gap-2 text-muted p-5 text-center">
+                      <FileText className="size-8 text-primary/70" />
+                      <span className="text-xs font-semibold text-ink">PDF Quotation / Receipt Document</span>
+                      <span className="text-[11px] text-faint max-w-xs break-all">{activeDoc.name}</span>
+                      <div className="mt-1 flex items-center gap-2">
+                        <a
+                          href={activeUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-colors shadow-2xs"
+                        >
+                          View Full PDF <ExternalLink className="size-3.5" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={handleDownload}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface border border-border-warm text-xs font-semibold text-ink hover:bg-surface-subtle transition-colors"
+                        >
+                          <Download className="size-3.5 text-primary" /> Download
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-muted p-5 text-center">
+                      <LinkIcon className="size-8 text-emerald-600" />
+                      <span className="text-xs font-semibold text-ink">Attached External Web Link</span>
+                      <span className="text-[11px] text-faint max-w-xs truncate">{activeUrl}</span>
+                      <a
+                        href={activeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-surface border border-border-warm text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        Open External Link <ExternalLink className="size-3.5" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
       ) : (
         <div className="h-40 rounded-lg border border-dashed border-border-warm bg-surface-subtle/40 flex flex-col items-center justify-center gap-1.5 text-xs text-faint">

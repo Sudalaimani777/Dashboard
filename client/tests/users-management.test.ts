@@ -63,6 +63,15 @@ async function run() {
     userFormModalSource.includes('useForm') && userFormModalSource.includes('zodResolver'),
     'UserFormModal.tsx must use react-hook-form with zodResolver'
   );
+  assert.ok(
+    !userFormModalSource.includes('CreateUserForm') &&
+      !userFormModalSource.includes("mode: 'create' | 'edit'"),
+    'UserFormModal.tsx must not contain duplicate CreateUserForm component or create mode'
+  );
+  assert.ok(
+    userFormModalSource.includes('EditUserForm') || userFormModalSource.includes('UserEditModal'),
+    'UserFormModal.tsx must focus on editing existing directory users'
+  );
 
   const adminUsersPageSource = fs.readFileSync(
     path.join(clientSrc, 'features/users/pages/AdminUsersPage.tsx'),

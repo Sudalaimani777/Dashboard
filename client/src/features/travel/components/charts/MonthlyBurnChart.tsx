@@ -36,7 +36,7 @@ export const MonthlyBurnChart: React.FC<MonthlyBurnChartProps> = ({ data, depart
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="text-xs font-semibold text-ink">
-            6-Month Chart ({department})
+            6-Month Chart
           </h3>
           <p className="text-[11px] text-faint">Approved vs. pending INR commitments</p>
         </div>

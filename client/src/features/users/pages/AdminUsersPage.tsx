@@ -20,7 +20,6 @@ import { UserFormModal } from '../components/UserFormModal';
 import {
   computeUserStats,
   filterDirectoryUsers,
-  type CreateUserPayload,
   type DirectoryUser,
   type ManagedUserRole,
   type UpdateUserPayload,
@@ -68,7 +67,6 @@ export const AdminUsersPage: React.FC = () => {
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
 
-  const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
   const [editingUser, setEditingUser] = useState<DirectoryUser | null>(null);
 
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null);
@@ -129,12 +127,6 @@ export const AdminUsersPage: React.FC = () => {
     setDepartmentFilter('ALL');
   };
 
-  const handleCreate = async (payload: CreateUserPayload) => {
-    const created = await usersApi.createUser(payload);
-    setUsers((prev) => [created, ...prev]);
-    setFeedback(`Added ${created.name} (${created.role}) to ${created.department}.`);
-  };
-
   const handleUpdate = async (id: string, payload: UpdateUserPayload) => {
     const updated = await usersApi.updateUser(id, payload);
     setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
@@ -188,9 +180,6 @@ export const AdminUsersPage: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-ink tracking-tight">Team &amp; Access</h1>
-          <p className="text-xs text-muted">
-            Provision Employees, Managers, and Administrators, manage lifecycle status, and oversee department assignments.
-          </p>
         </div>
 
         <button
@@ -444,7 +433,6 @@ export const AdminUsersPage: React.FC = () => {
                             type="button"
                             onClick={() => {
                               setEditingUser(member);
-                              setModalMode('edit');
                             }}
                             aria-label={`Edit ${member.name}`}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border-warm bg-surface hover:bg-surface-subtle text-xs font-semibold text-ink cursor-pointer active:scale-[0.98] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
@@ -653,18 +641,15 @@ export const AdminUsersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Create / Edit Modal */}
-      {modalMode && (
+      {/* Edit Modal */}
+      {editingUser && (
         <UserFormModal
-          mode={modalMode}
           initialUser={editingUser}
           managers={managers}
           departments={departments}
           onClose={() => {
-            setModalMode(null);
             setEditingUser(null);
           }}
-          onCreate={handleCreate}
           onUpdate={handleUpdate}
         />
       )}

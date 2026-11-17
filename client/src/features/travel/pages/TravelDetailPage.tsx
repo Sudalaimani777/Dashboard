@@ -6,7 +6,7 @@ import {
   Calendar,
   MapPin,
   AlertTriangle,
-  ShieldCheck,
+  ShieldAlert,
   ChevronRight,
   FileEdit,
   Trash2,
@@ -15,19 +15,26 @@ import {
   Printer,
   Phone,
   Briefcase,
-  CheckCircle2,
   MessageSquareText,
 } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
+import { useAuditDecision } from '../hooks/useAuditDecision';
 import { ProofInspectorViewer } from '../components/audit/ProofInspectorViewer';
 import { AuditTimelineLog } from '../components/audit/AuditTimelineLog';
+import { AdminClearanceCard } from '../components/audit/AdminClearanceCard';
+import { ManagerDecisionCard } from '../components/audit/ManagerDecisionCard';
+import { BudgetImpactGauge } from '../components/audit/BudgetImpactGauge';
 import { TravelStatusBadge } from '../components/TravelStatusBadge';
 import { RouteLabel } from '../components/shared/RouteLabel';
 import { TravelDetailSkeleton } from '../components/shared/TravelDetailSkeleton';
 import { InlineConfirmBar } from '../components/shared/InlineConfirmBar';
 import { formatINR } from '../utils/currency';
-import { aggregateExpenseItems, computeTripDuration } from '../utils/travelAnalytics';
+import {
+  aggregateExpenseItems,
+  computeTripDuration,
+  getFiscalQuarterFromDate,
+} from '../utils/travelAnalytics';
 import type { TravelRequest } from '../types/travel.types';
 
 export const TravelDetailPage: React.FC = () => {
@@ -36,29 +43,52 @@ export const TravelDetailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const fromTab = searchParams.get('tab');
   const { user } = useAuth();
-  const { loadRequestDetails, cancelRequest } = useTravel();
+  const { loadRequestDetails, cancelRequest, budget, loadBudget } = useTravel();
   const [request, setRequest] = useState<TravelRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const returnTab = useMemo(() => {
+    if (fromTab) return fromTab;
+    if (user?.role === 'ADMIN') return 'governance';
+    return 'present';
+  }, [fromTab, user?.role]);
+
+  const {
+    isSubmitting: isAuditing,
+    error: auditError,
+    managerApprove,
+    managerRequestRevision,
+    managerReject,
+    adminClearance,
+    adminRevision,
+    adminReject,
+  } = useAuditDecision(id || '', returnTab);
+
   const backNav = useMemo(() => {
     if (fromTab === 'drafts') {
       return { label: 'Back to Travel Drafts', path: '/dashboard?tab=drafts' };
     }
+    if (fromTab === 'governance') {
+      return { label: 'Back to Travel Governance Queue', path: '/dashboard?tab=governance' };
+    }
     if (fromTab === 'past') {
-      if (user?.role === 'ADMIN') return { label: 'Back to Corporate Travel Ledger Archive', path: '/dashboard?tab=past' };
+      if (user?.role === 'ADMIN') return { label: 'Back to Travel Governance Queue', path: '/dashboard?tab=governance' };
       if (user?.role === 'MANAGER') return { label: 'Back to Past Team Approvals History', path: '/dashboard?tab=past' };
       return { label: 'Back to Past Travel History', path: '/dashboard?tab=past' };
     }
     if (fromTab === 'revisions') {
-      if (user?.role === 'ADMIN') return { label: 'Back to Dispatched Revisions', path: '/dashboard?tab=revisions' };
+      if (user?.role === 'ADMIN') return { label: 'Back to Travel Governance Queue', path: '/dashboard?tab=governance' };
       if (user?.role === 'MANAGER') return { label: 'Back to Resubmitted Team Requests', path: '/dashboard?tab=revisions' };
       return { label: 'Back to Action Required: Revisions', path: '/dashboard?tab=revisions' };
     }
     if (fromTab === 'personal') {
       return { label: 'Back to My Personal Travel', path: '/dashboard?tab=personal' };
+    }
+    if (user?.role === 'ADMIN') {
+      return { label: 'Back to Travel Governance Queue', path: '/dashboard?tab=governance' };
     }
     return { label: 'Back to Dashboard', path: '/dashboard' };
   }, [fromTab, user?.role]);
@@ -85,11 +115,17 @@ export const TravelDetailPage: React.FC = () => {
   useEffect(() => {
     if (id) {
       loadRequestDetails(id)
-        .then(setRequest)
+        .then((req) => {
+          setRequest(req);
+          if (req && req.departureDate) {
+            const { year, quarter } = getFiscalQuarterFromDate(req.departureDate);
+            loadBudget(req.requesterDepartment || 'Engineering', year, quarter).catch(() => {});
+          }
+        })
         .catch(console.error)
         .finally(() => setIsLoading(false));
     }
-  }, [id, loadRequestDetails]);
+  }, [id, loadRequestDetails, loadBudget]);
 
   const duration = useMemo(
     () => computeTripDuration(request?.departureDate, request?.returnDate),
@@ -101,41 +137,10 @@ export const TravelDetailPage: React.FC = () => {
     [request?.expenses]
   );
 
-  const workflowStages = useMemo(() => {
-    if (!request) return [];
-    const s = request.status;
-    const isTerminalBad = s === 'REJECTED' || s === 'CANCELLED';
-    const submittedDone = s !== 'DRAFT';
-    const managerDone = [
-      'PENDING_ADMIN_APPROVAL',
-      'APPROVED',
-      'SETTLED',
-      'REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE',
-      'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER',
-    ].includes(s);
-    const adminDone = s === 'APPROVED' || s === 'SETTLED';
-    const settledDone = s === 'SETTLED';
-
-    return [
-      { label: 'Submitted', done: submittedDone, active: s === 'DRAFT' },
-      {
-        label: 'Manager Audit',
-        done: managerDone,
-        active: s === 'PENDING_MANAGER_REVIEW' || s === 'REVISION_REQUESTED_BY_MANAGER',
-      },
-      {
-        label: 'Admin Clearance',
-        done: adminDone,
-        active: s === 'PENDING_ADMIN_APPROVAL' || s.includes('REVISION_REQUESTED_BY_ADMIN'),
-      },
-      {
-        label: isTerminalBad ? (s === 'REJECTED' ? 'Rejected' : 'Cancelled') : request.travelType === 'UPCOMING' ? 'Approved' : 'Settled',
-        done: settledDone || (s === 'APPROVED' && request.travelType === 'UPCOMING'),
-        active: s === 'APPROVED' && request.travelType === 'ALREADY_TRAVELLED',
-        isError: isTerminalBad,
-      },
-    ];
-  }, [request]);
+  const isBudgetOverflow = useMemo(() => {
+    if (!budget || !request || budget.totalAllocation <= 0) return false;
+    return budget.utilizedAmount + Number(request.totalExpenses || 0) > budget.totalAllocation;
+  }, [budget, request]);
 
   if (isLoading || !request) {
     return <TravelDetailSkeleton />;
@@ -149,8 +154,15 @@ export const TravelDetailPage: React.FC = () => {
     );
   const avgPerDay = duration.days > 0 ? Number(request.totalExpenses) / duration.days : Number(request.totalExpenses);
 
+  // Review permissions and self-review guards
+  const isAdminClearanceEligible = user?.role === 'ADMIN' && request.status === 'PENDING_ADMIN_APPROVAL';
+  const isManagerAuditEligible =
+    (request.status === 'PENDING_MANAGER_REVIEW' || request.status === 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER') &&
+    (user?.role === 'MANAGER' || (user?.role === 'ADMIN' && !isOwner));
+
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-5">
+      {/* Top Header & Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -192,9 +204,9 @@ export const TravelDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {actionError && (
+      {(actionError || auditError) && (
         <div role="alert" className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-destructive font-medium">
-          {actionError}
+          {actionError || auditError}
         </div>
       )}
 
@@ -208,8 +220,8 @@ export const TravelDetailPage: React.FC = () => {
         />
       )}
 
-      {/* Title + Metadata + Approval Stage Stepper */}
-      <div className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* Title + Metadata Card */}
+      <div className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold text-ink tracking-tight">{request.title}</h1>
@@ -229,39 +241,20 @@ export const TravelDetailPage: React.FC = () => {
               <MapPin className="size-3.5" />
               <RouteLabel origin={request.origin} destination={request.destination} />
             </span>
-            <span className="flex items-center gap-1 font-mono">
-              <Calendar className="size-3.5" /> {request.departureDate} to {request.returnDate} ({duration.label})
-            </span>
           </div>
         </div>
 
-        {/* 4-Stage Progress Bar */}
-        <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-          {workflowStages.map((stage, i) => (
-            <React.Fragment key={stage.label}>
-              <div
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold ${
-                  stage.isError
-                    ? 'bg-red-50 border-red-200 text-destructive'
-                    : stage.done
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                    : stage.active
-                    ? 'bg-amber-50 border-amber-200 text-amber-800'
-                    : 'bg-surface-subtle border-border-warm text-muted'
-                }`}
-              >
-                <CheckCircle2 className="size-3.5 shrink-0" />
-                <span>{stage.label}</span>
-              </div>
-              {i < workflowStages.length - 1 && (
-                <ChevronRight className="size-3 text-muted/60 hidden sm:block" />
-              )}
-            </React.Fragment>
-          ))}
+        {/* Date & Duration Badge shifted to the right place */}
+        <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-subtle border border-border-warm text-xs font-mono text-ink shrink-0">
+          <Calendar className="size-4 text-primary shrink-0" />
+          <span>
+            {request.departureDate} to {request.returnDate}{' '}
+            <span className="text-muted font-sans font-medium">({duration.label})</span>
+          </span>
         </div>
       </div>
 
-      {/* Role-Specific Direct Action Banners */}
+      {/* Owner Action Banners */}
       {isOwner && request.status === 'DRAFT' && (
         <div className="flex flex-col gap-3">
           <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-xs">
@@ -302,49 +295,8 @@ export const TravelDetailPage: React.FC = () => {
         </div>
       )}
 
-      {!isOwner &&
-        user?.role === 'MANAGER' &&
-        (request.status === 'PENDING_MANAGER_REVIEW' ||
-          request.status === 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER') && (
-          <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-xs">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="size-5 text-amber-700 shrink-0" />
-              <div className="text-xs text-ink">
-                <strong>Manager Action Required:</strong>{' '}
-                {request.status === 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER'
-                  ? 'Corporate Admin has dispatched this trip back to you for alteration instructions.'
-                  : 'This trip is awaiting your line manager audit and clearance.'}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate(`/travel/audit/${request.id}`)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-[0.98] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
-            >
-              Open Audit Workstation <ChevronRight className="size-4" />
-            </button>
-          </div>
-        )}
-
-      {user?.role === 'ADMIN' && request.status === 'PENDING_ADMIN_APPROVAL' && (
-        <div className="bg-sky-50/90 border border-sky-200 rounded-xl p-4 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="size-5 text-sky-700 shrink-0" />
-            <div className="text-xs text-ink">
-              <strong>Admin Action Required:</strong> This request is manager-approved and awaiting corporate clearance.
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(`/travel/clearance/${request.id}`)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
-          >
-            Open Clearance Workstation <ChevronRight className="size-4" />
-          </button>
-        </div>
-      )}
-
-      {user?.id === request.userId && request.status.includes('REVISION') && (
+      {/* Employee Revision Banner */}
+      {isOwner && request.status.includes('REVISION') && (
         <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-3">
             <AlertTriangle className="size-5 text-amber-700 shrink-0" />
@@ -362,14 +314,65 @@ export const TravelDetailPage: React.FC = () => {
         </div>
       )}
 
+      {/* Self-Review Guard Banners */}
+      {isOwner && request.status === 'PENDING_ADMIN_APPROVAL' && user?.role === 'ADMIN' && (
+        <div className="flex items-center gap-2 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 shadow-2xs">
+          <ShieldAlert className="size-4 text-amber-700 shrink-0" />
+          <span>
+            <strong>Self-Review Guard:</strong> You submitted this travel request. Corporate governance policies prohibit approving or clearing your own personal travel request.
+          </span>
+        </div>
+      )}
+
+      {isOwner && request.status === 'PENDING_MANAGER_REVIEW' && (user?.role === 'MANAGER' || user?.role === 'ADMIN') && (
+        <div className="flex items-center gap-2 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 shadow-2xs">
+          <ShieldAlert className="size-4 text-amber-700 shrink-0" />
+          <span>
+            <strong>Self-Review Guard:</strong> You submitted this travel request. Line managers cannot audit or clear their own travel. This request has been escalated to Corporate Admin for Tier 1 clearance.
+          </span>
+        </div>
+      )}
+
+      {/* Polymorphic Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Column: Evidence Viewer & Audit Timeline */}
         <div className="lg:col-span-7 flex flex-col gap-5">
           <ProofInspectorViewer proofUrl={request.supportingDocUrl} docs={request.supportingDocs} title={request.title} />
           <AuditTimelineLog timeline={request.timeline} />
         </div>
 
+        {/* Right Column: In-situ Action Cards & Financial Breakdown */}
         <div className="lg:col-span-5 flex flex-col gap-5">
-          {/* Itemized Expenses with Category Bar + Footer */}
+          {/* 1. Admin Clearance Decision Panel (In-situ Workstation) */}
+          {isAdminClearanceEligible && !isOwner && (
+            <div className="flex flex-col gap-5">
+              <BudgetImpactGauge
+                budget={budget}
+                requestAmount={Number(request.totalExpenses || 0)}
+              />
+              <AdminClearanceCard
+                travelType={request.travelType}
+                isSubmitting={isAuditing}
+                isBudgetOverflow={isBudgetOverflow}
+                onClearance={adminClearance}
+                onRevision={adminRevision}
+                onReject={adminReject}
+              />
+            </div>
+          )}
+
+          {/* 2. Manager Audit Decision Panel (In-situ Workstation) */}
+          {isManagerAuditEligible && !isOwner && (
+            <ManagerDecisionCard
+              status={request.status}
+              isSubmitting={isAuditing}
+              onApprove={managerApprove}
+              onRequestRevision={managerRequestRevision}
+              onReject={managerReject}
+            />
+          )}
+
+          {/* 3. Itemized Expenses with Category Bar */}
           <div className="bg-surface rounded-xl border border-border-warm p-5 flex flex-col gap-3.5 shadow-xs">
             <div className="flex items-center justify-between border-b border-border-warm pb-3">
               <h3 className="text-sm font-semibold text-ink">
@@ -431,7 +434,7 @@ export const TravelDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Business Justification & Safety Metadata */}
+          {/* 4. Business Justification & Safety Metadata */}
           <div className="bg-surface rounded-xl border border-border-warm p-5 flex flex-col gap-3 shadow-xs">
             <h3 className="text-sm font-semibold text-ink flex items-center gap-2 border-b border-border-warm pb-2.5">
               <Briefcase className="size-4 text-primary" /> Business Purpose & Logistics
@@ -464,7 +467,7 @@ export const TravelDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Reviewer Sign-off & Remarks Card */}
+          {/* 5. Reviewer Sign-off & Remarks Card (Mounted for all or read-only view) */}
           <div className="bg-surface rounded-xl border border-border-warm p-5 flex flex-col gap-3 shadow-xs">
             <h3 className="text-sm font-semibold text-ink flex items-center gap-2 border-b border-border-warm pb-2.5">
               <MessageSquareText className="size-4 text-primary" /> Reviewer Sign-Off & Remarks

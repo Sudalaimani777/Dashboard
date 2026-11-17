@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import {
@@ -7,98 +7,74 @@ import {
   Download,
   Plane,
   Receipt,
-  FolderKanban,
 } from 'lucide-react';
 import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
 import { TravelMetricsGrid } from './shared/TravelMetricsGrid';
-import { CategorySpendBreakdownCard } from './employee/CategorySpendBreakdownCard';
 import {
-  DraftReadinessSummaryCard,
-  PolicyChecklistCard,
-  RecentActivityFeedCard,
   RecentTripsSnapshotCard,
   ResolvedRevisionsCard,
-  RevisionWorkflowGuideCard,
 } from './employee/EmployeeSidebarPanels';
 import { formatINR } from '../utils/currency';
 import {
   aggregateRequestsCategorySpend,
-  computeDraftReadiness,
   exportRequestsToCsv,
 } from '../utils/travelAnalytics';
+import { handleViewRevisionsAction } from '../utils/viewRevisionsAction';
 import type { TravelRequest } from '../types/travel.types';
 
 export interface EmployeeTravelPortalProps {
   activeTab?: string;
 }
 
-type TypeFilter = 'ALL' | 'UPCOMING' | 'ALREADY_TRAVELLED';
-type PastStatusFilter = 'ALL' | 'APPROVED' | 'SETTLED' | 'OTHER';
+export type EmployeeStatusSegment = 'ALL' | 'IN_FLIGHT' | 'REVISIONS' | 'DRAFTS' | 'CONCLUDED';
+type PastSubFilter = 'ALL' | 'APPROVED' | 'SETTLED' | 'OTHER';
+
+export const resolveEmployeeSegment = (activeTab?: string, explicitSegment?: string): EmployeeStatusSegment => {
+  if (explicitSegment && ['ALL', 'IN_FLIGHT', 'REVISIONS', 'DRAFTS', 'CONCLUDED'].includes(explicitSegment)) {
+    return explicitSegment as EmployeeStatusSegment;
+  }
+  switch (activeTab) {
+    case 'revisions':
+      return 'REVISIONS';
+    case 'drafts':
+      return 'DRAFTS';
+    case 'past':
+      return 'CONCLUDED';
+    case 'present':
+      return 'IN_FLIGHT';
+    case 'trips':
+    default:
+      return 'ALL';
+  }
+};
 
 export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
-  activeTab = 'present',
+  activeTab = 'trips',
 }) => {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const { requests, loadRequests } = useTravel();
+
+  const [statusSegment, setStatusSegment] = useState<EmployeeStatusSegment>(() =>
+    resolveEmployeeSegment(activeTab)
+  );
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL');
-  const [pastStatusFilter, setPastStatusFilter] = useState<PastStatusFilter>('ALL');
+  const [pastSubFilter, setPastSubFilter] = useState<PastSubFilter>('ALL');
+  const tableSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadRequests();
   }, [loadRequests]);
 
-  const filteredRequests = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const effectiveType = activeTab === 'past' ? 'ALL' : typeFilter;
-    return requests.filter((r) => {
-      if (effectiveType !== 'ALL' && r.travelType !== effectiveType) return false;
-      if (!q) return true;
-      return (
-        r.title.toLowerCase().includes(q) ||
-        r.destination.toLowerCase().includes(q) ||
-        r.origin.toLowerCase().includes(q) ||
-        r.projectCode.toLowerCase().includes(q)
-      );
-    });
-  }, [requests, searchQuery, typeFilter, activeTab]);
+  // Synchronize when activeTab changes (e.g. browser back button or direct link with legacy param)
+  useEffect(() => {
+    if (activeTab && ['present', 'revisions', 'drafts', 'past', 'trips'].includes(activeTab)) {
+      setStatusSegment(resolveEmployeeSegment(activeTab));
+    }
+  }, [activeTab]);
 
-  const presentRequests = useMemo(
-    () =>
-      filteredRequests.filter((r) =>
-        ['SUBMITTED', 'PENDING_MANAGER_REVIEW', 'PENDING_ADMIN_APPROVAL'].includes(r.status)
-      ),
-    [filteredRequests]
-  );
-
-  const revisionRequests = useMemo(
-    () => filteredRequests.filter((r) => r.status.includes('REVISION_REQUESTED')),
-    [filteredRequests]
-  );
-
-  const draftRequests = useMemo(
-    () => filteredRequests.filter((r) => r.status === 'DRAFT'),
-    [filteredRequests]
-  );
-
-  const pastRequests = useMemo(
-    () =>
-      filteredRequests.filter((r) =>
-        ['SETTLED', 'APPROVED', 'REJECTED', 'CANCELLED'].includes(r.status)
-      ),
-    [filteredRequests]
-  );
-
-  const displayedPastRequests = useMemo(() => {
-    if (pastStatusFilter === 'ALL') return pastRequests;
-    if (pastStatusFilter === 'APPROVED') return pastRequests.filter((r) => r.status === 'APPROVED');
-    if (pastStatusFilter === 'SETTLED') return pastRequests.filter((r) => r.status === 'SETTLED');
-    return pastRequests.filter((r) => ['REJECTED', 'CANCELLED'].includes(r.status));
-  }, [pastRequests, pastStatusFilter]);
-
-  // All-requests metrics (unfiltered by search for accurate KPI summary)
+  // Classification sets across all requests (unfiltered for KPI integrity)
   const allActive = useMemo(
     () =>
       requests.filter((r) =>
@@ -129,84 +105,97 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
     [nonDraftRequests]
   );
 
-  const hasActiveFilter = Boolean(
-    searchQuery.trim() ||
-      (activeTab !== 'past' && typeFilter !== 'ALL') ||
-      (activeTab === 'past' && pastStatusFilter !== 'ALL')
-  );
-
-  const recentNonActive = useMemo(
-    () =>
-      filteredRequests
-        .filter((r) => !['SUBMITTED', 'PENDING_MANAGER_REVIEW', 'PENDING_ADMIN_APPROVAL'].includes(r.status))
-        .slice(0, 4),
-    [filteredRequests]
-  );
-
-  const pastCategoryBreakdown = useMemo(
-    () => aggregateRequestsCategorySpend(allPast),
-    [allPast]
-  );
-
-  const projectSummaries = useMemo(() => {
-    const map = new Map<string, { code: string; trips: number; total: number; routes: Set<string> }>();
-    for (const req of allPast) {
-      const code = req.projectCode || 'GENERAL';
-      const entry = map.get(code) || { code, trips: 0, total: 0, routes: new Set<string>() };
-      entry.trips += 1;
-      entry.total += Number(req.totalExpenses) || 0;
-      if (req.destination && req.destination !== 'TBD') {
-        entry.routes.add(req.destination);
-      }
-      map.set(code, entry);
-    }
-    return Array.from(map.values()).sort((a, b) => b.total - a.total);
-  }, [allPast]);
-
-  const approvedTrips = allPast.filter((r) => r.status === 'APPROVED');
-  const settledTrips = allPast.filter((r) => r.status === 'SETTLED');
+  const approvedTrips = useMemo(() => allPast.filter((r) => r.status === 'APPROVED'), [allPast]);
+  const settledTrips = useMemo(() => allPast.filter((r) => r.status === 'SETTLED'), [allPast]);
   const clearedCount = approvedTrips.length + settledTrips.length;
   const avgTripSpend = clearedCount > 0 ? totalSpent / clearedCount : 0;
 
-  const managerReviewCount = allActive.filter((r) => r.status === 'PENDING_MANAGER_REVIEW').length;
-  const adminApprovalCount = allActive.filter((r) => r.status === 'PENDING_ADMIN_APPROVAL').length;
-
-  const managerReturnedCount = allRevisions.filter(
-    (r) => r.status === 'REVISION_REQUESTED_BY_MANAGER'
-  ).length;
-  const adminReturnedCount = allRevisions.filter((r) => r.status.includes('ADMIN')).length;
-  const resubmittedCount = allActive.filter((r) =>
-    Boolean(r.timeline?.some((ev) => String(ev.toStatus || ev.to_status || '').includes('REVISION')))
-  ).length;
-  const firstPassRate = useMemo(() => {
-    if (allPast.length === 0) return '100%';
-    const clean = allPast.filter(
-      (r) => !r.timeline?.some((ev) => String(ev.toStatus || ev.to_status || '').includes('REVISION'))
-    ).length;
-    return `${Math.round((clean / allPast.length) * 100)}%`;
-  }, [allPast]);
-
-  const draftTotalValue = useMemo(
-    () => allDrafts.reduce((sum, r) => sum + (Number(r.totalExpenses) || 0), 0),
-    [allDrafts]
+  const managerReviewCount = useMemo(
+    () => allActive.filter((r) => r.status === 'PENDING_MANAGER_REVIEW').length,
+    [allActive]
   );
-  const readyDraftsCount = useMemo(
-    () => allDrafts.filter((r) => computeDraftReadiness(r).isReady).length,
-    [allDrafts]
+  const adminApprovalCount = useMemo(
+    () => allActive.filter((r) => r.status === 'PENDING_ADMIN_APPROVAL').length,
+    [allActive]
   );
 
-  const settledAmount = settledTrips.reduce((s, r) => s + (Number(r.totalExpenses) || 0), 0);
-  const approvedPendingSettlement = approvedTrips.reduce(
-    (s, r) => s + (Number(r.totalExpenses) || 0),
-    0
+  // Filtering requests by search query
+  const baseFilteredRequests = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return requests.filter((r) => {
+      if (!q) return true;
+      return (
+        r.title.toLowerCase().includes(q) ||
+        r.destination.toLowerCase().includes(q) ||
+        r.origin.toLowerCase().includes(q) ||
+        r.projectCode.toLowerCase().includes(q)
+      );
+    });
+  }, [requests, searchQuery]);
+
+  // Segmented requests display
+  const displayedRequests = useMemo(() => {
+    switch (statusSegment) {
+      case 'IN_FLIGHT':
+        return baseFilteredRequests.filter((r) =>
+          ['SUBMITTED', 'PENDING_MANAGER_REVIEW', 'PENDING_ADMIN_APPROVAL'].includes(r.status)
+        );
+      case 'REVISIONS':
+        return baseFilteredRequests.filter((r) => r.status.includes('REVISION_REQUESTED'));
+      case 'DRAFTS':
+        return baseFilteredRequests.filter((r) => r.status === 'DRAFT');
+      case 'CONCLUDED': {
+        const past = baseFilteredRequests.filter((r) =>
+          ['SETTLED', 'APPROVED', 'REJECTED', 'CANCELLED'].includes(r.status)
+        );
+        if (pastSubFilter === 'ALL') return past;
+        if (pastSubFilter === 'APPROVED') return past.filter((r) => r.status === 'APPROVED');
+        if (pastSubFilter === 'SETTLED') return past.filter((r) => r.status === 'SETTLED');
+        return past.filter((r) => ['REJECTED', 'CANCELLED'].includes(r.status));
+      }
+      case 'ALL':
+      default:
+        return baseFilteredRequests;
+    }
+  }, [baseFilteredRequests, statusSegment, pastSubFilter]);
+
+  const hasActiveFilter = Boolean(
+    searchQuery.trim() ||
+      statusSegment !== 'ALL' ||
+      pastSubFilter !== 'ALL'
   );
 
   const handleCloneTrip = (req: TravelRequest) => {
     navigate(`/travel/new?clone=${req.id}`);
   };
 
+  const handleViewRevisions = () => {
+    handleViewRevisionsAction({
+      revisionRequests: allRevisions,
+      onNavigate: (url) => navigate(url),
+      onSetSegment: setStatusSegment,
+      onClearSearch: () => setSearchQuery(''),
+      onScrollToTable: () => {
+        tableSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      },
+      targetDashboardTab: 'revisions',
+    });
+  };
+
+  const handleRowAction = (req: TravelRequest) => {
+    if (req.status.includes('REVISION')) {
+      navigate(`/travel/requests/${req.id}/edit?tab=revisions`);
+    } else if (req.status === 'DRAFT') {
+      navigate(`/travel/requests/${req.id}/edit?tab=drafts`);
+    } else if (['APPROVED', 'SETTLED', 'REJECTED', 'CANCELLED'].includes(req.status)) {
+      navigate(`/travel/requests/${req.id}?tab=past`);
+    } else {
+      navigate(`/travel/requests/${req.id}`);
+    }
+  };
+
   const quickLaunchActions = (
-    <>
+    <div className="flex flex-wrap items-center gap-2">
       <button
         type="button"
         onClick={() => navigate('/travel/new?type=UPCOMING')}
@@ -221,497 +210,262 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
       >
         <Receipt className="size-3.5 text-primary" /> Claim Past Travel
       </button>
-    </>
+    </div>
   );
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-5">
-      {/* Page Header + Filter Toolbar */}
+      {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-ink tracking-tight">
-            {activeTab === 'revisions'
-              ? 'Action Required: Revisions'
-              : activeTab === 'drafts'
-              ? 'Travel Drafts'
-              : activeTab === 'past'
-              ? 'Past Travel History'
-              : 'My Travel Dashboard'}
+            My Travel Workspace
           </h1>
-          <p className="text-xs text-muted">
-            {activeTab === 'revisions'
-              ? 'Trips requiring updated quotes or receipts before returning to your Line Manager.'
-              : activeTab === 'drafts'
-              ? 'Saved unsubmitted travel requests and cloneable past trips.'
-              : activeTab === 'past'
-              ? 'Concluded company travel, category analytics, and reimbursement settlement status.'
-              : 'Track active travel requests, attention items, and spend insights.'}
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="relative">
-            <Search className="size-3.5 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search title, city, project..."
-              aria-label="Search travel requests"
-              className="pl-8 pr-3 py-2 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint w-64 sm:w-72 md:w-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
-            />
-          </div>
-
-          {activeTab !== 'past' && (
-            <div className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5 text-[11px]">
-              {(
-                [
-                  { id: 'ALL', label: 'All' },
-                  { id: 'UPCOMING', label: 'Upcoming' },
-                  { id: 'ALREADY_TRAVELLED', label: 'Claims' },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  aria-pressed={typeFilter === opt.id}
-                  onClick={() => setTypeFilter(opt.id)}
-                  className={`px-2.5 py-1.5 rounded-md font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
-                    typeFilter === opt.id
-                      ? 'bg-primary text-white'
-                      : 'text-muted hover:text-ink'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {quickLaunchActions}
         </div>
       </div>
 
+      {/* Pinned Executive Metric Strip */}
+      <TravelMetricsGrid
+        metrics={[
+          {
+            label: 'Active / In Review',
+            value: allActive.length,
+            subtext: 'Currently in approval pipeline',
+            isActive: statusSegment === 'IN_FLIGHT',
+            pills: [
+              { label: 'Manager', value: managerReviewCount },
+              { label: 'Admin', value: adminApprovalCount },
+            ],
+            onClick: () =>
+              setStatusSegment((prev) => (prev === 'IN_FLIGHT' ? 'ALL' : 'IN_FLIGHT')),
+          },
+          {
+            label: 'Needs Attention',
+            value: allRevisions.length + allDrafts.length,
+            subtext:
+              allRevisions.length > 0
+                ? 'Revisions awaiting your update'
+                : 'Saved drafts & action items',
+            tone: allRevisions.length > 0 ? 'amber' : 'default',
+            badge: allRevisions.length > 0 ? 'Fix Required' : undefined,
+            isActive: statusSegment === 'REVISIONS' || statusSegment === 'DRAFTS',
+            pills: [
+              {
+                label: 'Revisions',
+                value: allRevisions.length,
+                isActive: statusSegment === 'REVISIONS',
+                onClick: () =>
+                  setStatusSegment((prev) => (prev === 'REVISIONS' ? 'ALL' : 'REVISIONS')),
+              },
+              {
+                label: 'Drafts',
+                value: allDrafts.length,
+                isActive: statusSegment === 'DRAFTS',
+                onClick: () =>
+                  setStatusSegment((prev) => (prev === 'DRAFTS' ? 'ALL' : 'DRAFTS')),
+              },
+            ],
+            onClick: () =>
+              setStatusSegment((prev) =>
+                prev === 'REVISIONS' || prev === 'DRAFTS'
+                  ? 'ALL'
+                  : allRevisions.length > 0
+                  ? 'REVISIONS'
+                  : 'DRAFTS'
+              ),
+          },
+          {
+            label: 'Settled / Cleared',
+            value: clearedCount,
+            subtext:
+              clearedCount > 0
+                ? `Avg ${formatINR(avgTripSpend)} per trip`
+                : 'No completed trips yet',
+            isActive: statusSegment === 'CONCLUDED',
+            pills: [
+              {
+                label: 'Approved',
+                value: approvedTrips.length,
+                isActive: statusSegment === 'CONCLUDED' && pastSubFilter === 'APPROVED',
+                onClick: () => {
+                  setStatusSegment('CONCLUDED');
+                  setPastSubFilter((prev) => (prev === 'APPROVED' ? 'ALL' : 'APPROVED'));
+                },
+              },
+              {
+                label: 'Settled',
+                value: settledTrips.length,
+                isActive: statusSegment === 'CONCLUDED' && pastSubFilter === 'SETTLED',
+                onClick: () => {
+                  setStatusSegment('CONCLUDED');
+                  setPastSubFilter((prev) => (prev === 'SETTLED' ? 'ALL' : 'SETTLED'));
+                },
+              },
+            ],
+            onClick: () => {
+              setStatusSegment((prev) => (prev === 'CONCLUDED' ? 'ALL' : 'CONCLUDED'));
+              setPastSubFilter('ALL');
+            },
+          },
+          {
+            label: 'Total Expenditure',
+            value: formatINR(totalSpent),
+            isCurrency: true,
+            subtext: `${nonDraftRequests.length} submitted request(s) · INR`,
+            isActive: statusSegment === 'ALL',
+            onClick: () => {
+              setStatusSegment('ALL');
+              setPastSubFilter('ALL');
+            },
+            progressSegments: categoryBreakdown.categories.map((c) => ({
+              label: c.shortLabel,
+              percentage: c.percentage,
+              color: c.color,
+            })),
+          },
+        ]}
+      />
+
+      {/* Pinned Action Required Banner (Visible when revisions are pending) */}
+      {allRevisions.length > 0 && (
+        <div className="bg-amber-50/90 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="size-4 text-amber-700 shrink-0" />
+            <span>
+              <strong>{allRevisions.length} request(s)</strong> require your revision. Resubmissions strictly return to your Line Manager for verification.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleViewRevisions}
+            className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+          >
+            {allRevisions.length === 1 ? 'View Revision' : 'View Revisions'}
+          </button>
+        </div>
+      )}
+
+      {/* Search and Export Toolbar */}
+      <div className="w-full flex flex-wrap items-center justify-between gap-3">
+        <div className="relative flex-1 min-w-[280px] max-w-xl">
+          <Search className="size-3.5 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search title, city, project..."
+            aria-label="Search travel requests"
+            className="w-full pl-8 pr-3 py-2 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
+          />
+        </div>
+
+        <button
+          type="button"
+          disabled={displayedRequests.length === 0}
+          onClick={() => exportRequestsToCsv(displayedRequests, 'my-travel-requests.csv')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-warm bg-surface hover:bg-surface-subtle active:scale-[0.98] text-xs font-semibold text-ink disabled:opacity-40 cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 shrink-0"
+        >
+          <Download className="size-3.5 text-primary" /> Export CSV
+        </button>
+      </div>
+
+      {/* Main Workspace Table (Full Width) */}
       <motion.div
-        key={activeTab}
+        ref={tableSectionRef}
+        key={statusSegment}
         initial={reduceMotion ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-        className="flex flex-col gap-5"
+        className="w-full flex flex-col gap-5"
       >
-
-      {/* TAB 1: PRESENT / DASHBOARD */}
-      {activeTab === 'present' && (
-        <>
-          <TravelMetricsGrid
-            metrics={[
-              {
-                label: 'Active / In Review',
-                value: allActive.length,
-                subtext: 'Currently in approval pipeline',
-                pills: [
-                  { label: 'Manager', value: managerReviewCount },
-                  { label: 'Admin', value: adminApprovalCount },
-                ],
-              },
-              {
-                label: 'Needs Attention',
-                value: allRevisions.length + allDrafts.length,
-                subtext:
-                  allRevisions.length > 0
-                    ? 'Revisions awaiting your update'
-                    : 'Saved drafts & action items',
-                tone: allRevisions.length > 0 ? 'amber' : 'default',
-                badge: allRevisions.length > 0 ? 'Fix Required' : undefined,
-                pills: [
-                  { label: 'Revisions', value: allRevisions.length },
-                  { label: 'Drafts', value: allDrafts.length },
-                ],
-                onClick: () =>
-                  navigate(allRevisions.length > 0 ? '/dashboard?tab=revisions' : '/dashboard?tab=drafts'),
-              },
-              {
-                label: 'Settled / Approved',
-                value: clearedCount,
-                subtext:
-                  clearedCount > 0
-                    ? `Avg ${formatINR(avgTripSpend)} per trip`
-                    : 'No completed trips yet',
-                pills: [
-                  { label: 'Approved', value: approvedTrips.length },
-                  { label: 'Settled', value: settledTrips.length },
-                ],
-                onClick: () => navigate('/dashboard?tab=past'),
-              },
-              {
-                label: 'Total Expenditure',
-                value: formatINR(totalSpent),
-                isCurrency: true,
-                subtext: `${nonDraftRequests.length} submitted request(s) · INR`,
-                progressSegments: categoryBreakdown.categories.map((c) => ({
-                  label: c.shortLabel,
-                  percentage: c.percentage,
-                  color: c.color,
-                })),
-              },
-            ]}
-          />
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            <div className="lg:col-span-8 flex flex-col gap-5">
-              <TravelRequestsTable
-                title="Active Travel Requests"
-                requests={presentRequests}
-                onAction={(req) => navigate(`/travel/requests/${req.id}`)}
-                compactEmpty
-                emptyMessage="No active travel requests in review."
-                emptyDescription="Start a new pre-trip authorization or submit a post-trip reimbursement claim below."
-                emptyAction={quickLaunchActions}
-              />
-
-              <RecentTripsSnapshotCard
-                title="Recent Trips & Saved Work"
-                subtitle="Latest completed trips, drafts, and returned requests for quick access"
-                requests={recentNonActive}
-                actionLabel="Inspect"
-                emptyMessage={
-                  hasActiveFilter
-                    ? 'No recent trips match your current search or filter.'
-                    : undefined
+        <TravelRequestsTable
+          title={
+            statusSegment === 'IN_FLIGHT'
+              ? 'Active In-Flight Requests'
+              : statusSegment === 'REVISIONS'
+              ? 'Requests Requiring Revision'
+              : statusSegment === 'DRAFTS'
+              ? 'Saved Travel Drafts'
+              : statusSegment === 'CONCLUDED'
+              ? 'Concluded & Settled Company Travel'
+              : 'All Travel Requests'
+          }
+          requests={displayedRequests}
+          actionLabel={
+            statusSegment === 'REVISIONS'
+              ? 'Fix & Resubmit'
+              : statusSegment === 'DRAFTS'
+              ? 'Resume Draft'
+              : 'Inspect'
+          }
+          showRemarksPreview={statusSegment === 'REVISIONS' || statusSegment === 'ALL'}
+          onAction={handleRowAction}
+          secondaryAction={
+            statusSegment === 'CONCLUDED' || statusSegment === 'ALL'
+              ? {
+                  label: 'Clone',
+                  onClick: handleCloneTrip,
                 }
-                onAction={(req) =>
-                  navigate(
-                    req.status === 'DRAFT' || req.status.includes('REVISION')
-                      ? `/travel/requests/${req.id}/edit`
-                      : `/travel/requests/${req.id}?tab=past`
-                  )
-                }
-                onFooterClick={() => navigate('/dashboard?tab=past')}
-                footerLabel="View Past History"
-              />
-            </div>
+              : undefined
+          }
+          compactEmpty
+          emptyMessage={
+            hasActiveFilter
+              ? 'No travel requests match your current filters.'
+              : statusSegment === 'REVISIONS'
+              ? 'All clear. No requests currently require revisions.'
+              : statusSegment === 'DRAFTS'
+              ? 'You have no saved travel drafts.'
+              : statusSegment === 'IN_FLIGHT'
+              ? 'No active travel requests in review.'
+              : statusSegment === 'CONCLUDED'
+              ? 'No concluded or settled trips on record.'
+              : 'No travel requests found.'
+          }
+          emptyDescription={
+            statusSegment === 'REVISIONS'
+              ? 'When a Line Manager or Corporate Admin returns a trip for corrections, their remarks will appear here.'
+              : statusSegment === 'DRAFTS'
+              ? 'Start a new trip and click Save as Draft at any point to stage items and finish later.'
+              : 'Start a new pre-trip authorization or submit a post-trip reimbursement claim.'
+          }
+          emptyAction={
+            statusSegment === 'REVISIONS' ? (
+              <button
+                type="button"
+                onClick={() => setStatusSegment('ALL')}
+                className="px-3.5 py-2 rounded-lg border border-border-warm bg-surface hover:bg-surface-subtle active:scale-[0.98] text-xs font-semibold text-ink cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all"
+              >
+                View All Trips
+              </button>
+            ) : (
+              quickLaunchActions
+            )
+          }
+        />
 
-            <div className="lg:col-span-4 flex flex-col gap-5">
-              <CategorySpendBreakdownCard
-                title="My Expense Mix"
-                subtitle="Breakdown across submitted & cleared trips"
-                totalSpend={categoryBreakdown.totalSpend}
-                categories={categoryBreakdown.categories}
-              />
-              <RecentActivityFeedCard
-                requests={requests}
-                onInspect={(req) => navigate(`/travel/requests/${req.id}`)}
-              />
-              <PolicyChecklistCard />
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* TAB 2: REVISIONS */}
-      {activeTab === 'revisions' && (
-        <>
-          <TravelMetricsGrid
-            metrics={[
-              {
-                label: 'Pending Your Fix',
-                value: allRevisions.length,
-                subtext: 'Requires updated quotes or receipts',
-                tone: allRevisions.length > 0 ? 'amber' : 'default',
-                pills: [
-                  { label: 'Manager', value: managerReturnedCount },
-                  { label: 'Admin', value: adminReturnedCount },
-                ],
-              },
-              {
-                label: 'Resubmitted / In Re-Review',
-                value: resubmittedCount,
-                subtext: 'Previously revised, awaiting sign-off',
-              },
-              {
-                label: 'First-Pass Approval Rate',
-                value: firstPassRate,
-                subtext: `${allPast.length} concluded request(s) evaluated`,
-              },
-            ]}
+        {/* Contextual Sub-Cards on specific segments */}
+        {statusSegment === 'REVISIONS' && (
+          <ResolvedRevisionsCard
+            requests={baseFilteredRequests}
+            onInspect={(req) => navigate(`/travel/requests/${req.id}?tab=revisions`)}
           />
+        )}
 
-          {revisionRequests.length > 0 && (
-            <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-xl flex items-center justify-between shadow-xs">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="size-5 text-amber-700 shrink-0" />
-                <div className="text-xs text-ink">
-                  <strong>{revisionRequests.length} request(s) require your revisions.</strong>{' '}
-                  Resubmissions strictly return to your Line Manager for verification.
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            <div className="lg:col-span-8 flex flex-col gap-5">
-              <TravelRequestsTable
-                title="Requests Awaiting Revision"
-                requests={revisionRequests}
-                actionLabel="Fix & Resubmit"
-                showRemarksPreview
-                compactEmpty
-                onAction={(req) => navigate(`/travel/requests/${req.id}/edit?tab=revisions`)}
-                emptyMessage="All clear. No requests currently require revisions."
-                emptyDescription="When a Line Manager or Corporate Admin returns a trip for corrections, their exact remarks and a Fix & Resubmit button will appear here."
-                emptyAction={
-                  <button
-                    type="button"
-                    onClick={() => navigate('/dashboard?tab=present')}
-                    className="px-3.5 py-2 rounded-lg border border-border-warm bg-surface hover:bg-surface-subtle active:scale-[0.98] text-xs font-semibold text-ink cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all"
-                  >
-                    Back to Active Dashboard
-                  </button>
-                }
-              />
-
-              <ResolvedRevisionsCard
-                requests={filteredRequests}
-                onInspect={(req) => navigate(`/travel/requests/${req.id}?tab=revisions`)}
-              />
-            </div>
-
-            <div className="lg:col-span-4">
-              <RevisionWorkflowGuideCard />
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* TAB 3: DRAFTS */}
-      {activeTab === 'drafts' && (
-        <>
-          <TravelMetricsGrid
-            metrics={[
-              {
-                label: 'Saved Drafts',
-                value: allDrafts.length,
-                subtext: 'Unsubmitted requests saved locally',
-                pills: [
-                  {
-                    label: 'Upcoming',
-                    value: allDrafts.filter((d) => d.travelType === 'UPCOMING').length,
-                  },
-                  {
-                    label: 'Claims',
-                    value: allDrafts.filter((d) => d.travelType === 'ALREADY_TRAVELLED').length,
-                  },
-                ],
-              },
-              {
-                label: 'Unsubmitted Claim Value',
-                value: formatINR(draftTotalValue),
-                isCurrency: true,
-                subtext: 'Estimated total across saved drafts',
-              },
-              {
-                label: 'Submission Readiness',
-                value: `${readyDraftsCount} / ${allDrafts.length}`,
-                subtext:
-                  allDrafts.length === 0
-                    ? 'Save a draft anytime while creating a trip'
-                    : 'Drafts passing all pre-submit checks',
-              },
-            ]}
+        {statusSegment === 'DRAFTS' && (
+          <RecentTripsSnapshotCard
+            title="Clone from Past Trips"
+            subtitle="Duplicate route, project code, and emergency contact into a fresh request"
+            requests={allPast.slice(0, 4)}
+            actionLabel="Clone as Draft"
+            emptyMessage={hasActiveFilter ? 'No past trips match your current search.' : undefined}
+            onAction={handleCloneTrip}
           />
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            <div className="lg:col-span-8 flex flex-col gap-5">
-              <TravelRequestsTable
-                title="Saved Travel Drafts"
-                requests={draftRequests}
-                actionLabel="Resume Draft"
-                compactEmpty
-                onAction={(req) => navigate(`/travel/requests/${req.id}/edit?tab=drafts`)}
-                emptyMessage="You have no saved travel drafts."
-                emptyDescription="Start a new upcoming trip or post-trip reimbursement and click Save as Draft at any point to finish later."
-                emptyAction={quickLaunchActions}
-              />
-
-              <RecentTripsSnapshotCard
-                title="Clone from Past Trips"
-                subtitle="Duplicate route, project code, and emergency contact into a fresh request"
-                requests={pastRequests.slice(0, 4)}
-                actionLabel="Clone as Draft"
-                emptyMessage={
-                  hasActiveFilter ? 'No past trips match your current search or filter.' : undefined
-                }
-                onAction={handleCloneTrip}
-              />
-            </div>
-
-            <div className="lg:col-span-4 flex flex-col gap-5">
-              <DraftReadinessSummaryCard
-                drafts={allDrafts}
-                onResume={(req) => navigate(`/travel/requests/${req.id}/edit?tab=drafts`)}
-              />
-              <PolicyChecklistCard
-                title="Before Submitting a Draft"
-                items={[
-                  'Confirm origin, destination, and departure/return dates.',
-                  'Include at least one itemized expense greater than ₹0.',
-                  'Verify your supporting quotation or receipt link opens cleanly.',
-                ]}
-              />
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* TAB 4: PAST HISTORY */}
-      {activeTab === 'past' && (
-        <>
-          <TravelMetricsGrid
-            metrics={[
-              {
-                label: 'Concluded Trips',
-                value: allPast.length,
-                subtext: 'Completed, approved, or closed',
-                pills: [
-                  { label: 'Approved', value: approvedTrips.length },
-                  { label: 'Settled', value: settledTrips.length },
-                  {
-                    label: 'Closed',
-                    value: allPast.filter((r) => ['REJECTED', 'CANCELLED'].includes(r.status)).length,
-                  },
-                ],
-              },
-              {
-                label: 'Total Archive Spend',
-                value: formatINR(allPast.reduce((s, r) => s + (Number(r.totalExpenses) || 0), 0)),
-                isCurrency: true,
-                subtext:
-                  allPast.length > 0
-                    ? `Avg ${formatINR(
-                        allPast.reduce((s, r) => s + (Number(r.totalExpenses) || 0), 0) / allPast.length
-                      )} / trip`
-                    : 'No concluded spend',
-              },
-              {
-                label: 'Settlement Tracker',
-                value: formatINR(settledAmount),
-                subtext: `Pending settlement: ${formatINR(approvedPendingSettlement)}`,
-              },
-              {
-                label: 'Top Project Code',
-                value: projectSummaries[0]?.code || 'None',
-                subtext: projectSummaries[0]
-                  ? `${projectSummaries[0].trips} trip(s) · ${formatINR(projectSummaries[0].total)}`
-                  : 'No project trips yet',
-              },
-            ]}
-          />
-
-          <TravelRequestsTable
-            title="Concluded & Settled Trips"
-            requests={displayedPastRequests}
-            onAction={(req) => navigate(`/travel/requests/${req.id}?tab=past`)}
-            secondaryAction={{
-              label: 'Clone',
-              onClick: handleCloneTrip,
-            }}
-            compactEmpty
-            emptyMessage="No completed or settled trips match this filter."
-            emptyDescription="Try clearing your search or status filter to view all archived company travel."
-            headerActions={
-              <>
-                <div className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5 text-[11px]">
-                  {(
-                    [
-                      { id: 'ALL', label: 'All' },
-                      { id: 'APPROVED', label: 'Approved' },
-                      { id: 'SETTLED', label: 'Settled' },
-                      { id: 'OTHER', label: 'Closed' },
-                    ] as const
-                  ).map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      aria-pressed={pastStatusFilter === tab.id}
-                      onClick={() => setPastStatusFilter(tab.id)}
-                      className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
-                        pastStatusFilter === tab.id
-                          ? 'bg-primary text-white'
-                          : 'text-muted hover:text-ink'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  disabled={displayedPastRequests.length === 0}
-                  onClick={() => exportRequestsToCsv(displayedPastRequests, 'my-travel-history.csv')}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border-warm bg-surface hover:bg-surface-subtle active:scale-[0.98] text-xs font-semibold text-ink disabled:opacity-40 cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                >
-                  <Download className="size-3.5 text-primary" /> Export CSV
-                </button>
-              </>
-            }
-          />
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            <div className="lg:col-span-6">
-              <CategorySpendBreakdownCard
-                title="Archive Spend by Category"
-                subtitle="Real itemized distribution across your concluded trips"
-                totalSpend={pastCategoryBreakdown.totalSpend}
-                categories={pastCategoryBreakdown.categories}
-                emptyMessage="No itemized expense rows found on concluded trips."
-              />
-            </div>
-
-            <div className="lg:col-span-6">
-              <div className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col gap-3.5">
-                <div className="flex items-center justify-between border-b border-border-warm pb-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
-                      <FolderKanban className="size-4 text-primary" /> Project & Destination Summary
-                    </h3>
-                    <p className="text-[11px] text-muted mt-0.5">
-                      Spend allocation grouped by project code
-                    </p>
-                  </div>
-                </div>
-
-                {projectSummaries.length === 0 ? (
-                  <p className="text-xs text-muted py-4 text-center">
-                    Project-wise summaries will appear once trips are concluded.
-                  </p>
-                ) : (
-                  <div className="divide-y divide-border-warm/80">
-                    {projectSummaries.map((proj) => (
-                      <div
-                        key={proj.code}
-                        className="py-3 first:pt-1 last:pb-1 flex items-center justify-between gap-3"
-                      >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono font-bold text-ink">{proj.code}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-subtle border border-border-warm text-muted font-semibold">
-                              {proj.trips} trip{proj.trips > 1 ? 's' : ''}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-muted truncate mt-1">
-                            Destinations: {Array.from(proj.routes).join(', ') || 'None'}
-                          </p>
-                        </div>
-                        <span className="text-sm font-mono font-bold tabular-nums text-primary shrink-0">
-                          {formatINR(proj.total)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+        )}
       </motion.div>
     </div>
   );

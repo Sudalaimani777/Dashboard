@@ -6,8 +6,14 @@ import { AlertCircle } from 'lucide-react';
 const EmployeeTravelPortal = lazy(() =>
   import('../travel/components/EmployeeTravelPortal').then((m) => ({ default: m.EmployeeTravelPortal })),
 );
+const EmployeeSpendAnalyticsPage = lazy(() =>
+  import('../travel/pages/EmployeeSpendAnalyticsPage').then((m) => ({ default: m.EmployeeSpendAnalyticsPage })),
+);
 const ManagerQueuePortal = lazy(() =>
   import('../travel/components/ManagerQueuePortal').then((m) => ({ default: m.ManagerQueuePortal })),
+);
+const ManagerTeamAnalyticsPage = lazy(() =>
+  import('../travel/pages/ManagerTeamAnalyticsPage').then((m) => ({ default: m.ManagerTeamAnalyticsPage })),
 );
 const AdminGovernancePortal = lazy(() =>
   import('../travel/components/AdminGovernancePortal').then((m) => ({ default: m.AdminGovernancePortal })),
@@ -29,7 +35,9 @@ export const DashboardPage: React.FC = () => {
   const location = useLocation();
 
   const searchParams = new URLSearchParams(location.search);
-  const activeTab = searchParams.get('tab') || 'present';
+  const defaultTab =
+    user?.role === 'ADMIN' ? 'governance' : user?.role === 'MANAGER' ? 'team' : 'trips';
+  const activeTab = searchParams.get('tab') || defaultTab;
 
   if (isLoading) {
     return <PortalLoadingFallback />;
@@ -42,8 +50,14 @@ export const DashboardPage: React.FC = () => {
   const renderPortal = () => {
     switch (user.role) {
       case 'EMPLOYEE':
+        if (activeTab === 'analytics') {
+          return <EmployeeSpendAnalyticsPage />;
+        }
         return <EmployeeTravelPortal activeTab={activeTab} />;
       case 'MANAGER':
+        if (activeTab === 'analytics') {
+          return <ManagerTeamAnalyticsPage />;
+        }
         return <ManagerQueuePortal activeTab={activeTab} />;
       case 'ADMIN':
         return <AdminGovernancePortal activeTab={activeTab} />;

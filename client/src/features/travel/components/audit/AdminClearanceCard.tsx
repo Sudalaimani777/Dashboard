@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Receipt, RotateCcw, Ban, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Receipt, RotateCcw, Ban, AlertTriangle, User } from 'lucide-react';
 import type { TravelType, RevisionTarget } from '../../types/travel.types';
-import { DualRouteSelector } from './DualRouteSelector';
 import { validateAdminDecisionRemarks } from '../../utils/adminQueue';
 
 type AdminDecisionMode = 'DEFAULT' | 'REVISE' | 'REJECT';
@@ -25,7 +24,6 @@ export const AdminClearanceCard: React.FC<AdminClearanceCardProps> = ({
 }) => {
   const [remarks, setRemarks] = useState('');
   const [mode, setMode] = useState<AdminDecisionMode>('DEFAULT');
-  const [routeTarget, setRouteTarget] = useState<RevisionTarget>('MANAGER');
   const [forceOverride, setForceOverride] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -52,7 +50,7 @@ export const AdminClearanceCard: React.FC<AdminClearanceCardProps> = ({
       return;
     }
     setValidationError(null);
-    await onRevision(routeTarget, remarks.trim());
+    await onRevision('EMPLOYEE', remarks.trim());
   };
 
   const handleRejectSubmit = async () => {
@@ -139,7 +137,15 @@ export const AdminClearanceCard: React.FC<AdminClearanceCardProps> = ({
 
       {mode === 'REVISE' ? (
         <div className="flex flex-col gap-3 pt-2 border-t border-border-warm">
-          <DualRouteSelector value={routeTarget} onChange={setRouteTarget} />
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-start gap-2.5 text-xs text-ink">
+            <User className="size-4 text-primary shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-ink">Direct to Employee</span>
+              <p className="text-[11px] text-muted mt-0.5">
+                Alteration instructions will be sent directly to the employee. Resubmissions will return through standard line manager verification.
+              </p>
+            </div>
+          </div>
 
           <div className="flex items-center gap-3 mt-1">
             <button
@@ -155,7 +161,7 @@ export const AdminClearanceCard: React.FC<AdminClearanceCardProps> = ({
               onClick={handleRevisionSubmit}
               className="flex-1 py-2 px-4 rounded-xl bg-amber-700 hover:bg-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] text-white text-xs font-semibold shadow-xs disabled:opacity-50 transition-all cursor-pointer"
             >
-              Dispatch Revision
+              Dispatch Alterations to Employee
             </button>
           </div>
         </div>

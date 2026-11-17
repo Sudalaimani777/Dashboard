@@ -15,6 +15,8 @@ import {
 export interface MetricPill {
   label: string;
   value: string | number;
+  onClick?: (e: React.MouseEvent) => void;
+  isActive?: boolean;
 }
 
 export interface MetricProgressSegment {
@@ -34,6 +36,7 @@ export interface MetricItem {
   pills?: MetricPill[];
   progressSegments?: MetricProgressSegment[];
   onClick?: () => void;
+  isActive?: boolean;
 }
 
 export interface TravelMetricsGridProps {
@@ -96,7 +99,11 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
       {metrics.map((m, idx) => {
         const clickable = Boolean(m.onClick);
         const cardClassName = `relative rounded-xl border p-4 flex flex-col gap-2.5 text-left transition-all ${
-          m.isCurrency || m.tone === 'primary'
+          m.isActive
+            ? m.tone === 'amber'
+              ? 'border-amber-500 bg-amber-50/70 shadow-sm ring-2 ring-amber-500/30'
+              : 'border-primary bg-primary/[0.04] shadow-sm ring-2 ring-primary/30'
+            : m.isCurrency || m.tone === 'primary'
             ? 'border-primary/35 bg-surface shadow-xs'
             : m.tone === 'amber'
             ? 'border-amber-200 bg-amber-50/40'
@@ -110,7 +117,9 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
         const innerContent = (
           <>
             <div className="flex items-center justify-between gap-2 w-full">
-              <span className="text-xs font-medium text-muted truncate">{m.label}</span>
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="text-xs font-medium text-muted truncate">{m.label}</span>
+              </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {m.badge && (
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-100/80 text-amber-800 border border-amber-200/80">
@@ -136,14 +145,33 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
 
             {m.pills && m.pills.length > 0 && (
               <div className="w-full flex flex-wrap items-center gap-x-3 gap-y-1 pt-2 border-t border-border-warm/60 text-[11px] text-muted">
-                {m.pills.map((pill) => (
-                  <span key={pill.label} className="inline-flex items-center gap-1">
-                    <span>{pill.label}</span>
-                    <strong className="text-ink font-semibold font-mono tabular-nums">
-                      {pill.value}
-                    </strong>
-                  </span>
-                ))}
+                {m.pills.map((pill) => {
+                  return (
+                    <span
+                      key={pill.label}
+                      onClick={
+                        pill.onClick
+                          ? (e) => {
+                              e.stopPropagation();
+                              pill.onClick!(e);
+                            }
+                          : undefined
+                      }
+                      className={`inline-flex items-center gap-1 transition-all ${
+                        pill.isActive
+                          ? 'font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/30'
+                          : pill.onClick
+                          ? 'hover:text-ink cursor-pointer'
+                          : ''
+                      }`}
+                    >
+                      <span>{pill.label}</span>
+                      <strong className="text-ink font-semibold font-mono tabular-nums">
+                        {pill.value}
+                      </strong>
+                    </span>
+                  );
+                })}
               </div>
             )}
 
@@ -176,7 +204,13 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
 
         if (clickable) {
           return (
-            <button key={idx} type="button" onClick={m.onClick} className={cardClassName}>
+            <button
+              key={idx}
+              type="button"
+              onClick={m.onClick}
+              aria-pressed={Boolean(m.isActive)}
+              className={cardClassName}
+            >
               {innerContent}
             </button>
           );
