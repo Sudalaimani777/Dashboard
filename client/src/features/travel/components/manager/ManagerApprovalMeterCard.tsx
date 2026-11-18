@@ -15,15 +15,15 @@ export interface ManagerApprovalMeterCardProps {
 const chartConfig = {
   forwarded: {
     label: 'Forwarded / Approved',
-    color: '#15803D',
+    color: '#00D66F',
   },
   pending: {
     label: 'Pending Review',
-    color: '#D4A373',
+    color: '#7389FF',
   },
   returned: {
     label: 'Needs Revision',
-    color: '#C2B8AC',
+    color: '#FF6118',
   },
 } satisfies ChartConfig;
 
@@ -33,7 +33,7 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
 
   const pieData = useMemo(() => {
     if (totalVolume === 0) {
-      return [{ key: 'forwarded', name: 'No requests', value: 1, color: '#E8DFD3' }];
+      return [{ key: 'forwarded', name: 'No requests', value: 1, color: '#E5EDF5' }];
     }
     const items = [];
     if (health.forwardedCount > 0) {
@@ -41,7 +41,7 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
         key: 'forwarded',
         name: 'Forwarded / Approved',
         value: health.forwardedCount,
-        color: '#15803D',
+        color: '#00D66F',
       });
     }
     if (health.pendingManagerCount > 0) {
@@ -49,7 +49,7 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
         key: 'pending',
         name: 'Pending Manager Action',
         value: health.pendingManagerCount,
-        color: '#D4A373',
+        color: '#7389FF',
       });
     }
     if (health.returnedCount > 0) {
@@ -57,7 +57,7 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
         key: 'returned',
         name: 'Returned for Revision',
         value: health.returnedCount,
-        color: '#C2B8AC',
+        color: '#FF6118',
       });
     }
     return items;
@@ -148,7 +148,7 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
       <div className="pt-2 border-t border-border-warm/70 grid grid-cols-3 gap-2 text-xs">
         <div>
           <span className="inline-flex items-center gap-1.5 text-[11px] text-muted">
-            <span className="size-2 rounded-full bg-[#15803D]" /> Forwarded
+            <span className="size-2 rounded-full bg-[#00D66F]" /> Forwarded
           </span>
           <span className="block font-mono text-xs font-bold text-ink tabular-nums mt-0.5">
             {health.forwardedCount}
@@ -158,9 +158,9 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
 
         <div>
           <span className="inline-flex items-center gap-1.5 text-[11px] text-muted">
-            <span className="size-2 rounded-full bg-[#D4A373]" /> Pending Action
+            <span className="size-2 rounded-full bg-[#7389FF]" /> Pending Action
           </span>
-          <span className="block font-mono text-xs font-bold text-[#8A582B] tabular-nums mt-0.5">
+          <span className="block font-mono text-xs font-bold text-[#533AFD] tabular-nums mt-0.5">
             {health.pendingManagerCount}
           </span>
           <span className="text-[10px] text-faint">Awaiting review</span>
@@ -168,7 +168,7 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
 
         <div>
           <span className="inline-flex items-center gap-1.5 text-[11px] text-muted">
-            <span className="size-2 rounded-full bg-[#C2B8AC]" /> Corrections
+            <span className="size-2 rounded-full bg-[#FF6118]" /> Corrections
           </span>
           <span className="block font-mono text-xs font-bold text-ink tabular-nums mt-0.5">
             {health.returnedCount}

@@ -49,11 +49,11 @@ export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({
   const chartConfig = useMemo(() => ({
     utilized: {
       label: 'Utilized Spend',
-      color: isHeadroomLow ? '#C2782D' : '#8A582B',
+      color: isHeadroomLow ? '#FF6118' : '#533AFD',
     },
     headroom: {
       label: 'Available Headroom',
-      color: '#3F624D',
+      color: '#00D66F',
     },
   }) satisfies ChartConfig, [isHeadroomLow]);
 
@@ -154,8 +154,8 @@ export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({
             </>
           ) : (
             <>
-              <TrendingUp className="size-3.5 text-[#3F624D] shrink-0" />
-              <span className="text-[#3F624D]">{(100 - utilizationPercentage).toFixed(1)}% Headroom Available</span>
+              <TrendingUp className="size-3.5 text-[#00D66F] shrink-0" />
+              <span className="text-emerald-800">{(100 - utilizationPercentage).toFixed(1)}% Headroom Available</span>
             </>
           )}
         </div>

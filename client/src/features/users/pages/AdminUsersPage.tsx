@@ -354,7 +354,7 @@ export const AdminUsersPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border-warm bg-surface-subtle text-[11px] font-semibold uppercase tracking-wider text-muted">
+                <tr className="border-b border-border-warm bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-700">
                   <th className="py-3 px-5">Member</th>
                   <th className="py-3 px-4">Role</th>
                   <th className="py-3 px-4">Status</th>
@@ -385,7 +385,7 @@ export const AdminUsersPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-muted">{member.email}</div>
+                        <div className="text-[11px] text-slate-600 font-medium">{member.email}</div>
                       </td>
                       <td className="py-3.5 px-4">
                         <span
@@ -412,7 +412,7 @@ export const AdminUsersPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-medium text-ink">{member.department}</td>
-                      <td className="py-3.5 px-4 text-muted">
+                      <td className="py-3.5 px-4 text-slate-800">
                         {member.role === 'EMPLOYEE' ? (
                           member.manager_name ? (
                             <span className="text-ink font-medium">{member.manager_name}</span>
@@ -420,10 +420,10 @@ export const AdminUsersPage: React.FC = () => {
                             <span className="text-amber-700 font-medium">Unassigned</span>
                           )
                         ) : (
-                          <span className="text-faint">—</span>
+                          <span className="text-slate-400 font-semibold">—</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-muted whitespace-nowrap">
+                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-700 font-medium whitespace-nowrap">
                         {formatAddedDate(member.created_at)}
                       </td>
                       <td className="py-3.5 px-5 text-right whitespace-nowrap">

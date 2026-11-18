@@ -6,6 +6,7 @@ export interface AuthFieldProps extends React.InputHTMLAttributes<HTMLInputEleme
   label: string;
   labelRight?: React.ReactNode;
   error?: string;
+  helperText?: React.ReactNode;
   isPassword?: boolean;
   toggleLabel?: { show: string; hide: string };
 }
@@ -62,7 +63,9 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
             </button>
           )}
         </div>
-        {error && <p className="text-xs text-destructive font-medium">{error}</p>}
+        {error &&
+          <p className="text-xs text-destructive font-medium">{error}</p>
+        }
       </div>
     );
   }

@@ -59,6 +59,7 @@ export const SignInCard: React.FC = () => {
           label="Work email"
           autoComplete="email"
           placeholder="name@company.com"
+          helperText="Use your corporate organization email."
           error={errors.email?.message}
           {...register('email')}
         />

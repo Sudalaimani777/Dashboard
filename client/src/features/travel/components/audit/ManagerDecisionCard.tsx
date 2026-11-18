@@ -56,7 +56,7 @@ export const ManagerDecisionCard: React.FC<ManagerDecisionCardProps> = ({
     <div className="bg-surface rounded-xl border border-border-warm p-5 flex flex-col gap-4 shadow-xs">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ink">
-          {isAdminRevision ? 'Response to Admin Directive' : 'Tier 1 Manager Decision'}
+          {isAdminRevision ? 'Response to Admin Directive' : 'Manager Decision'}
         </h3>
         {isAdminRevision && (
           <span className="text-[10px] uppercase font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
@@ -74,8 +74,8 @@ export const ManagerDecisionCard: React.FC<ManagerDecisionCardProps> = ({
               ? 'Instructions for Employee (Required, min 3 chars)'
               : 'Revision Instructions (Required, min 3 chars)'
             : isAdminRevision
-            ? 'Clarification Notes for Admin (Optional)'
-            : 'Review Remarks (Optional)'}
+            ? 'Clarification Notes for Admin'
+            : 'Review Remarks'}
         </label>
         <textarea
           id="manager-decision-remarks"

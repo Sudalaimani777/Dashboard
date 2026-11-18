@@ -64,7 +64,7 @@ export const CategorySpendDonut: React.FC<CategorySpendDonutProps> = ({ budget }
     }
 
     return [
-      { categoryKey: 'UNSPENT', label: 'Uncommitted', value: 1, fill: '#E8DFD3' }
+      { categoryKey: 'UNSPENT', label: 'Uncommitted', value: 1, fill: '#E5EDF5' }
     ];
   }, [categoryBreakdown, budget?.utilizedAmount]);
 

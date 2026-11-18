@@ -16,10 +16,7 @@ import {
   ResolvedRevisionsCard,
 } from './employee/EmployeeSidebarPanels';
 import { formatINR } from '../utils/currency';
-import {
-  aggregateRequestsCategorySpend,
-  exportRequestsToCsv,
-} from '../utils/travelAnalytics';
+import { exportRequestsToCsv } from '../utils/travelAnalytics';
 import { handleViewRevisionsAction } from '../utils/viewRevisionsAction';
 import type { TravelRequest } from '../types/travel.types';
 
@@ -98,10 +95,6 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
   const nonDraftRequests = useMemo(() => requests.filter((r) => r.status !== 'DRAFT'), [requests]);
   const totalSpent = useMemo(
     () => nonDraftRequests.reduce((sum, r) => sum + (Number(r.totalExpenses) || 0), 0),
-    [nonDraftRequests]
-  );
-  const categoryBreakdown = useMemo(
-    () => aggregateRequestsCategorySpend(nonDraftRequests),
     [nonDraftRequests]
   );
 
@@ -321,11 +314,6 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
               setStatusSegment('ALL');
               setPastSubFilter('ALL');
             },
-            progressSegments: categoryBreakdown.categories.map((c) => ({
-              label: c.shortLabel,
-              percentage: c.percentage,
-              color: c.color,
-            })),
           },
         ]}
       />

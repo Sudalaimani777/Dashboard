@@ -120,11 +120,11 @@ export const EditUserForm: React.FC<{
               <option key={d} value={d} />
             ))}
           </datalist>
-          {errors.department?.message && (
+          {errors.department?.message &&
             <p role="alert" className="text-xs text-destructive font-medium">
               {errors.department.message}
             </p>
-          )}
+          }
         </div>
       </div>
 
@@ -198,9 +198,6 @@ export const UserEditModal: React.FC<UserFormModalProps> = ({
               <h2 id="user-modal-title" className="text-sm font-bold text-ink">
                 Edit {initialUser.name}
               </h2>
-              <p className="text-[11px] text-muted">
-                Update role, department, or reporting manager hierarchy.
-              </p>
             </div>
           </div>
           <button

@@ -51,10 +51,10 @@ export const DepartmentComparisonChart: React.FC<DepartmentComparisonChartProps>
               row.fiscalQuarter === selectedQuarter;
             const barColor =
               row.utilizationPercentage > 85
-                ? 'bg-destructive'
+                ? 'bg-[#FF6118]'
                 : row.utilizationPercentage >= 70
-                ? 'bg-primary'
-                : 'bg-[#3F624D]';
+                ? 'bg-[#533AFD]'
+                : 'bg-[#00D66F]';
 
             return (
               <button

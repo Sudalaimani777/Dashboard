@@ -59,7 +59,7 @@ export const EmployeeCategoryBreakdownCard: React.FC<EmployeeCategoryBreakdownCa
               ))
             ) : (
               <div
-                className="h-full w-full bg-[#E8DFD3]"
+                className="h-full w-full bg-[#E5EDF5]"
                 title="No expenses logged"
               />
             )}

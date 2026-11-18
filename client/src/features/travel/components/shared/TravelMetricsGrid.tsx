@@ -98,7 +98,7 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
     <div className={`grid grid-cols-1 gap-4 ${gridCols}`}>
       {metrics.map((m, idx) => {
         const clickable = Boolean(m.onClick);
-        const cardClassName = `relative rounded-xl border p-4 flex flex-col gap-2.5 text-left transition-all ${
+        const cardClassName = `relative rounded-xl border p-3.5 sm:p-4 flex flex-col justify-between text-left transition-all ${
           m.isActive
             ? m.tone === 'amber'
               ? 'border-amber-500 bg-amber-50/70 shadow-sm ring-2 ring-amber-500/30'
@@ -118,19 +118,19 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
           <>
             <div className="flex items-center justify-between gap-2 w-full">
               <div className="flex items-center gap-1.5 truncate">
-                <span className="text-xs font-medium text-muted truncate">{m.label}</span>
+                <span className="text-xs font-semibold text-slate-700 truncate">{m.label}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 {m.badge && (
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-100/80 text-amber-800 border border-amber-200/80">
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
                     {m.badge}
                   </span>
                 )}
-                <span aria-hidden="true">{getIcon(m)}</span>
+                <span aria-hidden="true" className="text-slate-500">{getIcon(m)}</span>
               </div>
             </div>
 
-            <div className="w-full my-auto">
+            <div className="w-full my-auto mt-1">
               <span
                 className={`text-2xl font-bold tracking-tight block tabular-nums ${
                   m.isCurrency ? 'font-mono text-primary' : 'text-ink'
@@ -138,15 +138,10 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
               >
                 {m.value}
               </span>
-              {m.subtext && (
-                <span className="text-[11px] text-faint block mt-0.5 truncate">{m.subtext}</span>
-              )}
-            </div>
 
-            {m.pills && m.pills.length > 0 && (
-              <div className="w-full flex flex-wrap items-center gap-x-3 gap-y-1 pt-2 border-t border-border-warm/60 text-[11px] text-muted">
-                {m.pills.map((pill) => {
-                  return (
+              {m.pills && m.pills.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-600 mt-0.5 truncate">
+                  {m.pills.map((pill, pIdx) => (
                     <span
                       key={pill.label}
                       onClick={
@@ -157,48 +152,26 @@ export const TravelMetricsGrid: React.FC<TravelMetricsGridProps> = ({ metrics })
                             }
                           : undefined
                       }
-                      className={`inline-flex items-center gap-1 transition-all ${
+                      className={`inline-flex items-center gap-1 transition-colors ${
                         pill.isActive
-                          ? 'font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/30'
+                          ? 'font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded border border-primary/25'
                           : pill.onClick
                           ? 'hover:text-ink cursor-pointer'
                           : ''
                       }`}
                     >
+                      {pIdx > 0 && !pill.isActive && <span className="text-slate-400 mr-0.5">·</span>}
                       <span>{pill.label}</span>
                       <strong className="text-ink font-semibold font-mono tabular-nums">
                         {pill.value}
                       </strong>
                     </span>
-                  );
-                })}
-              </div>
-            )}
-
-            {m.progressSegments && m.progressSegments.length > 0 && (
-              <div className="w-full flex flex-col gap-1.5 pt-2 border-t border-border-warm/60">
-                <div className="h-1.5 w-full rounded-full bg-surface-subtle overflow-hidden flex">
-                  {m.progressSegments.map((seg) => (
-                    <div
-                      key={seg.label}
-                      title={`${seg.label}: ${seg.percentage}%`}
-                      style={{ width: `${Math.max(seg.percentage, 3)}%`, backgroundColor: seg.color }}
-                    />
                   ))}
                 </div>
-                <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[10px] text-muted">
-                  {m.progressSegments.slice(0, 3).map((seg) => (
-                    <span key={seg.label} className="inline-flex items-center gap-1">
-                      <span
-                        className="size-1.5 rounded-full shrink-0"
-                        style={{ backgroundColor: seg.color }}
-                      />
-                      {seg.label} {seg.percentage}%
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+              ) : m.subtext ? (
+                <span className="text-[11px] text-slate-600 font-medium block mt-0.5 truncate">{m.subtext}</span>
+              ) : null}
+            </div>
           </>
         );
 

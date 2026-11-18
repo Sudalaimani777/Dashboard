@@ -40,8 +40,8 @@ const LegacyTravelReviewRedirect: React.FC = () => {
 };
 
 const RouteLoadingFallback: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#F7F4EE]">
-    <div className="text-sm font-medium text-[#756F68]">Loading TripFlow...</div>
+  <div className="min-h-screen flex items-center justify-center bg-[#F2F7FE]">
+    <div className="text-sm font-medium text-[#50617A]">Loading TripFlow...</div>
   </div>
 );
 

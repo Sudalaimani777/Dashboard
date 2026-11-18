@@ -12,12 +12,12 @@ async function run() {
     'utf8'
   );
   assert.ok(
-    adminPortal.includes("typeFilter === opt.id ? 'bg-primary text-white shadow-2xs' : 'text-muted hover:text-ink'"),
-    'AdminGovernancePortal type filter active pill should use bg-primary text-white'
+    adminPortal.includes('UnifiedSegmentControl') || adminPortal.includes('statusSegment'),
+    'AdminGovernancePortal should use unified segment controls'
   );
   assert.ok(
     !adminPortal.includes("typeFilter === opt.id ? 'bg-surface text-ink shadow-xs'"),
-    'AdminGovernancePortal type filter should not use bg-surface active pill'
+    'AdminGovernancePortal type filter should not use legacy bg-surface active pill'
   );
 
   const budgetsPage = fs.readFileSync(

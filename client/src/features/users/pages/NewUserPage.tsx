@@ -144,7 +144,8 @@ export const NewUserPage: React.FC = () => {
               id="new-user-name"
               label="Full name"
               type="text"
-              placeholder="Varun"
+              placeholder="Enter full name"
+              helperText="Legal name for corporate travel bookings."
               error={errors.name?.message}
               required
               {...register('name')}
@@ -154,7 +155,8 @@ export const NewUserPage: React.FC = () => {
               id="new-user-email"
               label="Work email"
               type="email"
-              placeholder="varun@company.com"
+              placeholder="name@company.com"
+              helperText="Corporate email address."
               error={errors.email?.message}
               required
               {...register('email')}
@@ -167,7 +169,7 @@ export const NewUserPage: React.FC = () => {
               label="Initial password"
               isPassword
               autoComplete="new-password"
-              placeholder="Minimum 8 characters"
+              placeholder="Enter initial password"
               error={errors.password?.message}
               required
               {...register('password')}
@@ -217,11 +219,11 @@ export const NewUserPage: React.FC = () => {
                   <option key={d} value={d} />
                 ))}
               </datalist>
-              {errors.department?.message && (
+              {errors.department?.message &&
                 <p role="alert" className="text-xs text-destructive font-medium">
                   {errors.department.message}
                 </p>
-              )}
+            }
             </div>
           </div>
 
@@ -288,9 +290,9 @@ export const NewUserPage: React.FC = () => {
                   {item.ok ? (
                     <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
                   ) : (
-                    <Circle className="size-4 text-faint shrink-0" />
+                    <Circle className="size-4 text-slate-400 shrink-0" />
                   )}
-                  <span className={item.ok ? 'text-ink font-medium' : 'text-muted'}>
+                  <span className={item.ok ? 'text-ink font-semibold' : 'text-slate-800 font-medium'}>
                     {item.label}
                   </span>
                 </li>

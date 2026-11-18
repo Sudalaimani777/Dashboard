@@ -43,6 +43,7 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
         : todayStr
       : departureDate || undefined;
   const returnMax = travelType === 'ALREADY_TRAVELLED' ? todayStr : undefined;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Title */}
@@ -52,11 +53,13 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
         </label>
         <input
           type="text"
-          placeholder="e.g. Tokyo Architecture Integration 2026"
+          placeholder="Enter trip title"
           {...register('title')}
           className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
-        {errors.title && <span className="text-[11px] text-destructive">{errors.title.message}</span>}
+        {errors.title && 
+          <span className="text-[11px] text-destructive font-medium">{errors.title.message}</span>
+        }
       </div>
 
       {/* Purpose */}
@@ -66,11 +69,13 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
         </label>
         <textarea
           rows={2}
-          placeholder="Detailed business necessity justifying corporate travel..."
+          placeholder="Explain business necessity and travel justification"
           {...register('purpose')}
           className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
-        {errors.purpose && <span className="text-[11px] text-destructive">{errors.purpose.message}</span>}
+        {errors.purpose && 
+          <span className="text-[11px] text-destructive font-medium">{errors.purpose.message}</span>
+        }
       </div>
 
       {/* Project Code */}
@@ -78,7 +83,7 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
         <label className="text-xs font-semibold text-ink">Project Code</label>
         <input
           type="text"
-          placeholder="e.g. ENG-APAC-2026"
+          placeholder="Enter project code"
           {...register('project_code')}
           className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink font-mono placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
@@ -89,11 +94,13 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
         <label className="text-xs font-semibold text-ink">Destination <span className="text-destructive">*</span></label>
         <input
           type="text"
-          placeholder="e.g. Tokyo, Japan"
+          placeholder="Enter destination city"
           {...register('destination')}
           className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
-        {errors.destination && <span className="text-[11px] text-destructive">{errors.destination.message}</span>}
+        {errors.destination && 
+          <span className="text-[11px] text-destructive font-medium">{errors.destination.message}</span>
+        }
       </div>
 
       {/* Origin */}
@@ -101,11 +108,13 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
         <label className="text-xs font-semibold text-ink">Origin City <span className="text-destructive">*</span></label>
         <input
           type="text"
-          placeholder="e.g. Bengaluru, India"
+          placeholder="Enter origin city"
           {...register('origin')}
           className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
-        {errors.origin && <span className="text-[11px] text-destructive">{errors.origin.message}</span>}
+        {errors.origin &&
+          <span className="text-[11px] text-destructive font-medium">{errors.origin.message}</span>
+        }
       </div>
 
       {/* Dates */}
@@ -119,7 +128,9 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
             {...register('departure_date')}
             className="w-full bg-surface border border-border-warm rounded-lg px-2.5 py-2 text-xs text-ink font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all cursor-pointer"
           />
-          {errors.departure_date && <span className="text-[11px] text-destructive">{errors.departure_date.message}</span>}
+          {errors.departure_date &&
+            <span className="text-[11px] text-destructive font-medium">{errors.departure_date.message}</span>
+          }
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-ink">Return <span className="text-destructive">*</span></label>
@@ -130,7 +141,9 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
             {...register('return_date')}
             className="w-full bg-surface border border-border-warm rounded-lg px-2.5 py-2 text-xs text-ink font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all cursor-pointer"
           />
-          {errors.return_date && <span className="text-[11px] text-destructive">{errors.return_date.message}</span>}
+          {errors.return_date &&
+            <span className="text-[11px] text-destructive font-medium">{errors.return_date.message}</span>
+          }
         </div>
       </div>
 
@@ -141,13 +154,13 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
         </label>
         <input
           type="text"
-          placeholder="e.g. HR Operations / Primary Contact"
+          placeholder="Full name of emergency contact"
           {...register('emergency_contact_name')}
           className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
-        {errors.emergency_contact_name && (
-          <span className="text-[11px] text-destructive">{errors.emergency_contact_name.message}</span>
-        )}
+        {errors.emergency_contact_name &&
+          <span className="text-[11px] text-destructive font-medium">{errors.emergency_contact_name.message}</span>
+        }
       </div>
 
       {/* Emergency Contact Phone */}
@@ -167,14 +180,14 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
           <input
             id="emergency-contact-phone"
             type="tel"
-            placeholder="e.g. +91 9876543210"
+            placeholder="Enter phone number"
             {...register('emergency_contact_phone')}
             className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink font-mono placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
           />
         )}
-        {errors.emergency_contact_phone && (
-          <span className="text-[11px] text-destructive">{errors.emergency_contact_phone.message}</span>
-        )}
+        {errors.emergency_contact_phone &&
+          <span className="text-[11px] text-destructive font-medium">{errors.emergency_contact_phone.message}</span>
+        }
       </div>
     </div>
   );

@@ -46,13 +46,13 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
           <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Merchant / Vendor</label>
           <input
             type="text"
-            placeholder="Merchant (e.g. Air India, Marriott)"
+            placeholder="Merchant or vendor name"
             {...register(`expenses.${index}.merchant`)}
             className="w-full bg-surface border border-border-warm rounded-lg px-3 py-2 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
           />
-          {rowErrors?.merchant && (
+          {rowErrors?.merchant &&
             <span className="text-[10px] text-destructive">{rowErrors.merchant.message}</span>
-          )}
+          }
         </div>
 
         <div className="sm:col-span-2 flex flex-col gap-1">
@@ -114,12 +114,12 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
         </div>
       </div>
 
-      <div>
+      <div className="flex flex-col gap-0.5">
         <input
           type="text"
-          placeholder="Optional note (e.g. Economy round-trip, GST invoice #...)"
+          placeholder="Expense details or invoice reference"
           {...register(`expenses.${index}.notes`)}
-          className="w-full bg-surface border border-border-warm/80 rounded-lg px-3 py-1.5 text-[11px] text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+          className="w-full bg-surface border border-border-warm rounded-lg px-3 py-1.5 text-[11px] text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
         />
       </div>
     </div>

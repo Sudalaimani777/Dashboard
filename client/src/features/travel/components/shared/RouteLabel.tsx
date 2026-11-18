@@ -21,7 +21,7 @@ export const RouteLabel: React.FC<RouteLabelProps> = ({ origin, destination, cla
   return (
     <span className={`inline-flex items-center gap-1.5 flex-wrap ${className}`}>
       <span>{origin}</span>
-      <ArrowRight className="size-3 text-faint shrink-0" aria-hidden="true" />
+      <ArrowRight className="size-3 text-slate-400 shrink-0" aria-hidden="true" />
       <span>{destLabel}</span>
     </span>
   );

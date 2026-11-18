@@ -65,7 +65,7 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col">
                     <span className="text-xs font-bold text-ink">{req.title}</span>
-                    <span className="text-[10px] text-faint font-mono mt-0.5">
+                    <span className="text-[11px] text-slate-500 font-mono font-medium mt-0.5">
                       #{req.id.slice(0, 8)} • {req.projectCode}
                     </span>
                   </div>
@@ -73,9 +73,9 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
                 </div>
 
                 {showRequester && (
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-700">
                     <span>
-                      Requester: <strong className="text-ink font-medium">{req.requesterName}</strong>
+                      Requester: <strong className="text-ink font-semibold">{req.requesterName}</strong>
                     </span>
                     {req.requesterRole === 'MANAGER' && (
                       <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
@@ -83,33 +83,33 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
                       </span>
                     )}
                     {req.requesterDepartment && (
-                      <span className="text-[10px] text-faint">• {req.requesterDepartment}</span>
+                      <span className="text-[11px] text-slate-500 font-medium">• {req.requesterDepartment}</span>
                     )}
                   </div>
                 )}
 
                 {showRemarksPreview && (req.adminRemarks || req.managerRemarks) && (
-                  <p className="text-[11px] text-amber-800 bg-amber-50/90 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                  <p className="text-[11px] font-medium text-amber-900 bg-amber-100 border border-amber-300 rounded-lg px-2.5 py-1.5">
                     Note: “{req.adminRemarks || req.managerRemarks}”
                   </p>
                 )}
 
                 <div className="grid grid-cols-2 gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-surface-subtle border border-border-warm/60">
                   <div>
-                    <span className="text-[10px] text-muted block">Route</span>
+                    <span className="text-[10px] text-slate-600 font-semibold uppercase block">Route</span>
                     <span className="font-medium text-ink truncate block">
-                      <RouteLabel origin={req.origin} destination={req.destination} />
+                      <RouteLabel origin={req.origin} destination={req.destination} className="text-ink font-medium" />
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted block">Dates</span>
-                    <span className="font-mono text-ink text-[11px] block">{req.departureDate}</span>
+                    <span className="text-[10px] text-slate-600 font-semibold uppercase block">Dates</span>
+                    <span className="font-mono text-slate-900 font-medium text-[11px] block">{req.departureDate}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-1">
                   <div>
-                    <span className="text-[10px] text-muted block">Total Commitment</span>
+                    <span className="text-[10px] text-slate-600 font-semibold uppercase block">Total Commitment</span>
                     <span className="text-sm font-mono font-bold tabular-nums text-primary">
                       {formatINR(req.totalExpenses)}
                     </span>
@@ -143,7 +143,7 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border-warm text-[11px] uppercase font-semibold tracking-wider text-muted bg-surface-subtle/70">
+                <tr className="border-b border-border-warm text-[11px] uppercase font-bold tracking-wider text-slate-700 bg-slate-50/80">
                   <th className="p-3.5">Trip Title</th>
                   {showRequester && <th className="p-3.5">Requester</th>}
                   <th className="p-3.5">Type</th>

@@ -74,7 +74,7 @@ export const ManagerTeamAnalyticsPage: React.FC = () => {
       <div className="bg-surface rounded-xl border border-border-warm p-4 sm:px-5 shadow-xs flex flex-col gap-3.5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-0 lg:divide-x lg:divide-border-warm">
           <div className="lg:pr-5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-faint block">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
               Team Cleared Spend
             </span>
             <span className="text-xl font-bold font-mono tabular-nums text-primary block mt-0.5">
@@ -86,10 +86,10 @@ export const ManagerTeamAnalyticsPage: React.FC = () => {
           </div>
 
           <div className="lg:px-5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-faint block">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
               In Approval Pipeline
             </span>
-            <span className="text-xl font-bold font-mono tabular-nums text-[#D4A373] block mt-0.5">
+            <span className="text-xl font-bold font-mono tabular-nums text-[#7389FF] block mt-0.5">
               {formatINR(overview.teamPendingApprovals)}
             </span>
             <span className="text-[10px] text-muted block mt-0.5 font-mono">
@@ -98,7 +98,7 @@ export const ManagerTeamAnalyticsPage: React.FC = () => {
           </div>
 
           <div className="lg:px-5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-faint block">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
               Manager Review SLA
             </span>
             <span className="text-xl font-bold font-mono tabular-nums text-ink block mt-0.5">
@@ -114,7 +114,7 @@ export const ManagerTeamAnalyticsPage: React.FC = () => {
           </div>
 
           <div className="lg:pl-5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-faint block">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
               Active Travelers
             </span>
             <span className="text-xl font-bold font-mono tabular-nums text-emerald-800 block mt-0.5">

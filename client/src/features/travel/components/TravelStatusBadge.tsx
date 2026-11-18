@@ -24,8 +24,8 @@ export function getStatusBadgeConfig(status: TravelStatus): StatusBadgeConfig {
     case 'REVISION_REQUESTED_BY_MANAGER':
       return {
         label: 'Revision Required (Manager)',
-        className: 'border-rose-200 bg-rose-50/80 text-rose-800',
-        dotClassName: 'bg-rose-500',
+        className: 'border-orange-200 bg-orange-50/80 text-orange-900',
+        dotClassName: 'bg-[#FF6118]',
       };
     case 'PENDING_ADMIN_APPROVAL':
       return {
@@ -36,38 +36,38 @@ export function getStatusBadgeConfig(status: TravelStatus): StatusBadgeConfig {
     case 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER':
       return {
         label: 'Admin Revision (via Manager)',
-        className: 'border-rose-200 bg-rose-50/80 text-rose-800',
-        dotClassName: 'bg-rose-500',
+        className: 'border-orange-200 bg-orange-50/80 text-orange-900',
+        dotClassName: 'bg-[#FF6118]',
       };
     case 'REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE':
       return {
         label: 'Admin Revision (Direct)',
-        className: 'border-rose-200 bg-rose-50/80 text-rose-800',
-        dotClassName: 'bg-rose-500',
+        className: 'border-orange-200 bg-orange-50/80 text-orange-900',
+        dotClassName: 'bg-[#FF6118]',
       };
     case 'APPROVED':
       return {
         label: 'Approved',
         className: 'border-emerald-200 bg-emerald-50/80 text-emerald-800',
-        dotClassName: 'bg-emerald-500',
+        dotClassName: 'bg-[#00D66F]',
       };
     case 'SETTLED':
       return {
         label: 'Settled (Paid)',
         className: 'border-emerald-200 bg-emerald-50/80 text-emerald-800',
-        dotClassName: 'bg-emerald-600',
+        dotClassName: 'bg-[#00D66F]',
       };
     case 'REJECTED':
       return {
         label: 'Rejected',
-        className: 'border-stone-200 bg-stone-100 text-stone-700',
-        dotClassName: 'bg-stone-500',
+        className: 'border-rose-200 bg-rose-50/80 text-rose-800',
+        dotClassName: 'bg-[#DC2626]',
       };
     case 'CANCELLED':
       return {
         label: 'Cancelled',
-        className: 'border-stone-200 bg-stone-100 text-stone-600',
-        dotClassName: 'bg-stone-400',
+        className: 'border-slate-200 bg-slate-100 text-slate-700',
+        dotClassName: 'bg-[#64748D]',
       };
     default:
       return {

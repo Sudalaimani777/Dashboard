@@ -249,8 +249,8 @@ export function computeDepartmentPoolHealth(utilizationPercentage: number): Depa
       status: 'CRITICAL',
       clampedPct,
       label: 'Exceeds Threshold (>85%)',
-      badgeClass: 'bg-red-50 text-destructive border-destructive/30',
-      barColor: 'bg-destructive',
+      badgeClass: 'bg-orange-50 text-[#FF6118] border-[#FF6118]/30',
+      barColor: 'bg-[#FF6118]',
     };
   }
   if (utilizationPercentage >= 70) {
@@ -258,16 +258,16 @@ export function computeDepartmentPoolHealth(utilizationPercentage: number): Depa
       status: 'WARNING',
       clampedPct,
       label: 'Elevated (70-85%)',
-      badgeClass: 'bg-amber-50 text-amber-800 border-amber-300',
-      barColor: 'bg-amber-600',
+      badgeClass: 'bg-indigo-50 text-[#533AFD] border-[#533AFD]/30',
+      barColor: 'bg-[#533AFD]',
     };
   }
   return {
     status: 'HEALTHY',
     clampedPct,
     label: 'Healthy (<70%)',
-    badgeClass: 'bg-emerald-50 text-[#2E4B3A] border-[#3F624D]/30',
-    barColor: 'bg-[#3F624D]',
+    badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+    barColor: 'bg-[#00D66F]',
   };
 }
 
@@ -327,7 +327,7 @@ export function computeCategoryShares(
       label: 'Uncommitted Headroom',
       amount: 0,
       pct: 0,
-      color: '#E8DFD3',
+      color: '#E5EDF5',
     },
   ];
 }

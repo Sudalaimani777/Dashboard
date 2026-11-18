@@ -16,15 +16,15 @@ export interface EmployeeReimbursementMeterCardProps {
 const chartConfig = {
   settled: {
     label: 'Disbursed',
-    color: '#15803D',
+    color: '#00D66F',
   },
   approved: {
     label: 'Pending Payout',
-    color: '#D4A373',
+    color: '#7389FF',
   },
   review: {
     label: 'In Review',
-    color: '#E8DFD3',
+    color: '#839BC8',
   },
 } satisfies ChartConfig;
 
@@ -38,7 +38,7 @@ export const EmployeeReimbursementMeterCard: React.FC<EmployeeReimbursementMeter
 
   const pieData = useMemo(() => {
     if (totalVolume === 0) {
-      return [{ key: 'settled', name: 'No claims', value: 1, color: '#E8DFD3' }];
+      return [{ key: 'settled', name: 'No claims', value: 1, color: '#E5EDF5' }];
     }
     const items = [];
     if (health.totalSettledAmount > 0) {
@@ -46,7 +46,7 @@ export const EmployeeReimbursementMeterCard: React.FC<EmployeeReimbursementMeter
         key: 'settled',
         name: 'Disbursed',
         value: health.totalSettledAmount,
-        color: '#15803D',
+        color: '#00D66F',
       });
     }
     if (health.totalPendingSettlementAmount > 0) {
@@ -54,7 +54,7 @@ export const EmployeeReimbursementMeterCard: React.FC<EmployeeReimbursementMeter
         key: 'approved',
         name: 'Pending Payout',
         value: health.totalPendingSettlementAmount,
-        color: '#D4A373',
+        color: '#7389FF',
       });
     }
     if (health.totalInReviewAmount > 0) {
@@ -62,7 +62,7 @@ export const EmployeeReimbursementMeterCard: React.FC<EmployeeReimbursementMeter
         key: 'review',
         name: 'In Review',
         value: health.totalInReviewAmount,
-        color: '#C2B8AC',
+        color: '#839BC8',
       });
     }
     return items;
@@ -153,7 +153,7 @@ export const EmployeeReimbursementMeterCard: React.FC<EmployeeReimbursementMeter
       <div className="pt-2 border-t border-border-warm/70 grid grid-cols-3 gap-2 text-xs">
         <div>
           <span className="inline-flex items-center gap-1.5 text-[11px] text-muted">
-            <span className="size-2 rounded-full bg-[#15803D]" /> Disbursed
+            <span className="size-2 rounded-full bg-[#00D66F]" /> Disbursed
           </span>
           <span className="block font-mono text-xs font-bold text-ink tabular-nums mt-0.5">
             {formatINRCompact(health.totalSettledAmount)}
@@ -165,9 +165,9 @@ export const EmployeeReimbursementMeterCard: React.FC<EmployeeReimbursementMeter
 
         <div>
           <span className="inline-flex items-center gap-1.5 text-[11px] text-muted">
-            <span className="size-2 rounded-full bg-[#D4A373]" /> Pending Payout
+            <span className="size-2 rounded-full bg-[#7389FF]" /> Pending Payout
           </span>
-          <span className="block font-mono text-xs font-bold text-[#8A582B] tabular-nums mt-0.5">
+          <span className="block font-mono text-xs font-bold text-[#533AFD] tabular-nums mt-0.5">
             {formatINRCompact(health.totalPendingSettlementAmount)}
           </span>
           <span className="text-[10px] text-faint font-mono">
@@ -177,7 +177,7 @@ export const EmployeeReimbursementMeterCard: React.FC<EmployeeReimbursementMeter
 
         <div>
           <span className="inline-flex items-center gap-1.5 text-[11px] text-muted">
-            <span className="size-2 rounded-full bg-[#C2B8AC]" /> In Review
+            <span className="size-2 rounded-full bg-[#839BC8]" /> In Review
           </span>
           <span className="block font-mono text-xs font-bold text-ink tabular-nums mt-0.5">
             {formatINRCompact(health.totalInReviewAmount)}

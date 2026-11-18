@@ -18,11 +18,11 @@ export const EXPENSE_CATEGORY_META: Record<
   ExpenseCategory,
   { label: string; shortLabel: string; color: string }
 > = {
-  FLIGHT: { label: 'Airfare & Flights', shortLabel: 'Flights', color: '#8A582B' },
-  HOTEL: { label: 'Accommodations', shortLabel: 'Hotel', color: '#2D6A74' },
-  MEALS_PER_DIEM: { label: 'Meals & Per Diem', shortLabel: 'Meals', color: '#C2782D' },
-  TRANSIT: { label: 'Ground Transit', shortLabel: 'Transit', color: '#3F624D' },
-  MISC: { label: 'Incidental / Misc', shortLabel: 'Misc', color: '#645C54' },
+  FLIGHT: { label: 'Airfare & Flights', shortLabel: 'Flights', color: '#533AFD' },
+  HOTEL: { label: 'Accommodations', shortLabel: 'Hotel', color: '#635BFF' },
+  MEALS_PER_DIEM: { label: 'Meals & Per Diem', shortLabel: 'Meals', color: '#FF6118' },
+  TRANSIT: { label: 'Ground Transit', shortLabel: 'Transit', color: '#00D66F' },
+  MISC: { label: 'Incidental / Misc', shortLabel: 'Misc', color: '#839BC8' },
 };
 
 /**

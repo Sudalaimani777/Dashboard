@@ -253,7 +253,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
       <div className="bg-surface rounded-xl border border-border-warm p-4 sm:px-5 shadow-xs flex flex-col gap-3.5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-0 lg:divide-x lg:divide-border-warm">
           <div className="lg:pr-5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-faint block">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
               Corporate {selectedQuarter} Pool
             </span>
             <span className="text-xl font-bold font-mono tabular-nums text-primary block mt-0.5">
@@ -265,7 +265,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
           </div>
 
           <div className="lg:px-5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-faint block">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
               Committed Spend
             </span>
             <span className="text-xl font-bold font-mono tabular-nums text-ink block mt-0.5">
@@ -278,7 +278,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
           </div>
 
           <div className="lg:px-5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-faint block">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
               Available Headroom
             </span>
             <span className="text-xl font-bold font-mono tabular-nums text-[#3F624D] block mt-0.5">
@@ -290,7 +290,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
           </div>
 
           <div className="lg:pl-5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-faint block">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
               Pools Above 85%
             </span>
             <span
@@ -379,9 +379,10 @@ export const DepartmentBudgetsPage: React.FC = () => {
                 list="known-departments-list"
                 value={formDepartment}
                 onChange={(e) => setFormDepartment(e.target.value)}
-                placeholder="e.g. Engineering, Product, Sales"
+                placeholder="Enter department name"
                 className="px-3 py-2 rounded-lg border border-border-warm bg-surface-subtle text-xs text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
               />
+              <span className="text-[11px] text-faint">Cost center or business unit name.</span>
               <datalist id="known-departments-list">
                 {departmentOptions.map((dept) => (
                   <option key={dept} value={dept} />
@@ -576,7 +577,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-border-warm text-[11px] font-semibold uppercase tracking-wider text-muted bg-surface-subtle/60">
+                  <tr className="border-b border-border-warm text-[11px] font-bold uppercase tracking-wider text-slate-700 bg-slate-50/80">
                     <th className="p-3.5">Department</th>
                     <th className="p-3.5">Period</th>
                     <th className="p-3.5">Total Pool</th>
@@ -606,16 +607,16 @@ export const DepartmentBudgetsPage: React.FC = () => {
                             <span className="font-semibold text-ink">{row.department}</span>
                           </div>
                         </td>
-                        <td className="p-3.5 font-mono text-muted">
+                        <td className="p-3.5 font-mono text-slate-800 font-medium">
                           {row.fiscalQuarter} {row.fiscalYear}
                         </td>
                         <td className="p-3.5 font-mono tabular-nums font-semibold text-ink">
                           {formatINR(row.totalAllocation)}{' '}
-                          <span className="text-[10px] text-faint">
+                          <span className="text-[11px] text-slate-600 font-medium">
                             ({formatINRCompact(row.totalAllocation)})
                           </span>
                         </td>
-                        <td className="p-3.5 font-mono tabular-nums text-muted">
+                        <td className="p-3.5 font-mono tabular-nums text-slate-800 font-medium">
                           {formatINR(row.utilizedAmount)}
                         </td>
                         <td

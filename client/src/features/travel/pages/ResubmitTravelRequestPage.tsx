@@ -583,9 +583,11 @@ export const ResubmitTravelRequestPage: React.FC = () => {
                     {check.ok ? (
                       <CheckCircle2 className="size-3.5 text-emerald-700 shrink-0" />
                     ) : (
-                      <Circle className="size-3.5 text-faint/60 shrink-0" />
+                      <Circle className="size-3.5 text-slate-400 shrink-0" />
                     )}
-                    <span className={check.ok ? 'text-ink font-medium' : 'text-muted'}>{check.label}</span>
+                    <span className={check.ok ? 'text-ink font-semibold' : 'text-slate-800 font-medium'}>
+                      {check.label}
+                    </span>
                   </li>
                 ))}
               </ul>

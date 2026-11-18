@@ -17,11 +17,11 @@ export interface MonthlyBurnChartProps {
 const chartConfig = {
   approved: {
     label: 'Approved Spend',
-    color: '#8A582B',
+    color: '#533AFD',
   },
   pending: {
     label: 'Pending Commitments',
-    color: '#D4A373',
+    color: '#7389FF',
   },
 } satisfies ChartConfig;
 
@@ -42,11 +42,11 @@ export const MonthlyBurnChart: React.FC<MonthlyBurnChartProps> = ({ data, depart
         </div>
         <div className="flex items-center gap-3 text-[11px] text-muted">
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-[#8A582B]" />
+            <span className="size-2 rounded-full bg-[#533AFD]" />
             Approved
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-[#D4A373]" />
+            <span className="size-2 rounded-full bg-[#7389FF]" />
             Pending
           </span>
         </div>

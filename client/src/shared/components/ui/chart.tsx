@@ -50,7 +50,7 @@ const ChartContainer = React.forwardRef<
         data-chart={chartId}
         ref={ref}
         className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-[#756F68] [&_.recharts-cartesian-grid_line]:stroke-[#E8DFD3]/60 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-[#8A582B] [&_.recharts-dot]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-surface]:outline-none",
+          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-[#50617A] [&_.recharts-cartesian-grid_line]:stroke-[#E5EDF5] [&_.recharts-curve.recharts-tooltip-cursor]:stroke-[#533AFD] [&_.recharts-dot]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-surface]:outline-none",
           className
         )}
         {...props}
@@ -152,7 +152,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
 
       if (labelFormatter) {
         return (
-          <div className={cn("font-medium text-[#2B231D]", labelClassName)}>
+          <div className={cn("font-medium text-[#061B31]", labelClassName)}>
             {labelFormatter(value, payload)}
           </div>
         );
@@ -163,7 +163,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
       }
 
       return (
-        <div className={cn("font-medium text-[#2B231D]", labelClassName)}>
+        <div className={cn("font-medium text-[#061B31]", labelClassName)}>
           {value}
         </div>
       );
@@ -179,7 +179,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
       <div
         ref={ref}
         className={cn(
-          "grid min-w-[8rem] items-start gap-1.5 rounded-xl border border-[#E8DFD3] bg-white px-3 py-2 text-xs shadow-lg text-[#2B231D]",
+          "grid min-w-[8rem] items-start gap-1.5 rounded-xl border border-[#E5EDF5] bg-white px-3 py-2 text-xs shadow-md text-[#061B31]",
           className
         )}
       >
@@ -188,13 +188,13 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
           {payload.map((item: any, index: number) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`;
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
-            const indicatorColor = color || item.payload?.fill || item.color || "#8A582B";
+            const indicatorColor = color || item.payload?.fill || item.color || "#533AFD";
 
             return (
               <div
                 key={item.dataKey || index}
                 className={cn(
-                  "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-[#756F68]",
+                  "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-[#50617A]",
                   indicator === "dot" && "items-center"
                 )}
               >
@@ -227,11 +227,11 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
                         nestLabel ? "items-end" : "items-center"
                       )}
                     >
-                      <span className="text-[#756F68]">
+                      <span className="text-[#50617A]">
                         {itemConfig?.label || item.name}
                       </span>
                       {item.value !== undefined && (
-                        <span className="font-mono font-bold tabular-nums text-[#2B231D]">
+                        <span className="font-mono font-bold tabular-nums text-[#061B31]">
                           {item.value.toLocaleString()}
                         </span>
                       )}

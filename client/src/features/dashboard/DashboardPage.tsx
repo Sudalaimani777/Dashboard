@@ -22,10 +22,10 @@ const AdminGovernancePortal = lazy(() =>
 const PortalLoadingFallback: React.FC = () => (
   <div className="min-h-[60vh] flex items-center justify-center">
     <div className="flex flex-col items-center gap-3">
-      <div className="flex size-10 items-center justify-center rounded-xl bg-[#2B231D] text-white font-bold text-xs shadow-sm ring-1 ring-[#8A582B]/20 animate-pulse">
+      <div className="flex size-10 items-center justify-center rounded-xl bg-[#061B31] text-white font-bold text-xs shadow-sm ring-1 ring-[#533AFD]/20 animate-pulse">
         TF
       </div>
-      <p className="text-xs font-medium text-[#756F68]">Loading TripFlow workspace...</p>
+      <p className="text-xs font-medium text-[#50617A]">Loading TripFlow workspace...</p>
     </div>
   </div>
 );

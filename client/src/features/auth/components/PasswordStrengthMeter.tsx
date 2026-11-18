@@ -50,9 +50,9 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({ pa
               {passed ? (
                 <Check className="size-3.5 text-emerald-600" />
               ) : (
-                <X className="size-3.5 text-faint" />
+                <X className="size-3.5 text-slate-400" />
               )}
-              <span className={passed ? 'text-ink font-medium' : 'text-faint'}>
+              <span className={passed ? 'text-ink font-semibold' : 'text-slate-700'}>
                 {rule.label}
               </span>
             </li>

@@ -3,83 +3,129 @@
 @theme {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --color-canvas: #F7F4EE;
+
+  /* Global Canvas & Surfaces */
+  --color-canvas: #F2F7FE;
   --color-surface: #FFFFFF;
-  --color-surface-subtle: #FAF8F5;
-  --color-border-warm: #E8DFD3;
-  --color-primary: #8A582B;
-  --color-primary-hover: #754820;
-  --color-secondary: #996735;
-  --color-tertiary: #D4A373;
-  --color-muted: #575049;
-  --color-faint: #6E655C;
-  --color-ink: #2B231D;
-  --color-destructive: #9E2A2B;
+  --color-surface-subtle: #F8FAFC;
+  --color-border-warm: #CBD5E1;
+  --color-border: #CBD5E1;
+  --color-border-strong: #94A3B8;
+
+  /* Brand Primary & Interactive */
+  --color-primary: #533AFD;
+  --color-primary-hover: #4834DB;
+  --color-secondary: #E5EDF5;
+  --color-secondary-hover: #D6D9FC;
+  --color-tertiary: #635BFF;
+
+  /* Typography / Inks */
+  --color-ink: #061B31;
+  --color-text-main: #1A2C44;
+  --color-muted: #334155;
+  --color-faint: #50617A;
+
+  /* Semantic Feedback */
+  --color-success: #00D66F;
+  --color-warning: #FF6118;
+  --color-destructive: #DC2626;
+
+  /* 5 Border Radii (PDF Chapter 06) */
+  --radius-xs: 1px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 100px;
+
+  /* 5 Elevation Tiers (PDF Chapter 06) */
+  --shadow-xs: 0 1px 2px rgba(6, 27, 49, 0.04);
+  --shadow-sm: 0 1px 3px rgba(6, 27, 49, 0.06), 0 1px 2px rgba(6, 27, 49, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(6, 27, 49, 0.08), 0 2px 4px -2px rgba(6, 27, 49, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(6, 27, 49, 0.08), 0 4px 6px -4px rgba(6, 27, 49, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(6, 27, 49, 0.10), 0 8px 10px -6px rgba(6, 27, 49, 0.04);
+
+  /* 5 Motion Durations & Easing (PDF Chapter 08) */
+  --duration-100: 100ms;
+  --duration-200: 200ms;
+  --duration-300: 300ms;
+  --duration-500: 500ms;
+  --duration-800: 800ms;
+  --ease-stripe: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
   font-family: var(--font-sans);
-  background-color: #F7F4EE;
-  color: #2B231D;
+  background-color: #F2F7FE;
+  color: #061B31;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+
+  /* Stripe 29 Tokens & Full Palette */
+  --stripe-primary: #533AFD;
+  --stripe-primary-hover: #4834DB;
+  --stripe-secondary: #E5EDF5;
+  --stripe-accent: #FFE0D1;
+  --stripe-canvas: #F2F7FE;
+  --stripe-surface: #FFFFFF;
+  --stripe-ink: #061B31;
+  --stripe-ink-body: #1A2C44;
+  --stripe-neutral-black: #000000;
+  --stripe-neutral-dark: #101010;
+  --stripe-neutral-600: #50617A;
+  --stripe-neutral-500: #64748D;
+  --stripe-neutral-400: #7D8BA4;
+  --stripe-violet: #635BFF;
+  --stripe-indigo-light: #7389FF;
+  --stripe-periwinkle: #D6D9FC;
+  --stripe-mint: #00D66F;
+  --stripe-lime: #81B81A;
+  --stripe-orange: #FF6118;
+
+  /* Functional Status Variables */
+  --blk-error: #DC2626;
+  --blk-warning: #FF6118;
+  --blk-success: #00D66F;
+  --blk-accent-ink: #533AFD;
+  --blk-accent-fill: #533AFD;
+  --blk-accent-fill-ink: #FFFFFF;
 }
 
 body {
   margin: 0;
   min-height: 100dvh;
-  background-color: #F7F4EE;
-  color: #2B231D;
+  background-color: #F2F7FE;
+  color: #061B31;
 }
 
-
-
-
-/* Bjork / AppSignIn Theme Variables (Adapted to Warm Storycraft) */
+/* Stripe Design Tokens & Semantic Accents */
 :root {
-  --bjork-bg: #F7F4EE;
+  --bjork-bg: #F2F7FE;
   --bjork-surface: #FFFFFF;
-  --bjork-surface-muted: rgba(250, 248, 245, 0.94);
-  --bjork-surface-hover: #F5EFE3;
-  --bjork-surface-active: #EFE7D8;
-  --bjork-panel: #FAF8F5;
+  --bjork-surface-muted: rgba(248, 250, 252, 0.95);
+  --bjork-surface-hover: #F1F5F9;
+  --bjork-surface-active: #E2E8F0;
+  --bjork-panel: #FFFFFF;
   --bjork-menu: rgba(255, 255, 255, 0.98);
   --bjork-field: #FFFFFF;
-  --bjork-field-muted: rgba(248, 242, 231, 0.82);
-  --bjork-field-inset: rgba(239, 231, 216, 0.72);
+  --bjork-field-muted: rgba(241, 245, 249, 0.85);
+  --bjork-field-inset: rgba(226, 232, 240, 0.75);
   --bjork-error-bg: #FFF0E8;
-  --bjork-text: #2B231D;
-  --bjork-text-strong: rgba(43, 35, 29, 0.95);
-  --bjork-text-medium: rgba(43, 35, 29, 0.75);
-  --bjork-text-muted: rgba(43, 35, 29, 0.58);
-  --bjork-text-soft: rgba(43, 35, 29, 0.44);
-  --bjork-text-faint: rgba(43, 35, 29, 0.22);
-  --bjork-inverted-text: #FFF8F0;
-  --bjork-border: #E8DFD3;
-  --bjork-border-muted: #F2EBE0;
-  --bjork-border-strong: #D8CDBE;
-  --bjork-thumb: #A49B8E;
-  --bjork-track: #DED6CA;
-  --bjork-accent: #8A582B;
-  --bjork-accent-hover: #754820;
-  --bjork-accent-soft: rgba(138, 88, 43, 0.12);
-  --bjork-accent-muted: rgba(138, 88, 43, 0.22);
-  --bjork-accent-foreground: #FAF8F5;
-  --bjork-shadow-surface: inset 0 7px 14px rgba(88, 72, 49, 0.045), inset 0 0.5px 0.5px rgba(255, 255, 255, 0.92), inset 1px 0 0 rgba(88, 72, 49, 0.026), inset -1px 0 0 rgba(255, 255, 255, 0.68), 0 14px 22px -9px rgba(66, 52, 33, 0.11);
-  --bjork-shadow-soft: inset 0 1px 0 rgba(88, 72, 49, 0.045), inset 0 0.5px 0.5px rgba(255, 255, 255, 0.86);
-  --bjork-shadow-panel: inset 0 1px 0 rgba(88, 72, 49, 0.04), inset 1px 0 0 rgba(88, 72, 49, 0.024), inset -1px 0 0 rgba(255, 255, 255, 0.64), 0 18px 38px -30px rgba(66, 52, 33, 0.2);
-  --bjork-shadow-menu: inset 0 1px 0 rgba(88, 72, 49, 0.04), inset 0 12px 24px rgba(88, 72, 49, 0.022), inset 1px 0 0 rgba(88, 72, 49, 0.024), inset -1px 0 0 rgba(255, 255, 255, 0.62), 0 22px 44px -26px rgba(66, 52, 33, 0.22);
-  --bjork-shadow-inset: inset 0 1px 10px rgba(88, 72, 49, 0.12), inset 0 0.5px 0.5px rgba(255, 255, 255, 0.72);
-  --bjork-ring-offset: #F7F4EE;
-
-  /* Block Kit Functional Accents */
-  --blk-error: #DC2626;
-  --blk-error-soft: rgba(254, 242, 242, 0.9);
-  --blk-warning: #D97706;
-  --blk-success: #16A34A;
-  --blk-success-soft: rgba(240, 253, 244, 0.9);
-  --blk-accent-ink: #8A582B;
-  --blk-accent-fill: #8A582B;
-  --blk-accent-fill-ink: #FFFFFF;
-  --blk-chart-ghost: rgba(138, 88, 43, 0.25);
+  --bjork-text: #061B31;
+  --bjork-text-strong: #061B31;
+  --bjork-text-medium: #1A2C44;
+  --bjork-text-muted: #334155;
+  --bjork-text-soft: #50617A;
+  --bjork-text-faint: #50617A;
+  --bjork-inverted-text: #FFFFFF;
+  --bjork-border: #CBD5E1;
+  --bjork-border-muted: #E2E8F0;
+  --bjork-border-strong: #94A3B8;
+  --bjork-thumb: #94A3B8;
+  --bjork-track: #E2E8F0;
+  --bjork-accent: #533AFD;
+  --bjork-accent-hover: #4834DB;
+  --bjork-accent-soft: rgba(83, 58, 253, 0.08);
+  --bjork-accent-muted: rgba(83, 58, 253, 0.16);
+  --bjork-accent-foreground: #FFFFFF;
+  --bjork-ring-offset: #F2F7FE;
 }
