@@ -3,108 +3,56 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 async function run() {
-  console.log('🧪 Testing Form Permanent Helper Text & Clean Placeholders...');
+  console.log('🧪 Testing Form Clean Inputs & Error-Only Display (No Helper Text)...');
 
-  // 1. Check shared Input component
-  const inputPath = path.resolve(import.meta.dirname, '../src/shared/components/ui/input.tsx');
-  const inputSource = fs.readFileSync(inputPath, 'utf8');
-  assert.ok(
-    inputSource.includes('helperText?: React.ReactNode'),
-    'InputProps in input.tsx must include helperText'
-  );
-  assert.ok(
-    inputSource.includes('text-[#50617A]') || inputSource.includes('text-faint'),
-    'Input component must style helperText with accessible high-contrast faint color'
-  );
-
-  // 2. Check AuthField component
-  const authFieldPath = path.resolve(import.meta.dirname, '../src/features/auth/components/AuthField.tsx');
-  const authFieldSource = fs.readFileSync(authFieldPath, 'utf8');
-  assert.ok(
-    authFieldSource.includes('helperText?: React.ReactNode'),
-    'AuthFieldProps in AuthField.tsx must include helperText'
-  );
-
-  // 3. Check TravelLogisticsFields.tsx
+  // 1. Check TravelLogisticsFields.tsx
   const logisticsPath = path.resolve(
     import.meta.dirname,
     '../src/features/travel/components/forms/TravelLogisticsFields.tsx'
   );
   const logisticsSource = fs.readFileSync(logisticsPath, 'utf8');
 
-  // Title: clean placeholder + permanent helper text
+  // Assert NO helper text is rendered below fields
   assert.ok(
-    logisticsSource.includes('placeholder="Enter trip title"'),
-    'Trip Title must use a clean action-oriented placeholder'
+    !logisticsSource.includes('Minimum 5 characters. Use a descriptive'),
+    'Trip Title must not have persistent helper text'
   );
   assert.ok(
-    !logisticsSource.includes('placeholder="e.g. Tokyo Architecture Integration 2026"'),
-    'Trip Title must not use confusing dummy text in placeholder'
+    !logisticsSource.includes('Minimum 10 characters explaining business'),
+    'Business Purpose must not have persistent helper text'
   );
   assert.ok(
-    logisticsSource.includes('Minimum 5 characters'),
-    'Trip Title must have permanent helper text specifying minimum 5 characters'
+    !logisticsSource.includes('Optional code for department budget'),
+    'Project Code must not have persistent helper text'
   );
 
-  // Purpose: clean placeholder + permanent helper text
+  // Assert error messages are present when validation fails
   assert.ok(
-    logisticsSource.includes('placeholder="Explain business necessity') ||
-      logisticsSource.includes('placeholder="Explain why travel is required'),
-    'Business Purpose must use clean action-oriented placeholder'
+    logisticsSource.includes('{errors.title &&') || logisticsSource.includes('errors.title ?'),
+    'Trip Title must render error on validation failure'
   );
   assert.ok(
-    !logisticsSource.includes('placeholder="Detailed business necessity justifying corporate travel..."'),
-    'Business Purpose must not use lengthy instructional placeholder'
-  );
-  assert.ok(
-    logisticsSource.includes('Minimum 10 characters'),
-    'Business Purpose must have permanent helper text specifying minimum 10 characters'
+    logisticsSource.includes('{errors.purpose &&') || logisticsSource.includes('errors.purpose ?'),
+    'Business Purpose must render error on validation failure'
   );
 
-  // Project code: clean placeholder + permanent helper text
+  // 2. Check AuthField component
+  const authFieldPath = path.resolve(import.meta.dirname, '../src/features/auth/components/AuthField.tsx');
+  const authFieldSource = fs.readFileSync(authFieldPath, 'utf8');
   assert.ok(
-    logisticsSource.includes('placeholder="Enter project code"'),
-    'Project Code must use clean placeholder'
-  );
-  assert.ok(
-    logisticsSource.includes('Optional code for department') ||
-      logisticsSource.includes('Optional code for billing'),
-    'Project Code must have permanent helper text'
+    !authFieldSource.includes('helperText'),
+    'AuthField must not require helperText'
   );
 
-  // Origin & Destination
+  // 3. Check shared Input component
+  const inputPath = path.resolve(import.meta.dirname, '../src/shared/components/ui/input.tsx');
+  const inputSource = fs.readFileSync(inputPath, 'utf8');
   assert.ok(
-    logisticsSource.includes('placeholder="Enter origin city"'),
-    'Origin City must use clean placeholder'
-  );
-  assert.ok(
-    logisticsSource.includes('placeholder="Enter destination city"'),
-    'Destination must use clean placeholder'
+    !inputSource.includes('helperText'),
+    'Input component must not have helperText'
   );
 
-  // Emergency Contact
-  assert.ok(
-    logisticsSource.includes('placeholder="Full name of emergency contact"'),
-    'Emergency Contact Name must use clean placeholder'
-  );
-
-  // 4. Check ExpenseRowItem.tsx
-  const expenseRowPath = path.resolve(
-    import.meta.dirname,
-    '../src/features/travel/components/forms/ExpenseRowItem.tsx'
-  );
-  const expenseRowSource = fs.readFileSync(expenseRowPath, 'utf8');
-
-  assert.ok(
-    expenseRowSource.includes('placeholder="Merchant or vendor name"'),
-    'ExpenseRowItem merchant must use clean placeholder'
-  );
-  assert.ok(
-    expenseRowSource.includes('placeholder="Expense details or invoice reference"'),
-    'ExpenseRowItem notes must use clean placeholder'
-  );
-
-  console.log('✅ ALL FORM PERMANENT HELPER TEXT TESTS PASSED!');
+  console.log('✅ ALL FORM CLEAN INPUT & ERROR-ONLY VALIDATION TESTS PASSED!');
 }
 
 run().catch((err) => {

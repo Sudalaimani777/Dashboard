@@ -3,12 +3,11 @@ import { cn } from '../../utils/cn';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: boolean;
-  helperText?: React.ReactNode;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, error, helperText, ...props }, ref) => {
-    const inputElement = (
+  ({ className, type, error, ...props }, ref) => {
+    return (
       <input
         type={type}
         className={cn(
@@ -21,17 +20,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         {...props}
       />
-    );
-
-    if (!helperText) {
-      return inputElement;
-    }
-
-    return (
-      <div className="w-full flex flex-col gap-1">
-        {inputElement}
-        <p className="text-[11px] text-[#50617A] font-normal leading-normal">{helperText}</p>
-      </div>
     );
   }
 );

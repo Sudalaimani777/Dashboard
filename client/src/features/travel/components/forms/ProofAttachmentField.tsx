@@ -508,7 +508,6 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
               className="sm:col-span-7 px-2.5 py-1.5 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             />
           </div>
-          <span className="text-[10px] text-faint">Paste a public or shared Google Drive, Dropbox, or company cloud URL.</span>
           <div className="flex items-center justify-end gap-2 pt-1">
             <button
               type="button"

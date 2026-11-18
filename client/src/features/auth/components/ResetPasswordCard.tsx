@@ -148,7 +148,6 @@ export const ResetPasswordCard: React.FC = () => {
           toggleLabel={{ show: 'Show confirm password', hide: 'Hide confirm password' }}
           autoComplete="new-password"
           placeholder="Confirm new password"
-          helperText="Must match the new password above."
           error={errors.confirmPassword?.message}
           {...register('confirmPassword')}
         />

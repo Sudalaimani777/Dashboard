@@ -145,7 +145,6 @@ export const NewUserPage: React.FC = () => {
               label="Full name"
               type="text"
               placeholder="Enter full name"
-              helperText="Legal name for corporate travel bookings."
               error={errors.name?.message}
               required
               {...register('name')}
@@ -156,7 +155,6 @@ export const NewUserPage: React.FC = () => {
               label="Work email"
               type="email"
               placeholder="name@company.com"
-              helperText="Corporate email address."
               error={errors.email?.message}
               required
               {...register('email')}

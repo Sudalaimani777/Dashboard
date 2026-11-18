@@ -97,7 +97,6 @@ export const ForgotPasswordCard: React.FC = () => {
           label="Work email"
           autoComplete="email"
           placeholder="name@company.com"
-          helperText="We will send a secure single-use recovery link to this address."
           error={errors.email?.message}
           {...register('email')}
         />

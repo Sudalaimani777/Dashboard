@@ -382,7 +382,6 @@ export const DepartmentBudgetsPage: React.FC = () => {
                 placeholder="Enter department name"
                 className="px-3 py-2 rounded-lg border border-border-warm bg-surface-subtle text-xs text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
               />
-              <span className="text-[11px] text-faint">Cost center or business unit name.</span>
               <datalist id="known-departments-list">
                 {departmentOptions.map((dept) => (
                   <option key={dept} value={dept} />
