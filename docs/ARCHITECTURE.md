@@ -1,212 +1,421 @@
-# Readventure Full-Stack Architecture
+# TripFlow Full-Stack Architecture
 
-This document describes the end-to-end system architecture, security model, request lifecycle, and data flow for the **Readventure** application.
+This document describes the end-to-end system architecture, two-tier governance state machine, database schemas, security model, and component lifecycles for the **TripFlow** Corporate Travel & Expense Governance platform.
 
 ---
 
-## 🏛️ System Overview
+## 🏛️ System Overview & High-Level Topology
 
-Readventure is a decoupled, modern full-stack web application designed for personal literary discovery, book tracking, and reading habit cadence. It couples a responsive client built with **React 19**, **Tailwind CSS v4**, and **Vite** to a modular backend service powered by **Express 5**, **TypeScript**, and **PostgreSQL**.
+TripFlow is an enterprise-grade corporate travel authorization, manager audit, and expense governance platform. It couples a responsive client built with **React 19**, **Vite 8**, **Tailwind CSS v4**, and the **Stripe Design System** to a modular backend service powered by **Node.js**, **Express 5**, **TypeScript**, and **PostgreSQL**.
 
 ```mermaid
-flowchart LR
-    subgraph Client ["Client (React 19 + Vite @ Port 5173)"]
-        UI["Warm Storycraft UI"]
-        Router["React Router 7"]
-        AuthCtx["AuthContext / Axios"]
+flowchart TD
+    subgraph Client ["Client Layer (React 19 + Vite 8 @ Port 5173)"]
+        UI["Stripe Design System UI\n(Plus Jakarta Sans + JetBrains Mono)"]
+        Router["React Router 7 (Lazy-Loaded AppRoutes)"]
+        State["Context Providers\n(AuthContext & TravelContext)"]
+        HTTP["Axios Client\n(withCredentials: true)"]
     end
 
-    subgraph Server ["Server (Express 5 + TypeScript @ Port 5000)"]
-        Routes["API Routes (/api/auth)"]
-        Controllers["Controllers & Middleware"]
-        Services["Services (AuthService, EmailService)"]
-        Repo["AuthRepository"]
+    subgraph Server ["Server Layer (Express 5 + TypeScript @ Port 5000)"]
+        Pipeline["Middleware Pipeline\n(CORS, CookieParser, Multer, ErrorHandler)"]
+        Guards["Access Control Guards\n(requireAuth, requireRole)"]
+        Controllers["Feature Controllers\n(Auth, Travel, Users)"]
+        Services["Business Domain Services\n(TravelService, AuthService, CloudinaryService)"]
+        Repos["Repository Layer\n(Parameterized SQL Queries & Transactions)"]
     end
 
-    subgraph DataStore ["Persistence & External Services"]
-        PG[("PostgreSQL Database")]
-        SMTP["SMTP Mailer (Gmail / Ethereal)"]
+    subgraph Persistence ["Persistence, Storage & Notifications"]
+        PG[("PostgreSQL Database\n(pg Connection Pool)")]
+        Cloudinary["Cloudinary Storage\n(Multi-Proof Receipts & Quotations)"]
+        SMTP["SMTP Mailer\n(Nodemailer / Gmail / Ethereal)"]
     end
 
-    UI --> Router --> AuthCtx
-    AuthCtx -- "HTTP / REST (withCredentials: true)" --> Routes
-    Routes --> Controllers --> Services
-    Services --> Repo --> PG
+    UI --> Router --> State --> HTTP
+    HTTP -- "HTTP / REST (Cookies + JSON)" --> Pipeline
+    Pipeline --> Guards --> Controllers
+    Controllers --> Services --> Repos --> PG
+    Services --> Cloudinary
     Services --> SMTP
 ```
 
 ---
 
-## 🔐 Authentication & Session Security Model
+## 🧭 Two-Tier Governance State Machine & Core Invariants
 
-The system utilizes an **HttpOnly Cookie** architecture for primary session management, with support for Bearer tokens for headless or API integrations.
+TripFlow implements an auditable two-tier state machine to enforce corporate spending policy, manager operational oversight, and executive financial clearance.
 
-### Registration & Login Lifecycle
-
-To enforce intentional authentication and prevent unverified auto-logins, Readventure separates account creation (`/signup`) from session establishment (`/signin`):
-1. **Visitor Registration**: Creating an account registers the user record and password hash in PostgreSQL without issuing a session cookie.
-2. **Seamless Navigation Hand-off**: The client redirects the user to `/signin` with route state (`registeredEmail` and a calm confirmation notice), pre-filling their email.
-3. **Explicit Authentication**: The user enters their credentials to authenticate, receiving an `HttpOnly` session cookie before accessing the protected `/dashboard`.
+### Dual Operational Lifecycles
+The system accommodates two distinct travel cases with differentiated terminal states:
+1. **Case 1: Upcoming Travel (Pre-Trip Clearance)**:
+   - Employees submit proposed itineraries, business justifications, and itemized estimated expenses accompanied by quotation proofs.
+   - Approval by Tier 1 (Line Manager) and Tier 2 (Admin) grants travel clearance, resulting in the terminal state `APPROVED`.
+2. **Case 2: Already Travelled (Post-Trip Reimbursement)**:
+   - Employees submit completed trip details, actual expenses incurred, and proof receipts.
+   - Verification through both tiers authorizes financial payout, resulting in the terminal state `SETTLED`.
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Reader (Browser)
-    participant Client as React Client (Port 5173)
-    participant Server as Express Server (Port 5000)
-    participant DB as PostgreSQL (Port 5432)
+stateDiagram-v2
+    [*] --> DRAFT : Initialize Request
+    DRAFT --> PENDING_MANAGER_REVIEW : Employee Submits
 
-    Note over User, DB: Phase 1: Account Registration (No Session Issued)
-    User->>Client: Enters name, email, password & submits /signup
-    Client->>Server: POST /api/auth/signup { name, email, password }
-    Server->>Server: Validate schema (Zod) & hash password with bcrypt (10 rounds)
-    Server->>DB: INSERT INTO users (name, email, password_hash)
-    DB-->>Server: User record created
-    Server-->>Client: 201 Created { user } (NO session cookie)
-    Client->>Client: Redirects to /signin (state: pre-fill email + success banner)
+    state "Tier 1: Line Manager Audit" as Tier1 {
+        PENDING_MANAGER_REVIEW --> REVISION_REQUESTED_BY_MANAGER : Manager Requests Changes
+        REVISION_REQUESTED_BY_MANAGER --> PENDING_MANAGER_REVIEW : Employee Resubmits Alterations
+        PENDING_MANAGER_REVIEW --> REJECTED : Manager Denies
+    }
 
-    Note over User, DB: Phase 2: Explicit Authentication
-    User->>Client: Enters password on /signin & submits
-    Client->>Server: POST /api/auth/signin { email, password }
-    Server->>DB: Query user by email (idx_users_email)
-    DB-->>Server: Return user row & password_hash
-    Server->>Server: Verify bcrypt hash (10 rounds)
-    Server->>Server: Generate signed JWT (7 days expiry)
-    Server-->>Client: 200 OK + Set-Cookie: token=<jwt>; HttpOnly; SameSite=Lax
-    Client->>Client: Updates AuthContext state & navigates to /dashboard
-    Client->>Server: GET /api/auth/me (Cookie automatically attached)
-    Server->>Server: Verify JWT signature & extract userId
-    Server-->>Client: 200 OK { user profile }
+    PENDING_MANAGER_REVIEW --> PENDING_ADMIN_APPROVAL : Manager Approves & Escalates
+
+    state "Tier 2: Admin & Finance Governance" as Tier2 {
+        PENDING_ADMIN_APPROVAL --> REVISION_REQUESTED_BY_ADMIN_TO_MANAGER : Admin Route A (via Manager)
+        REVISION_REQUESTED_BY_ADMIN_TO_MANAGER --> REVISION_REQUESTED_BY_MANAGER : Manager Forwards to Employee
+        REVISION_REQUESTED_BY_ADMIN_TO_MANAGER --> PENDING_ADMIN_APPROVAL : Manager Clarifies Directly
+
+        PENDING_ADMIN_APPROVAL --> REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE : Admin Route B (Direct to Employee)
+        PENDING_ADMIN_APPROVAL --> REJECTED : Admin Denies
+        PENDING_ADMIN_APPROVAL --> APPROVED : Upcoming Travel Cleared
+        PENDING_ADMIN_APPROVAL --> SETTLED : Past Reimbursement Disbursed
+    }
+
+    %% Core Architectural Invariant
+    REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE --> PENDING_MANAGER_REVIEW : Employee Resubmits (Strict Re-routing)
+
+    DRAFT --> CANCELLED : Employee Cancels
+    REVISION_REQUESTED_BY_MANAGER --> CANCELLED : Employee Cancels
+    REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE --> CANCELLED : Employee Cancels
+
+    APPROVED --> [*]
+    SETTLED --> [*]
+    REJECTED --> [*]
+    CANCELLED --> [*]
 ```
 
-### Key Security Invariants
-1. **Separation of Registration & Session**: Account registration does not issue ambient authentication credentials. Users must verify knowledge of credentials at sign-in.
-2. **XSS Mitigation**: The access JWT is stored in an `HttpOnly` cookie. Malicious scripts running in the browser cannot read or exfiltrate the token.
-3. **CSRF Protection**: Cookies are configured with `SameSite=Lax`. Cross-origin state-changing POST requests do not attach the cookie by default.
-4. **Password Security**: Passwords are salted and hashed using `bcryptjs` with 10 salt rounds before storage. Plaintext passwords never touch logs or databases.
+### Core Architectural Invariants
+1. **Strict Manager Re-routing Invariant**:
+   - When an Admin requests revisions directly from an employee (**Route B**: `REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE`), upon resubmission, the request **MUST return to the Line Manager first** (`PENDING_MANAGER_REVIEW`).
+   - An employee can **never bypass** their direct manager directly to Admin review. The state transition `REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE -> PENDING_ADMIN_APPROVAL` is strictly forbidden by the domain state validator.
+2. **Immutable Audit Ledger**:
+   - Every state transition, reviewer comment, and rejection reason is appended to `request_timeline_events`. Existing events cannot be altered or deleted.
+3. **Budget Headroom Validation**:
+   - When reviewing requests, admins evaluate real-time utilization against quarterly departmental budgets (`department_budgets`), ensuring allocation ceilings are maintained.
+4. **Currency Standardization**:
+   - All financial figures are denominated in Indian Rupees (`INR` / `₹`) and rendered using monospace tabular numbers (`font-mono tabular-nums`).
 
 ---
 
-## 📬 Password Recovery Architecture
+## 📂 Frontend Layer Architecture (`client/src/`)
 
-The password reset flow implements strict cryptographic standards, anti-enumeration defenses, and single-use replay protection.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as User / Attacker
-    participant Client as React Client
-    participant Server as Express Backend
-    participant DB as PostgreSQL
-    participant Mailer as Nodemailer (SMTP)
-
-    User->>Client: Enters email on /forgot-password
-    Client->>Server: POST /api/auth/forgot-password { email }
-    Server->>DB: Query user by email
-    
-    alt Account Exists
-        Server->>Server: Generate 32-byte hex raw token (crypto.randomBytes)
-        Server->>Server: Compute SHA-256 digest of raw token
-        Server->>DB: UPDATE users SET reset_token = <sha256>, reset_token_expires_at = now() + 1h
-        Server->>Mailer: Send email with URL: /reset-password?token=<rawToken>
-    else Account Does Not Exist
-        Server->>Server: Do nothing (silent anti-enumeration branch)
-    end
-
-    Server-->>Client: 200 OK (Generic message: "If an account exists, a link was sent.")
-    Client-->>User: Displays quiet confirmation card ("Check your inbox")
-
-    Note over User, Mailer: User receives email & clicks reset link
-
-    User->>Client: Opens /reset-password?token=<rawToken>
-    Client->>Client: URL Guard verifies ?token exists (rejects missing token)
-    User->>Client: Enters & confirms new password
-    Client->>Server: POST /api/auth/reset-password { token: rawToken, newPassword }
-    Server->>Server: Compute SHA-256 digest of incoming rawToken
-    Server->>DB: Query user WHERE reset_token = <sha256> AND reset_token_expires_at > now()
-    
-    alt Token Valid & Unexpired
-        Server->>Server: Hash new password with bcrypt
-        Server->>DB: UPDATE users SET password_hash = <newHash>, reset_token = NULL, reset_token_expires_at = NULL
-        Server-->>Client: 200 OK ("Password successfully reset")
-        Client-->>User: Displays success card & redirects to /signin
-    else Token Expired or Reused
-        Server-->>Client: 400 Bad Request ("Invalid or expired password reset token")
-        Client-->>User: Displays "Reset link expired" with button to request new link
-    end
-```
-
-### Why SHA-256 Hashed Tokens?
-If an attacker obtains a read-only dump of the PostgreSQL database, they **cannot reset any user's password**. The database stores only the SHA-256 digest of the token. The raw token exists only in the recipient's private inbox.
-
----
-
-## 📂 Frontend Layer Architecture
-
-The frontend follows a **Feature-Sliced Component Architecture**:
+The client is built using a **Feature-Sliced Architecture** with strict modular isolation:
 
 ```
 client/src/
 ├── features/
-│   ├── auth/                        # Self-contained Auth domain
-│   │   ├── components/              # UI Cards (SignIn, SignUp, Forgot, Reset)
-│   │   ├── context/                 # AuthContext (state, isAuthenticating, user)
-│   │   ├── hooks/                   # useAuth custom hook
-│   │   ├── schemas/                 # Zod validation schemas
-│   │   └── services/                # Axios API service (authApi)
-│   ├── dashboard/                   # Reading Hub domain
-│   │   ├── components/              # Topbar, Hero, Stats, Bookshelf, Quote, Modal
-│   │   ├── types/                   # Domain interfaces
-│   │   └── DashboardPage.tsx        # Page orchestrator
-│   └── landing/                     # Marketing domain
-│       ├── components/              # HeroSection, EditorialPreview, Navbar, Footer
-│       └── LandingPage.tsx          # Landing orchestrator
-├── routes/                          # AppRoutes & ProtectedRoute
-└── shared/                          # Shadcn-inspired UI primitives & utilities
+│   ├── auth/                                    # Authentication & Recovery Module
+│   │   ├── components/                          # SignInCard, ForgotPasswordCard, ResetPasswordCard, PasswordStrengthMeter
+│   │   ├── context/                             # AuthContext & Session Provider
+│   │   ├── hooks/                               # useAuth hook
+│   │   ├── schemas/                             # Zod validation schemas
+│   │   └── services/                            # Axios API client (authApi)
+│   ├── dashboard/                               # Dynamic Role Dashboard
+│   │   ├── utils/                               # Avatar & initial generators
+│   │   └── DashboardPage.tsx                    # Role-based workspace switcher (Employee, Manager, Admin)
+│   ├── travel/                                  # Corporate Travel & Governance Module
+│   │   ├── components/
+│   │   │   ├── forms/                           # DynamicExpenseTable, ExpenseRowItem, ProofAttachmentField, PhoneInputWithCountry, CloneTripDropdown
+│   │   │   ├── shared/                          # TravelMetricsGrid, RouteLabel, TravelDetailSkeleton, InlineConfirmBar
+│   │   │   ├── AdminGovernancePortal.tsx        # Clearance queue, budget metrics, and user management tabs
+│   │   │   ├── EmployeeTravelPortal.tsx         # Active trips, draft controls, and spend analytics tabs
+│   │   │   ├── ManagerQueuePortal.tsx           # Subordinate review queue and revision dispatch
+│   │   │   ├── DepartmentBudgetCard.tsx         # Department quarterly allocation summary
+│   │   │   ├── DepartmentCategoryBreakdownCard.tsx # Recharts pie/donut category breakdown
+│   │   │   ├── DepartmentSpendersVelocityCard.tsx  # Recharts top spenders bar chart
+│   │   │   └── TravelStatusBadge.tsx            # High-contrast status pill badges
+│   │   ├── context/                             # TravelContext (active requests, optimistic caching)
+│   │   ├── hooks/                               # useTravel custom hook
+│   │   ├── layout/                              # DashboardLayout, DynamicRoleSidebar, SidebarNavItem, SidebarUserProfile
+│   │   ├── pages/                               # Full-Page Workstations
+│   │   │   ├── DepartmentBudgetsPage.tsx        # Multi-quarter department budget workstation
+│   │   │   ├── EmployeeSpendAnalyticsPage.tsx   # Employee spend analytics charts
+│   │   │   ├── ManagerTeamAnalyticsPage.tsx     # Manager team spend analytics workstation
+│   │   │   ├── NewTravelRequestPage.tsx         # Request creation workstation
+│   │   │   ├── ResubmitTravelRequestPage.tsx     # Request revision workstation
+│   │   │   └── TravelDetailPage.tsx             # Detailed inspection & audit workstation
+│   │   ├── services/                            # travel.api.ts
+│   │   ├── types/                               # TypeScript domain contracts
+│   │   └── utils/                               # Currency, dial codes, budget analytics
+│   └── users/                                   # User Administration Module
+│       ├── components/                          # UserFormModal (create/edit user)
+│       ├── pages/                               # AdminUsersPage, NewUserPage
+│       ├── schemas/                             # Zod user schemas
+│       ├── services/                            # users.api.ts
+│       └── utils/                               # User helper formatting functions
+├── routes/
+│   ├── AppRoutes.tsx                            # Route registration with lazy code splitting
+│   └── ProtectedRoute.tsx                       # Session & role route protection gates
+├── shared/
+│   ├── components/ui/                           # Primitives (button, input, card, alert, chart, label, password-input)
+│   └── utils/                                   # cn class merger
+├── App.tsx                                      # Root component with AuthProvider & TravelProvider
+├── index.css                                    # Tailwind v4 configuration, font imports & Stripe tokens
+└── main.tsx                                     # Application bootstrapping
 ```
 
-### Architectural Rules:
-- **Loose Coupling**: Feature folders encapsulate their own types, API clients, and schemas.
-- **Orchestrator Pattern**: Page components (`LandingPage`, `DashboardPage`) remain lean (<100 lines) and coordinate independent presentational components.
-- **Single Source of Truth**: Authentication state is managed globally via `AuthContext` and consumed via the `useAuth()` hook.
+### Key Frontend Architectural Patterns
+1. **Dynamic Workspace Orchestration (`DashboardPage.tsx`)**:
+   Instead of static disjointed pages, `/dashboard` reads the authenticated user's role and dynamically mounts the appropriate workspace (`EmployeeTravelPortal`, `ManagerQueuePortal`, or `AdminGovernancePortal`), supporting tab switches to spend analytics without full page reloads.
+2. **Workstation Pattern**:
+   Complex multi-step actions (e.g., creating a travel request, resubmitting a revised journey, or provisioning users) are separated into dedicated full-page workstations (`/travel/new`, `/travel/requests/:id/edit`, `/admin/users/new`) to ensure maximum focus and prevent form state loss.
+3. **Stripe Design System Tokens**:
+   - Palette: Cool canvas (`#F2F7FE`), card surfaces (`#FFFFFF`), primary blurple (`#533AFD`), text ink (`#061B31`), and strong hairline borders (`#CBD5E1`).
+   - Typography: **Plus Jakarta Sans** for UI readability and **JetBrains Mono** for financial figures (`INR` / `₹`).
+   - 5-tier elevation system (`--shadow-xs` to `--shadow-xl`) and 5 border radii (`--radius-xs` to `--radius-full`).
 
 ---
 
-## 🗃️ Backend Layer Architecture
+## 🗃️ Backend Layer Architecture (`server/src/`)
 
-The backend implements a classic **Controller-Service-Repository** pattern:
+The backend follows an enterprise **Controller-Service-Repository** pattern with strict transactional integrity:
 
 ```
-[HTTP Request]
-       │
-       ▼
-[Express Routes]        --> Validates path & attaches middleware
-       │
-       ▼
-[Auth Controller]       --> Extracts request body & sends HTTP response envelopes
-       │
-       ▼
-[Auth Service]          --> Executes business rules, token generation & hashing, SMTP
-       │
-       ▼
-[Auth Repository]       --> Parameterized SQL queries against PostgreSQL pool
-       │
-       ▼
-[PostgreSQL Database]   --> Persists users, password hashes, and hashed reset tokens
+[Incoming HTTP Request]
+         │
+         ▼
+[Express Router]               --> Verifies path & applies route-specific middleware
+         │
+         ▼
+[Guards & Middleware]          --> requireAuth (JWT verify) & requireRole (RBAC)
+         │
+         ▼
+[Feature Controller]           --> Validates payload with Zod & sends JSON responses
+         │
+         ▼
+[Domain Service]               --> Enforces state machine transitions, business logic & budget checks
+         │
+         ▼
+[Repository Layer]             --> Executes parameterized SQL & database transactions (pg pool)
+         │
+         ▼
+[PostgreSQL Database]          --> Persists entities, constraints, and audit timeline
 ```
+
+### Middleware Pipeline (`server/src/app.ts`)
+- **CORS**: Configured with origin binding and `credentials: true`.
+- **Cookie Parser**: Extracts signed `HttpOnly` session tokens.
+- **Multer Middleware (`upload.middleware.ts`)**: Handles multipart file uploads in memory for direct streaming to Cloudinary.
+- **Centralized Error Handler (`error.middleware.ts`)**: Intercepts unhandled exceptions and formats standard JSON error envelopes.
+
+---
+
+## 🗄️ Database Architecture & Data Schema
+
+TripFlow relies on PostgreSQL 14+ for relational integrity, check constraints, foreign keys, and JSONB indexing:
+
+```mermaid
+erDiagram
+    users ||--o{ travel_requests : "submits"
+    users ||--o{ travel_requests : "audits (as manager)"
+    users ||--o{ travel_requests : "clears (as admin)"
+    travel_requests ||--|{ travel_expenses : "contains"
+    travel_requests ||--|{ request_timeline_events : "logs"
+    department_budgets ||--o{ travel_requests : "allocates"
+
+    users {
+        uuid id PK
+        varchar email UK
+        varchar password_hash
+        varchar first_name
+        varchar last_name
+        varchar role "EMPLOYEE | MANAGER | ADMIN"
+        varchar department
+        uuid manager_id FK
+        boolean is_active "Default true"
+        varchar reset_token_hash
+        timestamptz reset_token_expires_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    department_budgets {
+        uuid id PK
+        varchar department
+        int fiscal_year
+        varchar fiscal_quarter
+        numeric total_allocation "Default ₹35,00,000.00"
+        numeric utilized_amount "Default ₹0.00"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    travel_requests {
+        uuid id PK
+        uuid user_id FK
+        uuid manager_id FK
+        uuid admin_id FK
+        varchar travel_type "UPCOMING | ALREADY_TRAVELLED"
+        varchar title
+        text purpose
+        varchar project_code
+        varchar origin
+        varchar destination
+        date departure_date
+        date return_date
+        varchar emergency_contact_name
+        varchar emergency_contact_phone
+        jsonb supporting_docs "Multi-proof receipts & quotations"
+        numeric total_expenses "₹ INR"
+        varchar status "10-state lifecycle enum"
+        varchar revision_target "MANAGER | EMPLOYEE"
+        text manager_remarks
+        timestamptz manager_reviewed_at
+        text admin_remarks
+        timestamptz admin_reviewed_at
+        varchar currency "INR"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    travel_expenses {
+        uuid id PK
+        uuid travel_request_id FK
+        varchar category "FLIGHT | HOTEL | MEALS_PER_DIEM | TRANSIT | MISC"
+        varchar merchant
+        numeric amount "₹ INR"
+        date expense_date
+        varchar receipt_image_url
+        text notes
+        timestamptz created_at
+    }
+
+    request_timeline_events {
+        uuid id PK
+        uuid travel_request_id FK
+        uuid actor_id FK
+        varchar actor_role
+        varchar event_type
+        varchar from_status
+        varchar to_status
+        text remarks
+        timestamptz created_at
+    }
+```
+
+### Multi-Proof Attachment Hub (`supporting_docs` JSONB)
+Rather than limiting requests to a single URL string, migration `003` introduced a `supporting_docs` `JSONB` column indexed via a PostgreSQL **GIN index** (`idx_travel_requests_supporting_docs`). The stored structure follows this contract:
+
+```json
+[
+  {
+    "id": "a5e927c3-3e11-482a-9669-e054f15d9092",
+    "type": "FILE",
+    "name": "indigo-flight-tax-invoice.pdf",
+    "url": "https://res.cloudinary.com/tripflow/image/upload/v12345/proof.pdf",
+    "uploadedAt": "2026-11-18T10:00:00.000Z"
+  }
+]
+```
+
+---
+
+## 🔄 End-to-End Sequence Diagrams
+
+### Sequence 1: Travel Request Creation & Multi-Proof Upload
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Employee as Employee (Browser)
+    participant Client as React Client (/travel/new)
+    participant Server as Express Server
+    participant Cloudinary as Cloudinary API
+    participant DB as PostgreSQL
+
+    Employee->>Client: Attaches quotation/receipt PDF/image
+    Client->>Server: POST /api/travel/upload (multipart/form-data)
+    Server->>Cloudinary: Streams file buffer to Cloudinary
+    Cloudinary-->>Server: Returns secure HTTPS asset URL
+    Server-->>Client: 200 OK { url, name, id }
+    Client->>Client: Updates supporting_docs state & recalculates totals
+    Employee->>Client: Completes logistics & clicks "Submit Request"
+    Client->>Server: POST /api/travel/requests { itinerary, expenses, supportingDocs }
+    Server->>Server: Validate payload (dates, categories, amounts in INR)
+    Server->>DB: BEGIN TRANSACTION
+    Server->>DB: INSERT INTO travel_requests (status = 'PENDING_MANAGER_REVIEW')
+    Server->>DB: INSERT INTO travel_expenses (bulk line items)
+    Server->>DB: INSERT INTO request_timeline_events (event = 'SUBMITTED')
+    Server->>DB: COMMIT TRANSACTION
+    Server-->>Client: 201 Created { request }
+    Client->>Client: Navigates to /dashboard with confirmation banner
+```
+
+### Sequence 2: Two-Tier Review, Admin Route B Revision, & Strict Re-routing
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Manager as Line Manager
+    actor Admin as Admin / Finance
+    actor Employee as Employee
+    participant Server as Express Server
+    participant DB as PostgreSQL
+
+    Note over Manager, DB: Tier 1: Line Manager Audit
+    Manager->>Server: POST /api/travel/requests/:id/manager-review { action: "APPROVE_AND_FORWARD" }
+    Server->>DB: UPDATE travel_requests SET status = 'PENDING_ADMIN_APPROVAL'
+    Server->>DB: INSERT INTO request_timeline_events (to_status = 'PENDING_ADMIN_APPROVAL')
+    Server-->>Manager: 200 OK
+
+    Note over Admin, DB: Tier 2: Admin Direct Revision Request (Route B)
+    Admin->>Server: POST /api/travel/requests/:id/admin-review { action: "REQUEST_REVISION", target: "EMPLOYEE", remarks: "Please upload hotel invoice" }
+    Server->>DB: UPDATE travel_requests SET status = 'REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE', revision_target = 'EMPLOYEE'
+    Server->>DB: INSERT INTO request_timeline_events (remarks = "Please upload hotel invoice")
+    Server-->>Admin: 200 OK
+
+    Note over Employee, DB: Core Invariant: Employee Resubmission Strictly Re-Routes to Manager
+    Employee->>Server: POST /api/travel/requests/:id/resubmit { updatedExpenses, remarks: "Uploaded invoice" }
+    Server->>Server: Validate state transition: REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE -> PENDING_MANAGER_REVIEW
+    Server->>DB: BEGIN TRANSACTION
+    Server->>DB: UPDATE travel_requests SET status = 'PENDING_MANAGER_REVIEW', revision_target = NULL
+    Server->>DB: INSERT INTO request_timeline_events (event = 'RESUBMITTED', to_status = 'PENDING_MANAGER_REVIEW')
+    Server->>DB: COMMIT TRANSACTION
+    Server-->>Employee: 200 OK (Re-routed to Manager queue)
+```
+
+---
+
+## 🔐 Security, Session & Authorization Model
+
+1. **HttpOnly Cookie Architecture**:
+   - Authentication tokens are delivered via `HttpOnly`, `SameSite=Lax` cookies, preventing XSS-based token theft.
+   - Cross-Origin Resource Sharing (CORS) is bound to `CLIENT_URL` with credentials explicitly enabled.
+2. **Role-Based Access Control (RBAC)**:
+   - Routes are gated using `requireAuth` and `requireRole(['MANAGER', 'ADMIN'])` middleware.
+   - Users can only view requests they own, requests of subordinates they manage, or all company requests if assigned the `ADMIN` role.
+3. **Cryptographic Password Recovery**:
+   - Raw tokens are 32-byte cryptographically secure random values (`crypto.randomBytes`).
+   - Stored in PostgreSQL strictly as **SHA-256 digests**. A database leak does not expose valid reset tokens.
+   - Enforces a 1-hour expiration window and single-use invalidation.
+   - Implements anti-enumeration (identical calm response whether the email exists or not).
+4. **Governance Lifecycle & Erasure Safeguards**:
+   - Accounts carry an `is_active` flag. Deactivated users are blocked by authentication middleware.
+   - Admin user deletion requires explicit confirmation and handles database cascading cleanly.
 
 ---
 
 ## 📊 Complete Technology Matrix
 
-| Concern | Client Layer | Server Layer |
-| :--- | :--- | :--- |
-| **Language** | TypeScript 5.8 | TypeScript 5.8 |
-| **Framework / Runtime** | React 19 / Vite 8 | Express 5 / Node.js 20+ |
-| **Styling & Theme** | Tailwind CSS v4 (Warm Storycraft) | N/A |
-| **Routing** | React Router 7 | Express Router |
-| **State Management** | React Context API | Stateless JWT Sessions |
-| **Form Validation** | Zod | Zod / Native Regex validators |
-| **Database** | N/A | PostgreSQL 14+ |
-| **Email Service** | N/A | Nodemailer (Gmail SMTP & Ethereal) |
-| **Security** | Pre-flight validation, URL Guards | Bcrypt, JWT, SHA-256 tokens |
+| Concern | Client Layer | Server Layer | Infrastructure / Persistence |
+| :--- | :--- | :--- | :--- |
+| **Language** | TypeScript 5.8 / 7.0 | TypeScript 5.8.2 | SQL (PostgreSQL 14+) |
+| **Framework / Runtime** | React 19.3.1 / Vite 8.3.5 | Express 5.3.0 / Node.js 20+ | Node.js runtime (`tsx`) |
+| **Design System & Styling** | Tailwind CSS v4 (Stripe System) | N/A | N/A |
+| **Typography** | Plus Jakarta Sans & JetBrains Mono | N/A | Google Fonts Preconnect |
+| **Routing** | React Router 7.18.5 | Express Router 5.3.0 | N/A |
+| **Data Visualization** | Recharts 3.10.1 | N/A | N/A |
+| **Form Validation** | Zod 4.6.7 & React Hook Form | Zod / Type validators | SQL Constraints (`CHECK`, `FK`) |
+| **File Storage** | Axios Multipart Upload | Multer 2.5.0 (Memory Stream) | Cloudinary API & Local Disk |
+| **Database Access** | Axios REST Client | `pg` 8.13.3 Connection Pool | PostgreSQL 14+ |
+| **Authentication** | HttpOnly Cookies & AuthContext | JWT (`jsonwebtoken` 9.0.3) | SHA-256 digested reset tokens |
+| **Password Security** | PasswordStrengthMeter component | `bcryptjs` (10 rounds) | Bcrypt hashes in database |
+| **Email Service** | N/A | Nodemailer 10.3.1 | SMTP / Gmail / Ethereal |
+| **Testing Engine** | Standalone assertion suites | TSX assertion test suites | 47 FSM & validation tests |

@@ -1,15 +1,16 @@
 # TripFlow Database Schema Documentation
 
-This document describes the PostgreSQL database schema, relational architecture, constraints, indexes, and cryptographic security designs utilized in the **TripFlow** Corporate Travel & Expense Governance platform.
+This document describes the PostgreSQL database schema, relational architecture, constraints, performance indexes, migration history, and data integrity designs utilized in the **TripFlow** Corporate Travel & Expense Governance platform.
 
 ---
 
 ## 🗄️ Database Architecture & Tech Stack
 
 * **Database Engine**: PostgreSQL 14+
-* **Primary Key Strategy**: UUID v4 (`gen_random_uuid()`) to prevent enumeration attacks and simplify distributed replication.
+* **Primary Key Strategy**: UUID v4 (`gen_random_uuid()`) across all tables to prevent enumeration attacks and support seamless data partitioning.
 * **Timestamps**: All timestamps stored as `TIMESTAMPTZ` (UTC with timezone).
-* **Currency Standard**: Default currency `INR`. All financial balances, estimates, and expenses are stored as `NUMERIC(12, 2)` or `NUMERIC(14, 2)` to eliminate floating-point rounding errors.
+* **Currency Standard**: All monetary values are stored in Indian Rupees (`INR`) as fixed-precision `NUMERIC(10, 2)`, `NUMERIC(12, 2)`, or `NUMERIC(14, 2)` to eliminate floating-point arithmetic errors.
+* **Multi-Proof Attachments**: Stored as a native PostgreSQL `JSONB` array with a **GIN index** for efficient querying of uploaded receipts and quotations.
 * **Migration Runner**: Transactional runner in `server/src/shared/db/migrate.ts` executing ordered SQL files from `server/src/shared/db/migrations/`.
 
 ---
@@ -34,6 +35,7 @@ erDiagram
         varchar role "EMPLOYEE | MANAGER | ADMIN"
         varchar department
         uuid manager_id FK
+        boolean is_active "Default true"
         varchar reset_token
         timestamptz reset_token_expires_at
         timestamptz created_at
@@ -66,7 +68,8 @@ erDiagram
         date return_date
         varchar emergency_contact_name
         varchar emergency_contact_phone
-        varchar supporting_doc_url
+        varchar supporting_doc_url "Legacy fallback"
+        jsonb supporting_docs "Multi-proof receipts & quotes (GIN)"
         numeric total_expenses "INR (₹)"
         varchar status "10 FSM States"
         varchar revision_target "MANAGER | EMPLOYEE"
@@ -95,7 +98,7 @@ erDiagram
         uuid id PK
         uuid travel_request_id FK
         uuid actor_id FK
-        varchar actor_role "EMPLOYEE | MANAGER | ADMIN | SYSTEM"
+        varchar actor_role "EMPLOYEE | MANAGER | ADMIN"
         varchar event_type "SUBMITTED | MANAGER_APPROVED | REVISION_REQUESTED | ..."
         varchar from_status
         varchar to_status
@@ -106,10 +109,10 @@ erDiagram
 
 ---
 
-## 📋 Table Definitions & DDL
+## 📋 Table Definitions & DDL Specifications
 
 ### 1. `users` (Identities & Roles)
-Stores employee, line manager, and admin authentication credentials, reporting hierarchy, and recovery tokens.
+Stores employee, line manager, and administrator credentials, reporting hierarchy, active status, and recovery tokens.
 
 ```sql
 CREATE TABLE IF NOT EXISTS users (
@@ -120,6 +123,7 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(50) NOT NULL CHECK (role IN ('EMPLOYEE', 'MANAGER', 'ADMIN')) DEFAULT 'EMPLOYEE',
     department VARCHAR(100) NOT NULL DEFAULT 'Engineering',
     manager_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     reset_token VARCHAR(255),
     reset_token_expires_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -137,15 +141,16 @@ CREATE TABLE IF NOT EXISTS users (
 | `role` | `VARCHAR(50)` | No | `'EMPLOYEE'` | Role guard: `EMPLOYEE`, `MANAGER`, or `ADMIN` |
 | `department` | `VARCHAR(100)` | No | `'Engineering'` | Employee's business unit (e.g., Engineering, Sales, Product) |
 | `manager_id` | `UUID` | Yes | `NULL` | Foreign key referencing line manager's `users.id` |
-| `reset_token` | `VARCHAR(255)` | Yes | `NULL` | SHA-256 digest of 32-byte password reset token |
+| `is_active` | `BOOLEAN` | No | `TRUE` | User governance lifecycle flag; deactivated users cannot log in |
+| `reset_token` | `VARCHAR(255)` | Yes | `NULL` | SHA-256 digest of 32-byte password recovery token |
 | `reset_token_expires_at` | `TIMESTAMPTZ` | Yes | `NULL` | 1-hour expiration timestamp |
 | `created_at` | `TIMESTAMPTZ` | No | `CURRENT_TIMESTAMP` | Account creation timestamp |
-| `updated_at` | `TIMESTAMPTZ` | No | `CURRENT_TIMESTAMP` | Last profile update |
+| `updated_at` | `TIMESTAMPTZ` | No | `CURRENT_TIMESTAMP` | Last profile update timestamp |
 
 ---
 
 ### 2. `department_budgets` (Fiscal Guardrails)
-Tracks quarterly travel budgets and utilized allocations in Indian Rupees (`₹`).
+Tracks quarterly travel budgets and real-time utilized allocations in Indian Rupees (`₹`).
 
 ```sql
 CREATE TABLE IF NOT EXISTS department_budgets (
@@ -165,11 +170,11 @@ CREATE TABLE IF NOT EXISTS department_budgets (
 | Column | Type | Nullable | Default | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `id` | `UUID` | No | `gen_random_uuid()` | Unique budget record ID |
-| `department` | `VARCHAR(100)` | No | None | Department name (e.g. `Engineering`) |
+| `department` | `VARCHAR(100)` | No | None | Department name (e.g. `Engineering`, `Sales`) |
 | `fiscal_year` | `INT` | No | None | Year (e.g. `2026`) |
-| `fiscal_quarter` | `VARCHAR(20)` | No | None | Quarter (e.g. `'Q4'`) |
+| `fiscal_quarter` | `VARCHAR(20)` | No | None | Quarter identifier (`'Q1'`, `'Q2'`, `'Q3'`, `'Q4'`) |
 | `total_allocation` | `NUMERIC(14, 2)`| No | `3500000.00` | Total approved allocation (`₹35,00,000.00`) |
-| `utilized_amount` | `NUMERIC(14, 2)`| No | `0.00` | Sum of cleared/approved expenditures (`₹`) |
+| `utilized_amount` | `NUMERIC(14, 2)`| No | `0.00` | Sum of cleared expenditures in INR (`₹`) |
 
 ---
 
@@ -193,6 +198,7 @@ CREATE TABLE IF NOT EXISTS travel_requests (
     emergency_contact_name VARCHAR(150) NOT NULL,
     emergency_contact_phone VARCHAR(50) NOT NULL,
     supporting_doc_url VARCHAR(500),
+    supporting_docs JSONB NOT NULL DEFAULT '[]'::jsonb,
     total_expenses NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
     status VARCHAR(60) NOT NULL DEFAULT 'DRAFT' CHECK (status IN (
         'DRAFT',
@@ -217,10 +223,24 @@ CREATE TABLE IF NOT EXISTS travel_requests (
 );
 ```
 
+#### Multi-Proof Attachment Contract (`supporting_docs` JSONB)
+The `supporting_docs` column stores an array of proof documents:
+```json
+[
+  {
+    "id": "f8a927c3-3e11-482a-9669-e054f15d9092",
+    "name": "flight-itinerary-quote.pdf",
+    "type": "FILE",
+    "url": "https://res.cloudinary.com/tripflow/image/upload/v1731924000/proofs/flight-itinerary-quote.pdf",
+    "uploadedAt": "2026-11-18T10:00:00.000Z"
+  }
+]
+```
+
 ---
 
-### 4. `travel_expenses` (Itemized Line Items & Proof)
-Stores itemized expenses with merchant details, category, date, amount, and receipt/quotation images.
+### 4. `travel_expenses` (Itemized Line Items)
+Stores individual expenditure lines linked to a travel request.
 
 ```sql
 CREATE TABLE IF NOT EXISTS travel_expenses (
@@ -241,7 +261,7 @@ CREATE TABLE IF NOT EXISTS travel_expenses (
 ---
 
 ### 5. `request_timeline_events` (Immutable Audit Ledger)
-Audit trail logging every state change, instruction dispatch, approval, and settlement.
+Audit trail logging every status change, instruction dispatch, approval, and settlement.
 
 ```sql
 CREATE TABLE IF NOT EXISTS request_timeline_events (
@@ -266,6 +286,7 @@ CREATE TABLE IF NOT EXISTS request_timeline_events (
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_manager ON users(manager_id);
+CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token);
 
 -- Travel Requests Indexes
@@ -274,6 +295,7 @@ CREATE INDEX IF NOT EXISTS idx_travel_requests_manager ON travel_requests(manage
 CREATE INDEX IF NOT EXISTS idx_travel_requests_status ON travel_requests(status);
 CREATE INDEX IF NOT EXISTS idx_travel_requests_travel_type ON travel_requests(travel_type);
 CREATE INDEX IF NOT EXISTS idx_travel_requests_created_at ON travel_requests(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_travel_requests_supporting_docs ON travel_requests USING GIN (supporting_docs);
 
 -- Travel Expenses Indexes
 CREATE INDEX IF NOT EXISTS idx_travel_expenses_req_id ON travel_expenses(travel_request_id);
@@ -290,17 +312,15 @@ CREATE INDEX IF NOT EXISTS idx_dept_budgets_lookup ON department_budgets(departm
 
 ## 🛡️ Business Invariants Enforced in Database
 
-1. **Foreign Key Cascades**:
-   - Deleting a `travel_request` automatically cascades and purges its associated line items in `travel_expenses` and audit logs in `request_timeline_events`.
-   - Deleting a `user` sets `manager_id` or `admin_id` in `travel_requests` to `NULL` to preserve historical audit continuity.
-2. **Numeric Financial Precision**:
-   - Amounts use fixed-precision `NUMERIC(10, 2)` / `NUMERIC(12, 2)` / `NUMERIC(14, 2)` to eliminate floating-point arithmetic errors.
-3. **Monetary Default**:
-   - `currency` column in `travel_requests` defaults to `'INR'`.
-4. **Finite State Machine Integrity**:
-   - Checked constraints enforce 10 valid status values (`DRAFT`, `PENDING_MANAGER_REVIEW`, `REVISION_REQUESTED_BY_MANAGER`, `PENDING_ADMIN_APPROVAL`, `REVISION_REQUESTED_BY_ADMIN_TO_MANAGER`, `REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE`, `APPROVED`, `SETTLED`, `REJECTED`, `CANCELLED`).
-5. **Manager Re-verification Rule**:
-   - When employee modifies a revised request, status updates strictly to `PENDING_MANAGER_REVIEW`.
+1. **Relational Cascades**:
+   - Deleting a `travel_request` cascades and cleans up `travel_expenses` and `request_timeline_events`.
+   - Deleting a `user` sets `manager_id` or `admin_id` in `travel_requests` to `NULL`, maintaining historical audit validity.
+2. **Fixed Financial Precision**:
+   - Amounts use `NUMERIC(10, 2)` / `NUMERIC(12, 2)` / `NUMERIC(14, 2)` to eliminate floating-point inaccuracies.
+3. **Finite State Machine Integrity**:
+   - Check constraints strictly restrict status values to the 10 defined lifecycle states.
+4. **Manager Re-routing Rule**:
+   - Resubmitting an altered travel request resets status to `PENDING_MANAGER_REVIEW`.
 
 ---
 
@@ -308,30 +328,13 @@ CREATE INDEX IF NOT EXISTS idx_dept_budgets_lookup ON department_budgets(departm
 
 Migrations are executed in sequential order by `server/src/shared/db/migrate.ts`:
 
-1. `001_create_users_table.sql`: Base user registration, passwords, and cryptographic reset tokens.
-2. `002_create_travel_governance_tables.sql`: Role expansion (`MANAGER`, `ADMIN`), department budgets, travel requests, itemized expenses, and timeline event tables.
+1. **`001_create_users_table.sql`**: Base user registration, passwords, and cryptographic reset tokens.
+2. **`002_create_travel_governance_tables.sql`**: Role expansion (`MANAGER`, `ADMIN`), department budgets, travel requests, itemized expenses, and timeline event tables.
+3. **`003_add_supporting_docs.sql`**: Adds `supporting_docs` JSONB column with GIN index on `travel_requests` for multi-proof receipt uploads.
+4. **`004_add_user_lifecycle.sql`**: Adds `is_active` boolean column and index on `users` for account deactivation.
 
 ### Running Database Migrations
 ```bash
 cd server
 npm run migrate
 ```
-
----
-
-## 👥 Seed Roles & Hierarchy Reference
-
-For local development, automated testing, and Postman API auditing, standard test accounts and budget records are configured:
-
-| Role | Email | Password | Department | Reporting Line |
-| :--- | :--- | :--- | :--- | :--- |
-| `EMPLOYEE` | `employee@corp.com` | `Password123!` | Engineering | Reports to `manager@corp.com` (`users.manager_id`) |
-| `MANAGER` | `manager@corp.com` | `Password123!` | Engineering | Line manager for Engineering team |
-| `ADMIN` | `admin@corp.com` | `Password123!` | Executive | Organization-wide governance & budget clearance |
-
-### Department Initial Budget Seed
-* **Department**: `Engineering`
-* **Fiscal Period**: `2026 Q4`
-* **Total Allocation**: `₹35,00,000.00` (`NUMERIC(14, 2)`)
-* **Utilized Amount**: `₹0.00` (auto-incremented on Admin approvals)
-* **Headroom Formula**: `available_headroom = total_allocation - utilized_amount`
