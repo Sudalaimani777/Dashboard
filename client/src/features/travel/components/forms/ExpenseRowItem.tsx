@@ -5,7 +5,6 @@ import { useWatch } from 'react-hook-form';
 import type { TravelFormValues } from '../../hooks/useTravelForm';
 import { parseExpenseAmount } from '../../hooks/useTravelForm';
 import { useFxRate } from '../../hooks/useFxRate';
-import { CURRENCY_SYMBOLS } from '../../utils/currency';
 
 export interface ExpenseRowItemProps {
   index: number;
@@ -20,16 +19,16 @@ export interface ExpenseRowItemProps {
 }
 
 const SUPPORTED_CURRENCIES = [
-  { code: 'INR', label: 'INR (₹)', symbol: '₹' },
-  { code: 'USD', label: 'USD ($)', symbol: '$' },
-  { code: 'EUR', label: 'EUR (€)', symbol: '€' },
-  { code: 'GBP', label: 'GBP (£)', symbol: '£' },
-  { code: 'AED', label: 'AED (د.إ)', symbol: 'د.إ' },
-  { code: 'SGD', label: 'SGD (S$)', symbol: 'S$' },
-  { code: 'JPY', label: 'JPY (¥)', symbol: '¥' },
-  { code: 'CAD', label: 'CAD (C$)', symbol: 'C$' },
-  { code: 'AUD', label: 'AUD (A$)', symbol: 'A$' },
-  { code: 'CHF', label: 'CHF', symbol: 'CHF' },
+  { code: 'INR', label: 'INR (₹)' },
+  { code: 'USD', label: 'USD ($)' },
+  { code: 'EUR', label: 'EUR (€)' },
+  { code: 'GBP', label: 'GBP (£)' },
+  { code: 'AED', label: 'AED (د.إ)' },
+  { code: 'SGD', label: 'SGD (S$)' },
+  { code: 'JPY', label: 'JPY (¥)' },
+  { code: 'CAD', label: 'CAD (C$)' },
+  { code: 'AUD', label: 'AUD (A$)' },
+  { code: 'CHF', label: 'CHF' },
 ];
 
 export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
@@ -77,13 +76,11 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
     setValue(`expenses.${index}.exchangeRate`, rate);
   }, [watchedCurrency, watchedOriginalAmount, rate, index, setValue]);
 
-  const activeSymbol = CURRENCY_SYMBOLS[watchedCurrency] || watchedCurrency;
-
   return (
     <div className="flex flex-col gap-2 py-3 transition-all">
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 items-start">
-        {/* Category */}
-        <div className="sm:col-span-3">
+        {/* Category (2 cols) */}
+        <div className="sm:col-span-2">
           <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Category</label>
           <select
             {...register(`expenses.${index}.category`)}
@@ -97,12 +94,12 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
           </select>
         </div>
 
-        {/* Merchant / Vendor */}
+        {/* Merchant / Vendor (3 cols) */}
         <div className="sm:col-span-3 flex flex-col gap-1">
           <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Merchant / Vendor</label>
           <input
             type="text"
-            placeholder="Merchant or vendor name"
+            placeholder="Merchant name"
             {...register(`expenses.${index}.merchant`)}
             className="w-full bg-surface border border-border-warm rounded-lg px-3 py-2 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
           />
@@ -111,9 +108,9 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
           )}
         </div>
 
-        {/* Expense Date */}
+        {/* Expense Date (2 cols) */}
         <div className="sm:col-span-2 flex flex-col gap-1">
-          <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Expense Date</label>
+          <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Date</label>
           <input
             type="date"
             min={minDate}
@@ -126,48 +123,45 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
           )}
         </div>
 
-        {/* Multi-Currency & Amount */}
-        <div className="sm:col-span-3 flex flex-col gap-1">
+        {/* Unified Machined Currency & Amount Input Group (4 cols) */}
+        <div className="sm:col-span-4 flex flex-col gap-1">
           <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Currency & Amount</label>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center rounded-lg border border-border-warm bg-surface shadow-xs focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all overflow-hidden h-9">
+            {/* Integrated Currency Dropdown */}
             <select
               {...register(`expenses.${index}.originalCurrency`)}
-              className="w-24 bg-surface border border-border-warm rounded-lg px-2 py-2 text-xs font-semibold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all cursor-pointer"
+              className="h-full bg-surface-subtle hover:bg-secondary/40 px-2.5 text-xs font-semibold text-ink border-r border-border-warm focus:outline-none cursor-pointer shrink-0 transition-colors"
               aria-label="Currency"
             >
               {SUPPORTED_CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
-                  {c.code} ({c.symbol})
+                  {c.label}
                 </option>
               ))}
             </select>
 
-            <div className="relative flex-1">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-muted">
-                {activeSymbol}
-              </span>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0.00"
-                {...register(`expenses.${index}.originalAmount`, {
-                  setValueAs: parseExpenseAmount,
-                })}
-                onKeyDown={(e) => {
-                  if (
-                    ['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) ||
-                    e.ctrlKey ||
-                    e.metaKey
-                  ) {
-                    return;
-                  }
-                  if (!/^[0-9.]$/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-                className="w-full bg-surface border border-border-warm rounded-lg pl-7 pr-2 py-2 text-xs font-mono tabular-nums text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
-              />
-            </div>
+            {/* Seamless Borderless Monospace Amount Input */}
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="0.00"
+              {...register(`expenses.${index}.originalAmount`, {
+                setValueAs: parseExpenseAmount,
+              })}
+              onKeyDown={(e) => {
+                if (
+                  ['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) ||
+                  e.ctrlKey ||
+                  e.metaKey
+                ) {
+                  return;
+                }
+                if (!/^[0-9.]$/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              className="h-full flex-1 min-w-0 bg-transparent px-3 text-xs font-mono font-bold tabular-nums text-ink placeholder:text-faint focus:outline-none"
+            />
           </div>
 
           {/* Hidden inputs to preserve form submission schema */}
@@ -175,13 +169,16 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
           <input type="hidden" {...register(`expenses.${index}.inrAmount`)} />
           <input type="hidden" {...register(`expenses.${index}.exchangeRate`)} />
 
-          {/* Live FX conversion pill */}
+          {/* Live FX conversion strip (Responsive, zero-clipping financial metadata) */}
           {watchedCurrency !== 'INR' && (
-            <div className="mt-1 flex items-center justify-between text-[11px] font-mono px-2 py-1 rounded bg-[#F8FAFC] border border-[#CBD5E1] text-[#061B31]">
-              <span className="text-[#50617A]">
+            <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-[10.5px] font-mono text-muted">
+              <span className="text-[#50617A] shrink-0">
                 1 {watchedCurrency} = ₹{loading ? '...' : rate.toFixed(2)}
               </span>
-              <span className="font-bold text-[#533AFD] tabular-nums">
+              <span
+                className="font-semibold text-primary tabular-nums shrink-0 ml-auto"
+                title={`≈ ₹${((Number(watchedOriginalAmount) || 0) * rate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} INR`}
+              >
                 ≈ ₹{((Number(watchedOriginalAmount) || 0) * rate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
@@ -195,8 +192,8 @@ export const ExpenseRowItem: React.FC<ExpenseRowItemProps> = ({
           )}
         </div>
 
-        {/* Action button */}
-        <div className="sm:col-span-1 flex justify-end sm:justify-center pt-0.5">
+        {/* Action button (1 col) */}
+        <div className="sm:col-span-1 flex justify-end sm:justify-center pt-1.5">
           <button
             type="button"
             onClick={onRemove}

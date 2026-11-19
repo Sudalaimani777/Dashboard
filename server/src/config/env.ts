@@ -34,4 +34,8 @@ export const config = {
     apiKey: process.env.CLOUDINARY_API_KEY || '',
     apiSecret: process.env.CLOUDINARY_API_SECRET || '',
   },
+  currency: {
+    primary: process.env.CURRENCY_PRIMARY_BASE || "",
+    fallback: process.env.CURRENCY_FALLBACK_BASE || ""
+  }
 };

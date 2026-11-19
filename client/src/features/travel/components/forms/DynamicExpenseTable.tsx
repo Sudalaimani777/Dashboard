@@ -100,10 +100,10 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
 
       {/* Desktop Column Header */}
       <div className="hidden sm:grid grid-cols-12 gap-3 px-2 text-[11px] font-medium text-muted">
-        <span className="col-span-3">Category</span>
+        <span className="col-span-2">Category</span>
         <span className="col-span-3">Merchant / Vendor</span>
         <span className="col-span-2">Date</span>
-        <span className="col-span-3">Currency & Amount</span>
+        <span className="col-span-4">Currency & Amount</span>
         <span className="col-span-1 text-center">Action</span>
       </div>
 

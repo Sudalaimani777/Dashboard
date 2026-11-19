@@ -32,7 +32,7 @@ export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
   return (
     <div className="mt-auto pt-3 border-t border-border-warm flex items-center justify-between shrink-0 select-none">
       <div
-        className="flex items-center min-w-0 overflow-hidden"
+        className="flex items-center flex-1 min-w-0 mr-2"
         title={isCollapsed ? `${user.name} (${roleLabel})` : undefined}
       >
         {/* 36px Circular Initials Avatar */}
@@ -42,7 +42,7 @@ export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
 
         {/* User Details (Smoothly masked when collapsed) */}
         {!isCollapsed && (
-          <div className="flex flex-col min-w-0 ml-2.5 overflow-hidden text-left leading-tight">
+          <div className="flex flex-col min-w-0 ml-2.5 text-left leading-tight">
             <span className="text-[13px] font-semibold text-ink truncate">
               {user.name}
             </span>

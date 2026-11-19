@@ -1,5 +1,6 @@
 // server/src/shared/services/exchangeRate.service.ts
 import { pool } from '../db/pool.js';
+import { config } from '../../config/env.js';
 
 export interface FxRateResult {
   from: string;
@@ -10,8 +11,13 @@ export interface FxRateResult {
 }
 
 export class ExchangeRateService {
-  private static readonly PRIMARY_BASE = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api';
-  private static readonly FALLBACK_BASE = 'https://latest.currency-api.pages.dev/v1/currencies';
+  private static get PRIMARY_BASE(): string {
+    return config.currency.primary;
+  }
+
+  private static get FALLBACK_BASE(): string {
+    return config.currency.fallback;
+  }
   
   public static readonly ALLOWED_CURRENCIES = new Set([
     'INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'THB', 'MYR'
