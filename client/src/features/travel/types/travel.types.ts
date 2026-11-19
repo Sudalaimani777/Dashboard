@@ -35,8 +35,19 @@ export interface TravelExpenseItem {
   category: ExpenseCategory;
   merchant: string;
   amount: number;
+  originalCurrency?: string;
+  original_currency?: string;
+  originalAmount?: number;
+  original_amount?: number;
+  exchangeRate?: number;
+  exchange_rate?: number;
+  inrAmount?: number;
+  inr_amount?: number;
+  currency?: string;
   expenseDate: string;
+  expense_date?: string;
   receiptImageUrl?: string | null;
+  receipt_image_url?: string | null;
   notes?: string | null;
 }
 
