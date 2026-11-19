@@ -235,6 +235,13 @@ export class TravelService {
       throw new Error('Access denied: You can only view your own travel requests');
     }
 
+    if (actorRole === 'MANAGER' && actorId && request.userId !== actorId) {
+      const assignedManagerId = request.managerId || (request as any).manager_id;
+      if (assignedManagerId && assignedManagerId !== actorId) {
+        throw new Error('Access denied: You can only view travel requests for your direct reports');
+      }
+    }
+
     return request;
   }
 
@@ -268,13 +275,19 @@ export class TravelService {
   async managerReview(
     managerId: string,
     requestId: string,
-    options: ManagerReviewOptions
+    options: ManagerReviewOptions,
+    actorRole: TravelRole = 'MANAGER'
   ): Promise<TravelRequest> {
     const request = await this.getRequestById(requestId);
 
     const requestOwnerId = request.userId || request.user_id;
     if (requestOwnerId && requestOwnerId === managerId) {
       throw new Error('Self-review blocked: Managers cannot audit or approve their own personal travel requests');
+    }
+
+    const assignedManagerId = request.managerId || (request as any).manager_id;
+    if (assignedManagerId && assignedManagerId !== managerId && actorRole !== 'ADMIN') {
+      throw new Error('Forbidden: You are not authorized to audit travel requests outside your reporting line');
     }
 
     const reviewableStatuses: TravelStatus[] = ['PENDING_MANAGER_REVIEW', 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER'];

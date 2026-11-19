@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
+import { RoleRoute } from './RoleRoute';
 
 /** Lazy-loads a named export from a module for route-level code splitting. */
 function lazyNamed<T extends Record<string, any>, K extends keyof T>(
@@ -74,7 +75,9 @@ export const AppRoutes: React.FC = () => {
               <Route path="/travel/requests/:id/edit" element={<ResubmitTravelRequestPage />} />
               <Route path="/travel/audit/:id" element={<LegacyTravelReviewRedirect />} />
               <Route path="/travel/clearance/:id" element={<LegacyTravelReviewRedirect />} />
-              <Route path="/admin/users/new" element={<NewUserPage />} />
+              <Route element={<RoleRoute allowedRoles={['ADMIN']} />}>
+                <Route path="/admin/users/new" element={<NewUserPage />} />
+              </Route>
             </Route>
           </Route>
 

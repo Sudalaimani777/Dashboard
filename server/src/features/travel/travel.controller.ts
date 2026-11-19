@@ -4,6 +4,7 @@ import path from 'node:path';
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../../shared/middleware/auth.middleware.js';
 import { sendError, sendSuccess } from '../../shared/utils/response.js';
+import { config } from '../../config/env.js';
 import { ExchangeRateService } from '../../shared/services/exchangeRate.service.js';
 import { cloudinaryService } from '../../shared/services/cloudinary.service.js';
 import { TravelService } from './travel.service.js';
@@ -118,7 +119,12 @@ export class TravelController {
         return sendError(res, 'Authentication required', 401);
       }
 
-      const updated = await this.service.managerReview(userId, id, req.body);
+      const updated = await this.service.managerReview(
+        userId,
+        id,
+        req.body,
+        (req.user?.role || 'MANAGER') as TravelRole
+      );
       return sendSuccess(res, updated, 'Manager review action recorded');
     } catch (err: any) {
       return sendError(res, err.message, 400);
@@ -274,8 +280,19 @@ export class TravelController {
         }
       }
 
-      // 3. Fallback redirect
-      return res.redirect(rawUrl);
+      // 3. Fallback redirect: only allow safe redirect if within allowed origins (prevention of Open Redirect)
+      try {
+        const parsedUrl = new URL(rawUrl, config.clientUrl);
+        const clientHostname = new URL(config.clientUrl).hostname;
+        const allowedOrigins = ['res.cloudinary.com', clientHostname, 'localhost', '127.0.0.1'];
+        if (allowedOrigins.includes(parsedUrl.hostname)) {
+          return res.redirect(parsedUrl.toString());
+        }
+      } catch {
+        // Ignore parsing error and drop to 400
+      }
+
+      return sendError(res, 'Invalid or untrusted file download URL destination', 400);
     } catch (err: any) {
       return sendError(res, err.message || 'Failed to download proof file', 500);
     }

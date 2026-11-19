@@ -8,5 +8,9 @@ export function errorHandler(
   _next: NextFunction
 ) {
   console.error('Unhandled Application Error:', err);
-  return sendError(res, err.message || 'Internal Server Error', 500);
+  const message =
+    process.env.NODE_ENV === 'production'
+      ? 'An unexpected error occurred. Please contact administrator.'
+      : err.message || 'Internal Server Error';
+  return sendError(res, message, 500);
 }

@@ -128,6 +128,14 @@ export class UsersService {
       }
     }
 
+    const travelRecordCount = await this.repo.countUserTravelRecords(targetUserId);
+    if (travelRecordCount > 0) {
+      throw new UserValidationError(
+        'Cannot delete user with associated corporate travel or financial records. Please deactivate the account instead to preserve financial audit compliance.',
+        400
+      );
+    }
+
     const deleted = await this.repo.deleteUser(targetUserId);
     if (!deleted) {
       throw new UserValidationError('Failed to delete user.', 500);

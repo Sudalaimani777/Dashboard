@@ -1,8 +1,7 @@
 // client/src/features/notifications/services/notifications.api.ts
 import axios, { isAxiosError, type AxiosInstance } from 'axios';
 import type { NotificationListResponse } from '../types/notification.types';
-
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../../config/api';
 
 export const notificationApiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
