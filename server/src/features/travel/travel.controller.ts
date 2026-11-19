@@ -1,8 +1,11 @@
 // server/src/features/travel/travel.controller.ts
+import fs from 'node:fs';
+import path from 'node:path';
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../../shared/middleware/auth.middleware.js';
 import { sendError, sendSuccess } from '../../shared/utils/response.js';
 import { ExchangeRateService } from '../../shared/services/exchangeRate.service.js';
+import { cloudinaryService } from '../../shared/services/cloudinary.service.js';
 import { TravelService } from './travel.service.js';
 import { TravelRole, TravelStatus } from './travel.types.js';
 
@@ -212,14 +215,69 @@ export class TravelController {
         return sendError(res, 'Authentication required', 401);
       }
 
-      if (!req.file) {
-        return sendError(res, 'No file uploaded. Please attach a PDF, PNG, JPG, or WEBP document.', 400);
+      if (!req.file || req.file.size === 0 || !req.file.buffer || req.file.buffer.length === 0) {
+        return sendError(res, 'Uploaded file is empty (0 bytes). Please attach a valid document with content.', 400);
       }
 
       const doc = await this.service.uploadProof(req.file, userId);
       return sendSuccess(res, doc, 'File uploaded successfully', 201);
     } catch (err: any) {
-      return sendError(res, err.message, 500);
+      const statusCode = err.statusCode || (err.name === 'FileSecurityValidationError' ? 400 : 500);
+      return sendError(res, err.message, statusCode);
+    }
+  };
+
+  /**
+   * GET /api/travel/download-proof
+   * Authenticated download proxy to retrieve proof files (bypassing Cloudinary raw ACL restrictions for PDFs).
+   */
+  downloadProof = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const rawUrl = req.query.url as string;
+      const requestedFilename = (req.query.filename as string) || (req.query.name as string) || 'proof-document';
+
+      if (!rawUrl) {
+        return sendError(res, 'Missing file URL parameter', 400);
+      }
+
+      // 1. Cloudinary asset
+      if (rawUrl.includes('res.cloudinary.com')) {
+        const parsed = cloudinaryService.parseCloudinaryUrl(rawUrl);
+        if (parsed) {
+          const downloadUrl = cloudinaryService.getPrivateDownloadUrl(parsed.publicId, parsed.format);
+          if (downloadUrl) {
+            const ext = parsed.format.toLowerCase();
+            const safeFilename = requestedFilename.toLowerCase().endsWith(`.${ext}`)
+              ? requestedFilename
+              : `${requestedFilename}.${ext}`;
+
+            res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeFilename)}"`);
+            res.setHeader('Content-Type', ext === 'pdf' ? 'application/pdf' : `image/${ext}`);
+
+            const response = await fetch(downloadUrl);
+            if (!response.ok) {
+              return sendError(res, `Failed to retrieve asset from storage (status ${response.status})`, 502);
+            }
+            const arrayBuf = await response.arrayBuffer();
+            return res.send(Buffer.from(arrayBuf));
+          }
+        }
+      }
+
+      // 2. Local uploads fallback
+      const localMatch = rawUrl.match(/\/uploads\/proofs\/([^?#]+)/);
+      if (localMatch) {
+        const filename = path.basename(localMatch[1]);
+        const filePath = path.resolve(process.cwd(), 'uploads/proofs', filename);
+        if (fs.existsSync(filePath)) {
+          return res.download(filePath, requestedFilename);
+        }
+      }
+
+      // 3. Fallback redirect
+      return res.redirect(rawUrl);
+    } catch (err: any) {
+      return sendError(res, err.message || 'Failed to download proof file', 500);
     }
   };
 

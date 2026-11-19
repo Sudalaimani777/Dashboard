@@ -12,6 +12,7 @@ import {
   canEmployeeModify
 } from './travel.types.js';
 import { cloudinaryService } from '../../shared/services/cloudinary.service.js';
+import { fileSecurityService } from '../../shared/services/fileSecurity.service.js';
 import {
   validateCreateRequestPayload,
   validateManagerReviewPayload,
@@ -19,6 +20,8 @@ import {
   validateResubmitPayload,
   validateUpsertBudgetPayload
 } from './travel.validation.js';
+import { pool } from '../../shared/db/pool.js';
+import { notificationService } from '../notifications/notification.service.js';
 
 export interface ManagerReviewOptions {
   action: 'APPROVE' | 'APPROVE_AND_FORWARD' | 'REVISE' | 'REQUEST_REVISION' | 'REJECT';
@@ -96,6 +99,10 @@ export class TravelService {
         category: exp.category,
         merchant: exp.merchant,
         amount: Number(exp.amount),
+        originalCurrency: exp.originalCurrency || exp.original_currency || exp.currency || 'INR',
+        originalAmount: Number(exp.originalAmount ?? exp.original_amount ?? exp.amount) || 0,
+        exchangeRate: Number(exp.exchangeRate ?? exp.exchange_rate ?? 1.0),
+        inrAmount: Number(exp.inrAmount ?? exp.inr_amount ?? exp.amount) || 0,
         expense_date: exp.expense_date || exp.expenseDate,
         receipt_image_url: exp.receipt_image_url || exp.receiptImageUrl,
         notes: exp.notes
@@ -134,6 +141,10 @@ export class TravelService {
         category: e.category || 'MISC',
         merchant: e.merchant || 'Pending',
         amount: Number(e.amount) || 0,
+        originalCurrency: e.originalCurrency || 'INR',
+        originalAmount: Number(e.originalAmount ?? e.amount) || 0,
+        exchangeRate: Number(e.exchangeRate ?? 1.0),
+        inrAmount: Number(e.inrAmount ?? e.amount) || 0,
         expenseDate: e.expense_date || new Date().toISOString().split('T')[0],
         receiptImageUrl: e.receipt_image_url,
         notes: e.notes
@@ -142,7 +153,66 @@ export class TravelService {
       status: isDraft ? 'DRAFT' : 'PENDING_MANAGER_REVIEW'
     };
 
-    return this.repo.createRequestWithExpenses(repoPayload);
+    const created = await this.repo.createRequestWithExpenses(repoPayload);
+
+    // Transactional Notification Dispatch
+    if (created.status !== 'DRAFT') {
+      try {
+        const userRes = await pool.query(
+          'SELECT id, name, email, role, manager_id FROM users WHERE id = $1',
+          [userId]
+        );
+        const requester = userRes.rows[0];
+
+        if (requester?.role === 'MANAGER') {
+          // Manager personal travel: executive oversight notification to all admins
+          const adminRes = await pool.query(
+            "SELECT id, name, email FROM users WHERE role = 'ADMIN' AND (is_active IS NULL OR is_active = TRUE)"
+          );
+          for (const admin of adminRes.rows) {
+            await notificationService.notify({
+              userId: admin.id,
+              actorId: userId,
+              requestId: created.id,
+              type: 'MANAGER_OVERSIGHT',
+              title: 'Executive Oversight: Manager Travel Request',
+              message: `${requester.name} submitted a personal travel request: "${created.title}"`,
+              linkUrl: '/dashboard?tab=notifications',
+              recipientEmail: admin.email,
+              recipientName: admin.name,
+              emailType: 'MANAGER_OVERSIGHT',
+              emailData: { managerName: requester.name, trip: created }
+            });
+          }
+        } else if (requester?.manager_id) {
+          // Employee travel request: notify line manager
+          const mgrRes = await pool.query(
+            'SELECT id, name, email FROM users WHERE id = $1',
+            [requester.manager_id]
+          );
+          if (mgrRes.rows.length > 0) {
+            const manager = mgrRes.rows[0];
+            await notificationService.notify({
+              userId: manager.id,
+              actorId: userId,
+              requestId: created.id,
+              type: 'TRAVEL_SUBMITTED',
+              title: 'New Travel Request Submitted',
+              message: `${requester.name} submitted a new travel request: "${created.title}"`,
+              linkUrl: '/dashboard?tab=notifications',
+              recipientEmail: manager.email,
+              recipientName: manager.name,
+              emailType: 'TRAVEL_SUBMITTED',
+              emailData: { requesterName: requester.name, trip: created }
+            });
+          }
+        }
+      } catch (notifErr: any) {
+        console.warn('⚠️ [TravelService] Failed to dispatch submission notification:', notifErr?.message || notifErr);
+      }
+    }
+
+    return created;
   }
 
   /**
@@ -242,7 +312,7 @@ export class TravelService {
       throw new Error(`Invalid status transition from ${request.status} to ${toStatus}`);
     }
 
-    return this.repo.updateStatusWithTimeline({
+    const updated = await this.repo.updateStatusWithTimeline({
       requestId,
       actorId: managerId,
       actorRole: 'MANAGER',
@@ -250,6 +320,118 @@ export class TravelService {
       toStatus,
       remarks: options.remarks || null
     });
+
+    // Transactional Notification Dispatch
+    try {
+      const mgrRes = await pool.query(
+        'SELECT id, name, email FROM users WHERE id = $1',
+        [managerId]
+      );
+      const manager = mgrRes.rows[0];
+
+      const reqUserRes = await pool.query(
+        'SELECT id, name, email, manager_id FROM users WHERE id = $1',
+        [request.userId || (request as any).user_id]
+      );
+      const requester = reqUserRes.rows[0];
+
+      if (normalizedAction === 'APPROVE_AND_FORWARD') {
+        // Transition Manager's card to FORWARDED_TO_ADMIN (marked read)
+        await notificationService.notify({
+          userId: managerId,
+          actorId: managerId,
+          requestId,
+          type: 'FORWARDED_TO_ADMIN',
+          title: 'Travel Request Forwarded to Executive Review',
+          message: `You approved travel request "${request.title}" and forwarded it for executive review.`,
+          linkUrl: '/dashboard?tab=notifications',
+          isRead: true
+        });
+
+        // Manager approved: notify all active Admins
+        const adminRes = await pool.query(
+          "SELECT id, name, email FROM users WHERE role = 'ADMIN' AND (is_active IS NULL OR is_active = TRUE)"
+        );
+        for (const admin of adminRes.rows) {
+          await notificationService.notify({
+            userId: admin.id,
+            actorId: managerId,
+            requestId,
+            type: 'TRAVEL_SUBMITTED',
+            title: 'Travel Request Awaiting Executive Approval',
+            message: `Manager ${manager?.name || 'Manager'} approved travel request "${request.title}" and forwarded it for executive review`,
+            linkUrl: '/dashboard?tab=notifications',
+            recipientEmail: admin.email,
+            recipientName: admin.name,
+            emailType: 'TRAVEL_SUBMITTED',
+            emailData: { requesterName: requester?.name || 'Employee', trip: updated }
+          });
+        }
+      } else if (normalizedAction === 'REQUEST_REVISION') {
+        // Manager's own card transitions to REVISION_REQUESTED (marked read)
+        await notificationService.notify({
+          userId: managerId,
+          actorId: managerId,
+          requestId,
+          type: 'REVISION_REQUESTED',
+          title: 'Revisions Requested from Employee',
+          message: `You requested revisions on "${request.title}": ${options.remarks || 'Pending employee update'}`,
+          linkUrl: '/dashboard?tab=notifications',
+          isRead: true
+        });
+
+        if (requester) {
+          await notificationService.notify({
+            userId: requester.id,
+            actorId: managerId,
+            requestId,
+            type: 'REVISION_REQUESTED',
+            title: 'Action Required: Revisions Requested',
+            message: `Manager requested revisions on "${request.title}": ${options.remarks || 'Please update your request.'}`,
+            linkUrl: '/dashboard?tab=notifications',
+            recipientEmail: requester.email,
+            recipientName: requester.name,
+            emailType: 'REVISION_REQUESTED',
+            emailData: { actorName: manager?.name || 'Manager', remarks: options.remarks || '', trip: updated }
+          });
+        }
+      } else if (normalizedAction === 'REJECT') {
+        // Manager's own card transitions to TRAVEL_REJECTED (marked read)
+        await notificationService.notify({
+          userId: managerId,
+          actorId: managerId,
+          requestId,
+          type: 'TRAVEL_REJECTED',
+          title: 'Travel Request Rejected',
+          message: `You rejected travel request "${request.title}".`,
+          linkUrl: '/dashboard?tab=notifications'
+        });
+        await pool.query(
+          'UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND request_id = $2',
+          [managerId, requestId]
+        );
+
+        if (requester) {
+          await notificationService.notify({
+            userId: requester.id,
+            actorId: managerId,
+            requestId,
+            type: 'TRAVEL_REJECTED',
+            title: 'Travel Request Update',
+            message: `Your travel request "${request.title}" was declined: ${options.remarks || 'Denied by manager.'}`,
+            linkUrl: '/dashboard?tab=notifications',
+            recipientEmail: requester.email,
+            recipientName: requester.name,
+            emailType: 'TRAVEL_REJECTED',
+            emailData: { reason: options.remarks || '', trip: updated }
+          });
+        }
+      }
+    } catch (notifErr: any) {
+      console.warn('⚠️ [TravelService] Failed to dispatch manager review notification:', notifErr?.message || notifErr);
+    }
+
+    return updated;
   }
 
   /**
@@ -332,7 +514,7 @@ export class TravelService {
       throw new Error(`Invalid status transition from ${request.status} to ${toStatus}`);
     }
 
-    return this.repo.updateStatusWithTimeline({
+    const updated = await this.repo.updateStatusWithTimeline({
       requestId,
       actorId: adminId,
       actorRole: 'ADMIN',
@@ -341,6 +523,176 @@ export class TravelService {
       remarks: options.remarks || null,
       revisionTarget: normalizedAction === 'REQUEST_REVISION' ? 'EMPLOYEE' : (revisionTarget || null)
     });
+
+    // Transactional Notification Dispatch
+    try {
+      const adminRes = await pool.query(
+        'SELECT id, name, email FROM users WHERE id = $1',
+        [adminId]
+      );
+      const admin = adminRes.rows[0];
+
+      const reqUserRes = await pool.query(
+        'SELECT id, name, email, manager_id FROM users WHERE id = $1',
+        [request.userId || (request as any).user_id]
+      );
+      const requester = reqUserRes.rows[0];
+
+      if (normalizedAction === 'APPROVE') {
+        if (request.travelType === 'UPCOMING') {
+          // Notify requester
+          if (requester) {
+            await notificationService.notify({
+              userId: requester.id,
+              actorId: adminId,
+              requestId,
+              type: 'TRAVEL_APPROVED',
+              title: 'Travel Request Approved',
+              message: `Your travel request "${request.title}" has been approved.`,
+              linkUrl: '/dashboard?tab=notifications',
+              recipientEmail: requester.email,
+              recipientName: requester.name,
+              emailType: 'TRAVEL_APPROVED',
+              emailData: { trip: updated }
+            });
+          }
+          // Also notify requester's line manager if available
+          if (requester?.manager_id) {
+            const mgrRes = await pool.query(
+              'SELECT id, name, email FROM users WHERE id = $1',
+              [requester.manager_id]
+            );
+            if (mgrRes.rows.length > 0) {
+              const mgr = mgrRes.rows[0];
+              await notificationService.notify({
+                userId: mgr.id,
+                actorId: adminId,
+                requestId,
+                type: 'TRAVEL_APPROVED',
+                title: 'Travel Request Approved',
+                message: `Travel request "${request.title}" for ${requester.name} was approved by executive review.`,
+                linkUrl: '/dashboard?tab=notifications',
+                recipientEmail: mgr.email,
+                recipientName: mgr.name,
+                emailType: 'TRAVEL_APPROVED',
+                emailData: { trip: updated }
+              });
+            }
+          }
+        } else {
+          // ALREADY_TRAVELLED -> SETTLED
+          if (requester) {
+            await notificationService.notify({
+              userId: requester.id,
+              actorId: adminId,
+              requestId,
+              type: 'TRAVEL_SETTLED',
+              title: 'Reimbursement Settled',
+              message: `Your expense reimbursement for "${request.title}" has been settled.`,
+              linkUrl: '/dashboard?tab=notifications',
+              recipientEmail: requester.email,
+              recipientName: requester.name,
+              emailType: 'TRAVEL_SETTLED',
+              emailData: { trip: updated }
+            });
+          }
+        }
+      } else if (normalizedAction === 'REQUEST_REVISION') {
+        if (revisionTarget === 'MANAGER' && requester?.manager_id) {
+          const mgrRes = await pool.query(
+            'SELECT id, name, email FROM users WHERE id = $1',
+            [requester.manager_id]
+          );
+          if (mgrRes.rows.length > 0) {
+            const mgr = mgrRes.rows[0];
+            await notificationService.notify({
+              userId: mgr.id,
+              actorId: adminId,
+              requestId,
+              type: 'REVISION_REQUESTED',
+              title: 'Executive Admin Revisions Requested',
+              message: `Executive admin requested revisions on "${request.title}": ${options.remarks || 'Please review.'}`,
+              linkUrl: '/dashboard?tab=notifications',
+              recipientEmail: mgr.email,
+              recipientName: mgr.name,
+              emailType: 'REVISION_REQUESTED',
+              emailData: { actorName: admin?.name || 'Admin', remarks: options.remarks || '', trip: updated }
+            });
+          }
+        } else if (requester) {
+          await notificationService.notify({
+            userId: requester.id,
+            actorId: adminId,
+            requestId,
+            type: 'REVISION_REQUESTED',
+            title: 'Action Required: Revisions Requested',
+            message: `Executive admin requested revisions on "${request.title}": ${options.remarks || 'Please update your request.'}`,
+            linkUrl: '/dashboard?tab=notifications',
+            recipientEmail: requester.email,
+            recipientName: requester.name,
+            emailType: 'REVISION_REQUESTED',
+            emailData: { actorName: admin?.name || 'Admin', remarks: options.remarks || '', trip: updated }
+          });
+        }
+      } else if (normalizedAction === 'REJECT') {
+        if (requester) {
+          await notificationService.notify({
+            userId: requester.id,
+            actorId: adminId,
+            requestId,
+            type: 'TRAVEL_REJECTED',
+            title: 'Travel Request Update',
+            message: `Your travel request "${request.title}" was denied: ${options.remarks || 'Denied by executive review.'}`,
+            linkUrl: '/dashboard?tab=notifications',
+            recipientEmail: requester.email,
+            recipientName: requester.name,
+            emailType: 'TRAVEL_REJECTED',
+            emailData: { reason: options.remarks || '', trip: updated }
+          });
+        }
+      }
+      // Transition Admin's own card for this trip to resolved/read
+      if (normalizedAction === 'APPROVE') {
+        const adminType = request.travelType === 'UPCOMING' ? 'TRAVEL_APPROVED' : 'TRAVEL_SETTLED';
+        const adminTitle = request.travelType === 'UPCOMING' ? 'Travel Request Cleared' : 'Reimbursement Settled';
+        await notificationService.notify({
+          userId: adminId,
+          actorId: adminId,
+          requestId,
+          type: adminType,
+          title: adminTitle,
+          message: `Executive approval complete for "${request.title}".`,
+          linkUrl: '/dashboard?tab=notifications',
+          isRead: true
+        });
+      } else if (normalizedAction === 'REQUEST_REVISION') {
+        await notificationService.notify({
+          userId: adminId,
+          actorId: adminId,
+          requestId,
+          type: 'REVISION_REQUESTED',
+          title: 'Executive Revisions Requested',
+          message: `You requested revisions on "${request.title}".`,
+          linkUrl: '/dashboard?tab=notifications',
+          isRead: true
+        });
+      } else if (normalizedAction === 'REJECT') {
+        await notificationService.notify({
+          userId: adminId,
+          actorId: adminId,
+          requestId,
+          type: 'TRAVEL_REJECTED',
+          title: 'Travel Request Declined',
+          message: `You declined "${request.title}".`,
+          linkUrl: '/dashboard?tab=notifications',
+          isRead: true
+        });
+      }
+    } catch (notifErr: any) {
+      console.warn('⚠️ [TravelService] Failed to dispatch admin review notification:', notifErr?.message || notifErr);
+    }
+
+    return updated;
   }
 
   /**
@@ -400,6 +752,10 @@ export class TravelService {
         category: e.category || 'MISC',
         merchant: e.merchant || 'Pending',
         amount: Number(e.amount) || 0,
+        originalCurrency: ((e as any).originalCurrency || (e as any).original_currency || (e as any).currency || 'INR').toUpperCase().trim(),
+        originalAmount: Number((e as any).originalAmount ?? (e as any).original_amount ?? e.amount) || 0,
+        exchangeRate: Number((e as any).exchangeRate ?? (e as any).exchange_rate ?? 1.0),
+        inrAmount: Number((e as any).inrAmount ?? (e as any).inr_amount ?? e.amount) || 0,
         expenseDate: e.expense_date || e.expenseDate || new Date().toISOString().split('T')[0],
         receiptImageUrl: e.receipt_image_url || e.receiptImageUrl,
         notes: e.notes
@@ -427,7 +783,60 @@ export class TravelService {
       remarks: remarks || (request.status === 'DRAFT' ? 'Submitted travel request from draft' : 'Resubmitted after employee revisions')
     });
 
-    return this.getRequestById(requestId);
+    const updated = await this.getRequestById(requestId);
+
+    // Transactional Notification Dispatch
+    try {
+      const userRes = await pool.query(
+        'SELECT id, name, email, manager_id FROM users WHERE id = $1',
+        [userId]
+      );
+      const requester = userRes.rows[0];
+
+      if (requester?.manager_id) {
+        const mgrRes = await pool.query(
+          'SELECT id, name, email FROM users WHERE id = $1',
+          [requester.manager_id]
+        );
+        if (mgrRes.rows.length > 0) {
+          const manager = mgrRes.rows[0];
+          await notificationService.notify({
+            userId: manager.id,
+            actorId: userId,
+            requestId,
+            type: 'RESUBMITTED',
+            title: 'Travel Request Resubmitted',
+            message: `${requester.name} has resubmitted travel request: "${request.title}"`,
+            linkUrl: '/dashboard?tab=notifications',
+            recipientEmail: manager.email,
+            recipientName: manager.name,
+            emailType: 'TRAVEL_SUBMITTED',
+            emailData: { requesterName: requester.name, trip: updated }
+          });
+        }
+      }
+
+      // Mark Employee's own card as resubmitted and read
+      await pool.query(
+        "UPDATE notifications SET type = 'RESUBMITTED', title = 'Travel Request Resubmitted', is_read = TRUE WHERE user_id = $1 AND request_id = $2",
+        [userId, requestId]
+      );
+    } catch (notifErr: any) {
+      console.warn('⚠️ [TravelService] Failed to dispatch resubmit notification:', notifErr?.message || notifErr);
+    }
+
+    return updated;
+  }
+
+  /**
+   * Alias for employeeResubmit.
+   */
+  async resubmitRequest(
+    userId: string,
+    requestId: string,
+    options: EmployeeResubmitOptions
+  ): Promise<TravelRequest> {
+    return this.employeeResubmit(userId, requestId, options);
   }
 
   /**
@@ -502,14 +911,20 @@ export class TravelService {
    * Uploads an itinerary or quotation proof to Cloudinary and returns a SupportingDoc entity.
    */
   async uploadProof(file?: Express.Multer.File, userId?: string): Promise<SupportingDoc> {
-    if (!file || !file.buffer) {
-      throw new Error('No file provided for upload.');
+    if (!file || !file.buffer || file.buffer.length === 0 || file.size === 0) {
+      throw new Error('Uploaded file is empty (0 bytes). Please provide a valid file.');
     }
 
+    // Comprehensive 5-layer security verification: Multer, file-type, sharp, pdfjs, ClamAV
+    const verified = await fileSecurityService.verifyFile(file.buffer, {
+      declaredFilename: file.originalname || 'proof-document.pdf',
+      declaredMimeType: file.mimetype || 'application/pdf',
+    });
+
     const uploadResult = await cloudinaryService.uploadBuffer(
-      file.buffer,
+      verified.sanitizedBuffer,
       file.originalname || 'proof-document.pdf',
-      file.mimetype || 'application/pdf'
+      verified.verifiedMime
     );
 
     const doc: SupportingDoc = {
@@ -517,8 +932,10 @@ export class TravelService {
       type: 'FILE',
       name: uploadResult.name,
       url: uploadResult.url,
-      format: uploadResult.format,
-      size: uploadResult.size,
+      previewUrl: uploadResult.previewUrl,
+      downloadUrl: uploadResult.downloadUrl,
+      format: verified.verifiedExt || uploadResult.format,
+      size: verified.metadata.sanitizedSize || uploadResult.size,
       uploadedAt: new Date().toISOString(),
     };
 

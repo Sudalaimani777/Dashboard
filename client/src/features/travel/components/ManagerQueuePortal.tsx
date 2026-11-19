@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { Plus, Search, Download, AlertCircle } from 'lucide-react';
+import { Plus, Search, Download } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
@@ -12,7 +12,6 @@ import {
   classifyManagerQueue,
   filterManagerRequests,
 } from '../utils/managerQueue';
-import { handleViewRevisionsAction } from '../utils/viewRevisionsAction';
 import type { TravelRequest } from '../types/travel.types';
 
 export interface ManagerQueuePortalProps {
@@ -180,19 +179,6 @@ export const ManagerQueuePortal: React.FC<ManagerQueuePortalProps> = ({ activeTa
       ),
     [requests]
   );
-
-  const handleViewPersonalRevisions = () => {
-    handleViewRevisionsAction({
-      revisionRequests: personalRevisionRequests,
-      onNavigate: (url) => navigate(url),
-      onSetSegment: setPersonalSegment,
-      onClearSearch: () => setSearchQuery(''),
-      onScrollToTable: () => {
-        personalTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      },
-      targetDashboardTab: 'personal',
-    });
-  };
 
   const basePersonalRequests = useMemo(() => {
     switch (personalSegment) {
@@ -448,25 +434,6 @@ export const ManagerQueuePortal: React.FC<ManagerQueuePortalProps> = ({ activeTa
           transition={{ duration: reduceMotion ? 0 : 0.18 }}
           className="flex flex-col gap-5"
         >
-          {personalRevisionRequests.length > 0 && (
-            <div className="bg-amber-50/90 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-2.5 text-xs text-amber-900 shadow-2xs">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="size-4 text-amber-700 shrink-0" />
-                <span>
-                  You have <strong>{personalRevisionRequests.length}</strong> personal trip
-                  {personalRevisionRequests.length > 1 ? 's' : ''} requiring revision &amp; resubmission.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleViewPersonalRevisions}
-                className="px-2.5 py-1 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-semibold transition-all cursor-pointer"
-              >
-                {personalRevisionRequests.length === 1 ? 'View Revision' : 'View Revisions'}
-              </button>
-            </div>
-          )}
-
           {/* Personal Lifecycle Segment Pills */}
           <div
             role="tablist"

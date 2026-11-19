@@ -37,5 +37,11 @@ export const config = {
   currency: {
     primary: process.env.CURRENCY_PRIMARY_BASE || "",
     fallback: process.env.CURRENCY_FALLBACK_BASE || ""
-  }
+  },
+  clamav: {
+    host: process.env.CLAMAV_HOST || '127.0.0.1',
+    port: Number(process.env.CLAMAV_PORT) || 3310,
+    timeout: Number(process.env.CLAMAV_TIMEOUT) || 5000,
+    strict: process.env.CLAMAV_STRICT === 'true',
+  },
 };

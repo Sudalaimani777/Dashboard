@@ -5,15 +5,23 @@ import { z } from 'zod';
 import type { TravelType } from '../types/travel.types';
 import { getPhoneValidationError } from '../utils/countryDialCodes';
 
-export const supportingDocSchema = z.object({
-  id: z.string(),
-  type: z.enum(['LINK', 'FILE']),
-  name: z.string().min(1, 'Name or title required'),
-  url: z.string().min(1, 'Valid URL is required'),
-  format: z.string().optional(),
-  size: z.number().optional(),
-  uploadedAt: z.string().optional(),
-});
+export const supportingDocSchema = z
+  .object({
+    id: z.string(),
+    type: z.enum(['LINK', 'FILE']),
+    name: z.string().trim().min(1, 'Name or title required'),
+    url: z.string().trim().min(1, 'Valid URL is required'),
+    format: z.string().optional(),
+    size: z.number().optional(),
+    uploadedAt: z.string().optional(),
+  })
+  .refine(
+    (doc) => doc.type !== 'FILE' || (doc.size !== undefined && doc.size > 0),
+    {
+      message: 'Attached file must not be empty (0 KB)',
+      path: ['size'],
+    }
+  );
 
 const pad = (n: number) => String(n).padStart(2, '0');
 export function getLocalDateString(d: Date = new Date()): string {
@@ -29,17 +37,34 @@ export function parseExpenseAmount(val: unknown): number {
   return Number.isFinite(num) ? num : 0;
 }
 
+/**
+ * Project code validation:
+ * - Must contain only uppercase letters (A-Z), hyphens (-), and optional numbers (0-9)
+ * - Must contain at least one uppercase letter and at least one hyphen
+ * - No lowercase letters allowed
+ * - Numbers are optional
+ * - Example: ENG-2026, PROJ-APAC, CLIENT-01, DEV-OPS
+ */
+export const PROJECT_CODE_REGEX = /^(?=.*[A-Z])(?=.*-)[A-Z0-9]+(-[A-Z0-9]+)+$/;
+
 export const travelFormSchema = z
   .object({
     travel_type: z.enum(['UPCOMING', 'ALREADY_TRAVELLED']),
-    title: z.string().min(5, 'Title must be at least 5 characters'),
-    purpose: z.string().min(10, 'Business purpose must be at least 10 characters'),
-    project_code: z.string(),
-    origin: z.string().min(2, 'Origin city is required'),
-    destination: z.string().min(2, 'Destination is required'),
-    departure_date: z.string().min(1, 'Departure date is required'),
-    return_date: z.string().min(1, 'Return date is required'),
-    emergency_contact_name: z.string().min(2, 'Emergency contact name is required'),
+    title: z.string().trim().min(5, 'Title must be at least 5 characters'),
+    purpose: z.string().trim().min(10, 'Business purpose must be at least 10 characters'),
+    project_code: z
+      .string()
+      .trim()
+      .min(1, 'Project code is required')
+      .regex(
+        PROJECT_CODE_REGEX,
+        'Project code must be uppercase letters with at least one hyphen (e.g. ENG-2026, PROJ-APAC)'
+      ),
+    origin: z.string().trim().min(2, 'Origin city is required'),
+    destination: z.string().trim().min(2, 'Destination is required'),
+    departure_date: z.string().trim().min(1, 'Departure date is required'),
+    return_date: z.string().trim().min(1, 'Return date is required'),
+    emergency_contact_name: z.string().trim().min(2, 'Emergency contact name is required'),
     emergency_contact_phone: z
       .string()
       .min(1, 'Emergency contact phone is required')
@@ -59,6 +84,7 @@ export const travelFormSchema = z
         category: z.enum(['FLIGHT', 'HOTEL', 'MEALS_PER_DIEM', 'TRANSIT', 'MISC']),
         merchant: z
           .string()
+          .trim()
           .min(2, 'Merchant name is required')
           .refine(
             (val) => /^(?=.*[a-zA-Z].*[a-zA-Z]).{2,}$/.test(val.trim()),

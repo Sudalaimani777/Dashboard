@@ -76,13 +76,22 @@ export const TravelLogisticsFields: React.FC<TravelLogisticsFieldsProps> = ({
 
       {/* Project Code */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold text-ink">Project Code</label>
+        <label className="text-xs font-semibold text-ink">
+          Project Code <span className="text-destructive">*</span>
+        </label>
         <input
           type="text"
-          placeholder="Enter project code"
-          {...register('project_code')}
-          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink font-mono placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
+          placeholder="e.g. ENG-2026, PROJ-APAC"
+          {...register('project_code', {
+            onChange: (e) => {
+              if (e.target.value) {
+                e.target.value = e.target.value.toUpperCase();
+              }
+            },
+          })}
+          className="w-full bg-surface border border-border-warm rounded-lg px-3.5 py-2.5 text-xs text-ink font-mono uppercase placeholder:text-faint placeholder:normal-case focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-all"
         />
+        {errors.project_code && <span className="text-[11px] text-destructive">{errors.project_code.message}</span>}
       </div>
 
       {/* Destination */}

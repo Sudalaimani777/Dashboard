@@ -25,6 +25,11 @@ export const ManagerDecisionCard: React.FC<ManagerDecisionCardProps> = ({
   const isAdminRevision = status === 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER';
 
   const handleApprove = async () => {
+    const check = validateManagerDecisionRemarks('APPROVE', remarks);
+    if (!check.valid) {
+      setValidationError(check.error || 'Review remarks are required.');
+      return;
+    }
     setValidationError(null);
     await onApprove(remarks.trim());
   };
@@ -68,14 +73,16 @@ export const ManagerDecisionCard: React.FC<ManagerDecisionCardProps> = ({
       <div className="flex flex-col gap-1.5">
         <label htmlFor="manager-decision-remarks" className="text-xs font-semibold text-ink">
           {mode === 'REJECT'
-            ? 'Rejection Rationale (Required, min 3 chars)'
+            ? 'Rejection Rationale'
             : mode === 'REVISION'
             ? isAdminRevision
-              ? 'Instructions for Employee (Required, min 3 chars)'
-              : 'Revision Instructions (Required, min 3 chars)'
+              ? 'Instructions for Employee'
+              : 'Revision Instructions'
             : isAdminRevision
             ? 'Clarification Notes for Admin'
-            : 'Review Remarks'}
+            : 'Review Remarks'}{' '}
+          <span className="text-destructive">*</span>
+          <span className="text-[11px] font-normal text-muted ml-1">(Required, min 3 chars)</span>
         </label>
         <textarea
           id="manager-decision-remarks"
@@ -93,8 +100,8 @@ export const ManagerDecisionCard: React.FC<ManagerDecisionCardProps> = ({
                 ? 'Specify required changes for the employee (e.g. Downgrade hotel quote or attach missing receipt)...'
                 : 'Specify required alterations (e.g. Downgrade flight quote, supply missing receipt)...'
               : isAdminRevision
-              ? 'Explain operational justifications or additional details for corporate admin clearance...'
-              : 'Add optional operational notes for the Admin...'
+              ? 'Explain operational justifications or additional details for corporate admin clearance (min 3 chars)...'
+              : 'Add operational notes and review remarks for the Admin (min 3 chars)...'
           }
           className="w-full bg-surface-subtle border border-border-warm rounded-lg p-3 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
         />

@@ -5,14 +5,18 @@ import { useTravel } from '../hooks/useTravel';
 import { DynamicRoleSidebar } from './DynamicRoleSidebar';
 import { ErrorBoundary } from '../../../shared/components/ErrorBoundary';
 import { classifyManagerQueue } from '../utils/managerQueue';
+import { ToastProvider } from '../../../shared/context/ToastContext';
+import { useNotifications, NotificationProvider } from '../../notifications/hooks/useNotifications';
+import { NotificationsHubPage } from '../../notifications/pages/NotificationsHubPage';
 
 export interface DashboardLayoutProps {
   children?: React.ReactNode;
 }
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { user, signout } = useAuth();
   const { requests, managerQueue, adminQueue } = useTravel();
+  const { unreadCount, hasActionRequired } = useNotifications();
   const [isPinned, setIsPinned] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
   );
@@ -28,8 +32,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get('tab') || 'present';
 
-  const badgeCounts: Record<string, number> = useMemo(() => {
-    const counts: Record<string, number> = {};
+  const badgeCounts: Record<string, any> = useMemo(() => {
+    const counts: Record<string, any> = {
+      notifications: unreadCount,
+      notificationsDanger: hasActionRequired,
+    };
     if (!user) return counts;
     if (user.role === 'EMPLOYEE') {
       counts.revisions = requests.filter((r) => r.status.includes('REVISION_REQUESTED')).length;
@@ -44,7 +51,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       counts.revisions = adminQueue.filter((r) => r.status.includes('REVISION')).length;
     }
     return counts;
-  }, [user, requests, managerQueue, adminQueue]);
+  }, [user, requests, managerQueue, adminQueue, unreadCount, hasActionRequired]);
 
   const handleTabChange = (tabId: string) => {
     navigate(`/dashboard?tab=${tabId}`);
@@ -53,6 +60,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   if (!user) {
     return null;
   }
+
+  const isNotificationsTab = activeTab === 'notifications';
 
   return (
     <div className="flex min-h-[100dvh] h-[100dvh] w-full overflow-hidden bg-canvas text-ink relative">
@@ -75,11 +84,24 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         }`}
       >
         <div className="px-6 py-5">
-          <ErrorBoundary fallbackTitle="Workstation Error" fallbackMessage="There was a problem loading this workstation view. Try reloading or return to the dashboard.">
-            {children || <Outlet />}
+          <ErrorBoundary
+            fallbackTitle="Workstation Error"
+            fallbackMessage="There was a problem loading this workstation view. Try reloading or return to the dashboard."
+          >
+            {isNotificationsTab ? <NotificationsHubPage /> : children || <Outlet />}
           </ErrorBoundary>
         </div>
       </main>
     </div>
+  );
+};
+
+export const DashboardLayout: React.FC<DashboardLayoutProps> = (props) => {
+  return (
+    <ToastProvider>
+      <NotificationProvider>
+        <DashboardLayoutContent {...props} />
+      </NotificationProvider>
+    </ToastProvider>
   );
 };

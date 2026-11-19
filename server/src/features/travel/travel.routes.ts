@@ -9,6 +9,7 @@ export const travelRoutes = Router();
 
 // 1. Core Request CRUD & Scoped Queries
 travelRoutes.post('/upload', requireAuth, uploadMiddleware.single('file'), travelController.uploadProof);
+travelRoutes.get('/download-proof', requireAuth, travelController.downloadProof);
 travelRoutes.post('/requests', requireAuth, travelController.createRequest);
 travelRoutes.get('/requests', requireAuth, travelController.getRequests);
 travelRoutes.get('/requests/:id', requireAuth, travelController.getRequestById);

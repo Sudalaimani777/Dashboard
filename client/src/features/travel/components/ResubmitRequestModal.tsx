@@ -10,16 +10,16 @@ import { parseExpenseAmount } from '../hooks/useTravelForm';
 import type { TravelRequest, ResubmitRequestInput } from '../types/travel.types';
 
 const resubmitSchema = z.object({
-  remarks: z.string().min(3, 'Please describe what alterations you made'),
-  departureDate: z.string().min(1, 'Departure date required'),
-  returnDate: z.string().min(1, 'Return date required'),
-  supportingDocUrl: z.string().url('Must be a valid document URL'),
+  remarks: z.string().trim().min(3, 'Please describe what alterations you made'),
+  departureDate: z.string().trim().min(1, 'Departure date required'),
+  returnDate: z.string().trim().min(1, 'Return date required'),
+  supportingDocUrl: z.string().trim().url('Must be a valid document URL'),
   expenses: z.array(
     z.object({
       category: z.enum(['FLIGHT', 'HOTEL', 'MEALS_PER_DIEM', 'TRANSIT', 'MISC'] as const),
-      merchant: z.string().min(2, 'Merchant required'),
+      merchant: z.string().trim().min(2, 'Merchant required'),
       amount: z.number().positive('Amount must be > 0'),
-      expenseDate: z.string().min(1, 'Date required'),
+      expenseDate: z.string().trim().min(1, 'Date required'),
       receiptImageUrl: z.string().optional().nullable(),
       notes: z.string().optional().nullable(),
     })

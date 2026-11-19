@@ -22,18 +22,23 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "clamscan": "^2.4.0",
     "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^16.4.7",
     "express": "^5.3.0",
+    "file-type": "^22.3.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.5.0",
     "nodemailer": "^10.3.1",
-    "pg": "^8.13.3"
+    "pdfjs-dist": "^6.5.438",
+    "pg": "^8.13.3",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/clamscan": "^2.4.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

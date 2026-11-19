@@ -6,14 +6,14 @@ export interface PasswordStrengthMeterProps {
 }
 
 const RULES = [
-  { id: 'length', label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
+  { id: 'length', label: 'At least 8 characters', test: (p: string) => p.trim().length >= 8 },
   { id: 'case', label: 'Upper and lower case', test: (p: string) => /[a-z]/.test(p) && /[A-Z]/.test(p) },
   { id: 'number', label: 'A number', test: (p: string) => /\d/.test(p) },
-  { id: 'symbol', label: 'A special symbol', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+  { id: 'symbol', label: 'A special symbol', test: (p: string) => /[^\sA-Za-z0-9]/.test(p) },
 ];
 
 export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({ password = '' }) => {
-  if (!password) return null;
+  if (!password || password.trim().length === 0) return null;
 
   const passedCount = RULES.filter((r) => r.test(password)).length;
   const strengthColors = [

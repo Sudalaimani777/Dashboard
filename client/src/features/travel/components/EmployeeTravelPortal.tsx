@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import {
-  AlertCircle,
   Search,
   Download,
   Plane,
@@ -17,7 +16,6 @@ import {
 } from './employee/EmployeeSidebarPanels';
 import { formatINR } from '../utils/currency';
 import { exportRequestsToCsv } from '../utils/travelAnalytics';
-import { handleViewRevisionsAction } from '../utils/viewRevisionsAction';
 import type { TravelRequest } from '../types/travel.types';
 
 export interface EmployeeTravelPortalProps {
@@ -162,19 +160,6 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
     navigate(`/travel/new?clone=${req.id}`);
   };
 
-  const handleViewRevisions = () => {
-    handleViewRevisionsAction({
-      revisionRequests: allRevisions,
-      onNavigate: (url) => navigate(url),
-      onSetSegment: setStatusSegment,
-      onClearSearch: () => setSearchQuery(''),
-      onScrollToTable: () => {
-        tableSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      },
-      targetDashboardTab: 'revisions',
-    });
-  };
-
   const handleRowAction = (req: TravelRequest) => {
     if (req.status.includes('REVISION')) {
       navigate(`/travel/requests/${req.id}/edit?tab=revisions`);
@@ -317,25 +302,6 @@ export const EmployeeTravelPortal: React.FC<EmployeeTravelPortalProps> = ({
           },
         ]}
       />
-
-      {/* Pinned Action Required Banner (Visible when revisions are pending) */}
-      {allRevisions.length > 0 && (
-        <div className="bg-amber-50/90 border border-amber-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="size-4 text-amber-700 shrink-0" />
-            <span>
-              <strong>{allRevisions.length} request(s)</strong> require your revision. Resubmissions strictly return to your Line Manager for verification.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleViewRevisions}
-            className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
-          >
-            {allRevisions.length === 1 ? 'View Revision' : 'View Revisions'}
-          </button>
-        </div>
-      )}
 
       {/* Search and Export Toolbar */}
       <div className="w-full flex flex-wrap items-center justify-between gap-3">

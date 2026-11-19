@@ -154,8 +154,10 @@ async function run() {
   const searchByRequester = filterManagerRequests(queue, { query: 'Asha' });
   assert.ok(searchByRequester.length >= 1, 'Search should match requesterName');
 
-  // 3. Decision remarks validation (>= 3 chars required for REJECT & REQUEST_REVISION)
-  assert.equal(validateManagerDecisionRemarks('APPROVE', '').valid, true);
+  // 3. Decision remarks validation (>= 3 chars required for ALL actions: APPROVE, REJECT & REQUEST_REVISION)
+  assert.equal(validateManagerDecisionRemarks('APPROVE', '').valid, false);
+  assert.equal(validateManagerDecisionRemarks('APPROVE', 'ab').valid, false);
+  assert.equal(validateManagerDecisionRemarks('APPROVE', 'Approved for travel').valid, true);
   assert.equal(validateManagerDecisionRemarks('REQUEST_REVISION', 'no').valid, false);
   assert.equal(validateManagerDecisionRemarks('REQUEST_REVISION', 'Attach hotel quote').valid, true);
   assert.equal(validateManagerDecisionRemarks('REJECT', '  ').valid, false);

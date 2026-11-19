@@ -18,6 +18,9 @@ const ManagerTeamAnalyticsPage = lazy(() =>
 const AdminGovernancePortal = lazy(() =>
   import('../travel/components/AdminGovernancePortal').then((m) => ({ default: m.AdminGovernancePortal })),
 );
+const NotificationsHubPage = lazy(() =>
+  import('../notifications/pages/NotificationsHubPage').then((m) => ({ default: m.NotificationsHubPage })),
+);
 
 const PortalLoadingFallback: React.FC = () => (
   <div className="min-h-[60vh] flex items-center justify-center">
@@ -48,6 +51,9 @@ export const DashboardPage: React.FC = () => {
   }
 
   const renderPortal = () => {
+    if (activeTab === 'notifications') {
+      return <NotificationsHubPage />;
+    }
     switch (user.role) {
       case 'EMPLOYEE':
         if (activeTab === 'analytics') {

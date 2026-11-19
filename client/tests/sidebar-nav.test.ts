@@ -4,43 +4,49 @@ import path from 'node:path';
 import {
   getRoleNavItems,
   getRoleQuickAction,
-  NavItemConfig,
+  type NavItemConfig,
 } from '../src/features/travel/layout/DynamicRoleSidebar';
 
 async function run() {
-  console.log('🧪 Testing DynamicRoleSidebar navigation mapping & quick action...');
+  console.log('🧪 Testing DynamicRoleSidebar navigation ordering & quick action (TDD)...');
 
-  // 1. Employee Navigation Items (My Travel + Spend Analytics)
+  // 1. Employee Navigation Items: 1) Notifications, 2) My Travel, 3) Spend Analytics
   const empItems = getRoleNavItems('EMPLOYEE');
-  assert.equal(empItems.length, 2, 'Employee should have 2 navigation items: trips & analytics');
+  assert.equal(empItems.length, 3, 'Employee should have 3 navigation items: notifications, trips, analytics');
   assert.deepEqual(
     empItems.map((i: NavItemConfig) => i.id),
-    ['trips', 'analytics']
+    ['notifications', 'trips', 'analytics'],
+    'Employee navigation items must be strictly ordered: notifications -> trips -> analytics'
   );
-  assert.equal(empItems[0].label, 'My Travel');
-  assert.equal(empItems[1].label, 'Spend Analytics');
+  assert.equal(empItems[0].label, 'Notifications');
+  assert.equal(empItems[1].label, 'My Travel');
+  assert.equal(empItems[2].label, 'Spend Analytics');
 
-  // 2. Manager Navigation Items (Team Approvals, Team Analytics, My Travel)
+  // 2. Manager Navigation Items: 1) Notifications, 2) Team Approvals, 3) My Travel, 4) Team Analytics
   const mgrItems = getRoleNavItems('MANAGER');
-  assert.equal(mgrItems.length, 3, 'Manager should have 3 navigation items: team, analytics, personal');
+  assert.equal(mgrItems.length, 4, 'Manager should have 4 navigation items: notifications, team, personal, analytics');
   assert.deepEqual(
     mgrItems.map((i: NavItemConfig) => i.id),
-    ['team', 'analytics', 'personal']
+    ['notifications', 'team', 'personal', 'analytics'],
+    'Manager navigation items must be strictly ordered: notifications -> team -> personal -> analytics'
   );
-  assert.equal(mgrItems[0].label, 'Team Approvals');
-  assert.equal(mgrItems[1].label, 'Team Analytics');
+  assert.equal(mgrItems[0].label, 'Notifications');
+  assert.equal(mgrItems[1].label, 'Team Approvals');
   assert.equal(mgrItems[2].label, 'My Travel');
+  assert.equal(mgrItems[3].label, 'Team Analytics');
 
-  // 3. Admin Navigation Items (Consolidated to 3 streamlined items)
+  // 3. Admin Navigation Items: 1) Notifications, 2) Travel Governance, 3) Team & Access, 4) Department Budgets
   const admItems = getRoleNavItems('ADMIN');
-  assert.equal(admItems.length, 3, 'Admin should have 3 consolidated navigation items');
+  assert.equal(admItems.length, 4, 'Admin should have 4 navigation items: notifications, governance, users, budgets');
   assert.deepEqual(
     admItems.map((i: NavItemConfig) => i.id),
-    ['governance', 'budgets', 'users']
+    ['notifications', 'governance', 'users', 'budgets'],
+    'Admin navigation items must be strictly ordered: notifications -> governance -> users -> budgets'
   );
-  assert.equal(admItems[0].label, 'Travel Governance');
-  assert.equal(admItems[1].label, 'Department Budgets');
+  assert.equal(admItems[0].label, 'Notifications');
+  assert.equal(admItems[1].label, 'Travel Governance');
   assert.equal(admItems[2].label, 'Team & Access');
+  assert.equal(admItems[3].label, 'Department Budgets');
 
   // 4. Role Quick Actions
   const empAction = getRoleQuickAction('EMPLOYEE');
@@ -55,7 +61,7 @@ async function run() {
   assert.equal(admAction.label, 'Add Member');
   assert.equal(admAction.path, '/admin/users/new');
 
-  // 5. Source code validation for DynamicRoleSidebar
+  // 5. Source code validation for DynamicRoleSidebar: No duplicate standalone notifications item outside navItems.map
   const sidebarSource = fs.readFileSync(
     path.resolve(import.meta.dirname, '../src/features/travel/layout/DynamicRoleSidebar.tsx'),
     'utf8'
@@ -63,6 +69,10 @@ async function run() {
   assert.ok(
     sidebarSource.includes('/admin/users/new') && sidebarSource.includes('Add Member'),
     'DynamicRoleSidebar must include quick action for Admin to Add Member via /admin/users/new'
+  );
+  assert.ok(
+    !sidebarSource.includes('/* Permanent Notifications Navigation Item */'),
+    'DynamicRoleSidebar must not have redundant standalone notifications item outside navItems'
   );
 
   console.log('✅ ALL DYNAMIC ROLE SIDEBAR NAVIGATION & QUICK ACTION TESTS PASSED!');

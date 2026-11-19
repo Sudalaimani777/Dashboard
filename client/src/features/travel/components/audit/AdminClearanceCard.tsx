@@ -82,10 +82,12 @@ export const AdminClearanceCard: React.FC<AdminClearanceCardProps> = ({
       <div className="flex flex-col gap-1.5">
         <label htmlFor="admin-clearance-remarks" className="text-xs font-semibold text-ink">
           {mode === 'REVISE'
-            ? 'Alteration Instructions (Required, min 3 chars)'
+            ? 'Alteration Instructions'
             : mode === 'REJECT'
-            ? 'Rejection Rationale (Required, min 3 chars)'
-            : 'Executive Remarks (Optional for clearance)'}
+            ? 'Rejection Rationale'
+            : 'Executive Remarks'}{' '}
+          <span className="text-destructive">*</span>
+          <span className="text-[11px] font-normal text-muted ml-1">(Required, min 3 chars)</span>
         </label>
         <textarea
           id="admin-clearance-remarks"
@@ -100,7 +102,7 @@ export const AdminClearanceCard: React.FC<AdminClearanceCardProps> = ({
               ? 'Specify requested changes to flight class, dates, or missing receipts...'
               : mode === 'REJECT'
               ? 'Explain policy breach or reason this request is declined...'
-              : 'Add optional finance and governance notes...'
+              : 'Enter finance and governance clearance notes (min 3 chars)...'
           }
           className="w-full bg-surface-subtle border border-border-warm rounded-xl p-3 text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
         />

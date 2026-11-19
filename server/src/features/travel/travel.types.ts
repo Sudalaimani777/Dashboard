@@ -25,6 +25,8 @@ export interface SupportingDoc {
   type: 'LINK' | 'FILE';
   name: string;
   url: string;
+  previewUrl?: string;
+  downloadUrl?: string;
   format?: string;
   size?: number;
   uploadedAt?: string;

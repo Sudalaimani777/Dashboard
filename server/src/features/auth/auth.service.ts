@@ -75,8 +75,8 @@ export class AuthService {
       throw new Error('Please provide a valid email address');
     }
 
-    if (!password || password.length < 6) {
-      throw new Error('Password must be at least 6 characters long');
+    if (!password || password.trim().length < 6) {
+      throw new Error('Password must be at least 6 characters long and cannot be only spaces');
     }
 
     const existingUser = await this.repo.findByEmail(email);
@@ -100,7 +100,7 @@ export class AuthService {
     const email = dto.email?.trim().toLowerCase();
     const password = dto.password;
 
-    if (!email || !password) {
+    if (!email || !password || !password.trim()) {
       throw new Error('Email and password are required');
     }
 
@@ -174,12 +174,12 @@ export class AuthService {
     const token = dto.token?.trim();
     const newPassword = dto.newPassword;
 
-    if (!token || !newPassword) {
+    if (!token || !newPassword || !newPassword.trim()) {
       throw new Error('Token and new password are required');
     }
 
-    if (newPassword.length < 6) {
-      throw new Error('Password must be at least 6 characters long');
+    if (newPassword.trim().length < 6) {
+      throw new Error('Password must be at least 6 characters long and cannot be only spaces');
     }
 
     const hashedToken = this.hashToken(token);

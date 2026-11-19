@@ -28,20 +28,27 @@ import { TravelDetailSkeleton } from '../components/shared/TravelDetailSkeleton'
 import { InlineConfirmBar } from '../components/shared/InlineConfirmBar';
 import { formatINR } from '../utils/currency';
 import { aggregateExpenseItems, computeTripDuration } from '../utils/travelAnalytics';
-import { supportingDocSchema } from '../hooks/useTravelForm';
+import { supportingDocSchema, PROJECT_CODE_REGEX } from '../hooks/useTravelForm';
 import { getPhoneValidationError } from '../utils/countryDialCodes';
 import type { TravelRequest } from '../types/travel.types';
 
-const resubmitFormSchema = z.object({
-  alterations_remarks: z.string().optional(),
-  title: z.string().min(3, 'Title is required'),
-  purpose: z.string().min(5, 'Purpose is required'),
-  project_code: z.string().optional(),
-  origin: z.string().min(2, 'Origin city is required'),
-  destination: z.string().min(2, 'Destination is required'),
-  departure_date: z.string().min(1, 'Departure date is required'),
-  return_date: z.string().min(1, 'Return date is required'),
-  emergency_contact_name: z.string().optional(),
+export const resubmitFormSchema = z.object({
+  alterations_remarks: z.string().trim().optional(),
+  title: z.string().trim().min(3, 'Title is required'),
+  purpose: z.string().trim().min(5, 'Purpose is required'),
+  project_code: z
+    .string()
+    .trim()
+    .min(1, 'Project code is required')
+    .regex(
+      PROJECT_CODE_REGEX,
+      'Project code must be uppercase letters with at least one hyphen (e.g. ENG-2026, PROJ-APAC)'
+    ),
+  origin: z.string().trim().min(2, 'Origin city is required'),
+  destination: z.string().trim().min(2, 'Destination is required'),
+  departure_date: z.string().trim().min(1, 'Departure date is required'),
+  return_date: z.string().trim().min(1, 'Return date is required'),
+  emergency_contact_name: z.string().trim().optional(),
   emergency_contact_phone: z
     .string()
     .optional()
@@ -64,12 +71,17 @@ const resubmitFormSchema = z.object({
         category: z.enum(['FLIGHT', 'HOTEL', 'MEALS_PER_DIEM', 'TRANSIT', 'MISC']),
         merchant: z
           .string()
+          .trim()
           .min(2, 'Merchant name is required')
           .refine(
             (val) => /^(?=.*[a-zA-Z].*[a-zA-Z]).{2,}$/.test(val.trim()),
             'Merchant name must be a valid vendor (cannot be numbers only)'
           ),
         amount: z.number().positive('Amount must be positive'),
+        originalCurrency: z.string().optional(),
+        originalAmount: z.number().optional(),
+        exchangeRate: z.number().optional(),
+        inrAmount: z.number().optional(),
         expenseDate: z.string(),
         notes: z.string().optional(),
       })
@@ -205,18 +217,50 @@ export const ResubmitTravelRequestPage: React.FC = () => {
               : [],
           expenses:
             req.expenses && req.expenses.length > 0
-              ? req.expenses.map((e) => ({
-                  category: e.category,
-                  merchant: e.merchant,
-                  amount: Number(e.amount),
-                  expenseDate: e.expenseDate ? e.expenseDate.split('T')[0] : new Date().toISOString().split('T')[0],
-                  notes: e.notes || '',
-                }))
+              ? req.expenses.map((e) => {
+                  const origCur = e.originalCurrency || (e as any).original_currency || 'INR';
+                  const origAmt = Number(
+                    e.originalAmount !== undefined && e.originalAmount !== null
+                      ? e.originalAmount
+                      : (e as any).original_amount !== undefined && (e as any).original_amount !== null
+                      ? (e as any).original_amount
+                      : e.amount
+                  );
+                  const rate = Number(
+                    e.exchangeRate !== undefined && e.exchangeRate !== null
+                      ? e.exchangeRate
+                      : (e as any).exchange_rate !== undefined && (e as any).exchange_rate !== null
+                      ? (e as any).exchange_rate
+                      : 1.0
+                  );
+                  const inr = Number(
+                    e.inrAmount !== undefined && e.inrAmount !== null
+                      ? e.inrAmount
+                      : (e as any).inr_amount !== undefined && (e as any).inr_amount !== null
+                      ? (e as any).inr_amount
+                      : e.amount
+                  );
+                  return {
+                    category: e.category,
+                    merchant: e.merchant,
+                    amount: Number(e.amount),
+                    originalCurrency: origCur,
+                    originalAmount: origAmt,
+                    exchangeRate: rate,
+                    inrAmount: inr,
+                    expenseDate: e.expenseDate ? e.expenseDate.split('T')[0] : new Date().toISOString().split('T')[0],
+                    notes: e.notes || '',
+                  };
+                })
               : [
                   {
                     category: 'FLIGHT',
                     merchant: '',
                     amount: 0,
+                    originalCurrency: 'INR',
+                    originalAmount: 0,
+                    exchangeRate: 1.0,
+                    inrAmount: 0,
                     expenseDate: new Date().toISOString().split('T')[0],
                     notes: '',
                   },
@@ -266,6 +310,10 @@ export const ResubmitTravelRequestPage: React.FC = () => {
           category: e.category,
           merchant: e.merchant,
           amount: Number(e.amount),
+          originalCurrency: e.originalCurrency || 'INR',
+          originalAmount: Number(e.originalAmount ?? e.amount),
+          exchangeRate: Number(e.exchangeRate ?? 1.0),
+          inrAmount: Number(e.inrAmount ?? e.amount),
           expenseDate: e.expenseDate,
           notes: e.notes,
         })),
@@ -301,6 +349,10 @@ export const ResubmitTravelRequestPage: React.FC = () => {
           category: e.category,
           merchant: e.merchant,
           amount: Number(e.amount) || 0,
+          originalCurrency: e.originalCurrency || 'INR',
+          originalAmount: Number(e.originalAmount ?? e.amount),
+          exchangeRate: Number(e.exchangeRate ?? 1.0),
+          inrAmount: Number(e.inrAmount ?? e.amount),
           expenseDate: e.expenseDate,
           notes: e.notes,
         })),
