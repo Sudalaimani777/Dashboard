@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Plus } from 'lucide-react';
-import type { UseFormRegister, FieldErrors, UseFieldArrayReturn, Control } from 'react-hook-form';
+import type { UseFormRegister, FieldErrors, UseFieldArrayReturn, Control, UseFormSetValue } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import type { TravelFormValues } from '../../hooks/useTravelForm';
 import { getLocalDateString } from '../../hooks/useTravelForm';
@@ -14,6 +14,7 @@ export interface DynamicExpenseTableProps {
   errors: FieldErrors<TravelFormValues>;
   totalAmount?: number;
   control?: Control<TravelFormValues>;
+  setValue?: UseFormSetValue<TravelFormValues>;
   travelType?: TravelType;
   departureDate?: string;
   returnDate?: string;
@@ -25,6 +26,7 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
   errors,
   totalAmount,
   control,
+  setValue,
   travelType = 'UPCOMING',
   departureDate,
   returnDate,
@@ -56,6 +58,12 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
     }, 0);
   }, [watchedExpenses, fields]);
 
+  const hasForeignCurrency = useMemo(() => {
+    const list = watchedExpenses || fields;
+    if (!list || !Array.isArray(list)) return false;
+    return list.some((item) => item?.originalCurrency && item.originalCurrency !== 'INR');
+  }, [watchedExpenses, fields]);
+
   const displayTotal = control ? computedTotal : (totalAmount ?? computedTotal);
 
   const handleAddRow = () => {
@@ -63,6 +71,10 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
       category: 'MISC',
       merchant: '',
       amount: 0,
+      originalAmount: 0,
+      originalCurrency: 'INR',
+      exchangeRate: 1.0,
+      inrAmount: 0,
       expenseDate: departureDate || todayStr,
       notes: '',
     });
@@ -74,17 +86,24 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
         <label className="text-xs font-semibold text-ink">
           Itemized Expenses & Estimates <span className="text-destructive">*</span>
         </label>
-        <span className="text-xs font-mono tabular-nums font-semibold text-primary">
-          Subtotal: {formatINR(displayTotal)}
-        </span>
+        <div className="flex flex-col items-end">
+          <span className="text-xs font-mono tabular-nums font-semibold text-primary">
+            Subtotal: {formatINR(displayTotal)}
+          </span>
+          {hasForeignCurrency && (
+            <span className="text-[10px] font-mono text-muted">
+              (Normalized to INR base)
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Desktop Column Header */}
       <div className="hidden sm:grid grid-cols-12 gap-3 px-2 text-[11px] font-medium text-muted">
         <span className="col-span-3">Category</span>
-        <span className="col-span-4">Merchant / Vendor</span>
+        <span className="col-span-3">Merchant / Vendor</span>
         <span className="col-span-2">Date</span>
-        <span className="col-span-2">Amount (₹)</span>
+        <span className="col-span-3">Currency & Amount</span>
         <span className="col-span-1 text-center">Action</span>
       </div>
 
@@ -99,18 +118,26 @@ export const DynamicExpenseTable: React.FC<DynamicExpenseTableProps> = ({
             canRemove={fields.length > 1}
             minDate={minExpenseDate}
             maxDate={maxExpenseDate}
+            control={control}
+            setValue={setValue}
           />
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={handleAddRow}
-        className="self-start flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-primary text-primary text-xs font-semibold hover:bg-primary/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all cursor-pointer mt-1"
-      >
-        <Plus className="size-3.5" />
-        Add Expense Line Item
-      </button>
+      <div className="flex items-center justify-between pt-1">
+        <button
+          type="button"
+          onClick={handleAddRow}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-warm bg-surface hover:bg-surface-subtle text-xs font-medium text-ink transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+        >
+          <Plus className="size-3.5 text-primary" />
+          <span>Add Expense Item</span>
+        </button>
+
+        <span className="text-[11px] text-muted font-medium">
+          {fields.length} {fields.length === 1 ? 'item' : 'items'} itemized
+        </span>
+      </div>
     </div>
   );
 };

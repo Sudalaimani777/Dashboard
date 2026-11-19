@@ -65,6 +65,10 @@ export const travelFormSchema = z
             'Merchant name must be a valid vendor (cannot be numbers only)'
           ),
         amount: z.number().positive('Amount must be positive'),
+        originalCurrency: z.string().optional(),
+        originalAmount: z.number().optional(),
+        exchangeRate: z.number().optional(),
+        inrAmount: z.number().optional(),
         expenseDate: z.string(),
         notes: z.string().optional(),
       })
