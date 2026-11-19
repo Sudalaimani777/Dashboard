@@ -10,6 +10,15 @@ export interface CreateExpenseInput {
   category: ExpenseCategory;
   merchant: string;
   amount: number;
+  original_currency?: string;
+  originalCurrency?: string;
+  original_amount?: number;
+  originalAmount?: number;
+  exchange_rate?: number;
+  exchangeRate?: number;
+  inr_amount?: number;
+  inrAmount?: number;
+  currency?: string;
   expense_date: string;
   receipt_image_url?: string | null;
   notes?: string | null;

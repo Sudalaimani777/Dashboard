@@ -2,6 +2,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../../shared/middleware/auth.middleware.js';
 import { sendError, sendSuccess } from '../../shared/utils/response.js';
+import { ExchangeRateService } from '../../shared/services/exchangeRate.service.js';
 import { TravelService } from './travel.service.js';
 import { TravelRole, TravelStatus } from './travel.types.js';
 
@@ -253,6 +254,30 @@ export class TravelController {
     } catch (err: any) {
       const status = err.message.includes('validation') ? 400 : 500;
       return sendError(res, err.message, status);
+    }
+  };
+
+  /**
+   * GET /api/travel/fx-rate
+   * Fetches exchange rate for a given currency and optional expense date against INR.
+   */
+  getFxRate = async (req: any, res: Response) => {
+    try {
+      const from = ((req.query.from as string) || '').toUpperCase().trim();
+      const date = ((req.query.date as string) || '').trim();
+
+      if (!from || !ExchangeRateService.ALLOWED_CURRENCIES.has(from)) {
+        return sendError(
+          res,
+          `Invalid or unsupported currency. Allowed: ${Array.from(ExchangeRateService.ALLOWED_CURRENCIES).join(', ')}`,
+          400
+        );
+      }
+
+      const fxData = await ExchangeRateService.getRate(from, date || undefined);
+      return sendSuccess(res, fxData, 'Exchange rate retrieved successfully');
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
     }
   };
 }
