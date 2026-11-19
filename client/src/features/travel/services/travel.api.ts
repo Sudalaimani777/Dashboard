@@ -223,6 +223,23 @@ class TravelApiService {
       this.handleError(err, 'Failed to upload document proof');
     }
   }
+
+  /**
+   * Fetch live or historical exchange rate against INR.
+   */
+  async getFxRate(from: string, date?: string): Promise<{ rate: number; from: string; date: string; source: string }> {
+    try {
+      const params: any = { from };
+      if (date) params.date = date;
+      const res = await travelApiClient.get<ApiResponse<{ rate: number; from: string; date: string; source: string }>>(
+        '/travel/fx-rate',
+        { params }
+      );
+      return res.data.data;
+    } catch (err) {
+      this.handleError(err, 'Failed to fetch currency exchange rate');
+    }
+  }
 }
 
 export const travelApi = new TravelApiService();

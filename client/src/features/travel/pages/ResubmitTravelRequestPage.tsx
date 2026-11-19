@@ -489,6 +489,7 @@ export const ResubmitTravelRequestPage: React.FC = () => {
               errors={form.formState.errors as any}
               totalAmount={totalAmount}
               control={form.control as any}
+              setValue={form.setValue as any}
               travelType={request.travelType}
               departureDate={watchedDep}
               returnDate={watchedRet}

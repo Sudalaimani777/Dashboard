@@ -99,7 +99,7 @@ export const ManagerTeamAnalyticsPage: React.FC = () => {
 
           <div className="lg:px-5">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600 block">
-              Manager Review SLA
+              Manager Review
             </span>
             <span className="text-xl font-bold font-mono tabular-nums text-ink block mt-0.5">
               {overview.avgReviewDays !== null

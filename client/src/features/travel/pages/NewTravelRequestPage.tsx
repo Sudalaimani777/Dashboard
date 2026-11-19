@@ -366,6 +366,7 @@ export const NewTravelRequestPage: React.FC = () => {
             errors={form.formState.errors}
             totalAmount={totalAmount}
             control={form.control}
+            setValue={form.setValue}
             travelType={watchedType}
             departureDate={watchedDep}
             returnDate={watchedRet}

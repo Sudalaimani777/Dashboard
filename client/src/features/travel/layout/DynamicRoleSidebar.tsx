@@ -134,7 +134,7 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
           type="button"
           onClick={handleTogglePin}
           aria-label={pinned ? 'Collapse sidebar' : 'Expand and pin sidebar'}
-          className="flex items-center min-w-0 overflow-hidden cursor-pointer rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="flex items-center flex-1 min-w-0 cursor-pointer rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 mr-2"
         >
           {/* Logo Monogram */}
           <div className="w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
@@ -143,11 +143,11 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
 
           {/* Brand Name & Subtitle */}
           {!isItemCollapsed && (
-            <div className="flex flex-col min-w-0 ml-2.5 overflow-hidden text-left leading-tight">
-              <span className="font-bold text-base text-ink tracking-tight truncate">
+            <div className="flex flex-col min-w-0 ml-2.5 text-left leading-tight">
+              <span className="font-bold text-base text-ink tracking-tight whitespace-nowrap">
                 TripFlow
               </span>
-              <span className="text-[11px] text-muted truncate mt-0.5">
+              <span className="text-[11px] text-muted whitespace-nowrap mt-0.5">
                 {roleSubtitle}
               </span>
             </div>

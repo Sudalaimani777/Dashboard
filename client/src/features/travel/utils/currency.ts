@@ -56,3 +56,45 @@ export function parseINR(formattedStr: string): number {
  * Prevents layout shift during animated increments and preserves vertical alignment.
  */
 export const TABULAR_NUM_CLASS = 'font-mono tabular-nums tracking-tight';
+
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  INR: '₹',
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  AED: 'د.إ',
+  SGD: 'S$',
+  JPY: '¥',
+  CAD: 'C$',
+  AUD: 'A$',
+  CHF: 'CHF',
+  CNY: '¥',
+  THB: '฿',
+  MYR: 'RM'
+};
+
+export function formatForeignCurrency(amount: number | string | null | undefined, currency: string = 'INR'): string {
+  const num = typeof amount === 'string' ? parseFloat(amount) : Number(amount ?? 0);
+  if (isNaN(num)) return `${currency} 0.00`;
+  const code = currency.toUpperCase().trim();
+  const symbol = CURRENCY_SYMBOLS[code] || code;
+  return `${symbol}${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+export function formatDualCurrency(
+  foreignAmount: number | string | null | undefined,
+  foreignCurrency: string = 'INR',
+  inrAmount?: number | string | null | undefined
+): string {
+  const cur = (foreignCurrency || 'INR').toUpperCase().trim();
+  const fAmt = typeof foreignAmount === 'string' ? parseFloat(foreignAmount) : Number(foreignAmount ?? 0);
+  const iAmt = inrAmount !== undefined && inrAmount !== null
+    ? (typeof inrAmount === 'string' ? parseFloat(inrAmount) : Number(inrAmount))
+    : fAmt;
+
+  if (cur === 'INR') {
+    return formatINR(iAmt);
+  }
+
+  return `${formatForeignCurrency(fAmt, cur)} (₹${iAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+}

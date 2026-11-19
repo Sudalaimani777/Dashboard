@@ -29,7 +29,7 @@ import { TravelStatusBadge } from '../components/TravelStatusBadge';
 import { RouteLabel } from '../components/shared/RouteLabel';
 import { TravelDetailSkeleton } from '../components/shared/TravelDetailSkeleton';
 import { InlineConfirmBar } from '../components/shared/InlineConfirmBar';
-import { formatINR } from '../utils/currency';
+import { formatINR, formatForeignCurrency } from '../utils/currency';
 import {
   aggregateExpenseItems,
   computeTripDuration,
@@ -421,9 +421,21 @@ export const TravelDetailPage: React.FC = () => {
                       <span className="text-[11px] text-faint mt-0.5 truncate">{exp.notes}</span>
                     )}
                   </div>
-                  <span className="font-mono tabular-nums font-bold text-primary shrink-0">
-                    {formatINR(exp.amount)}
-                  </span>
+                  <div className="flex flex-col items-end shrink-0">
+                    <span className="font-mono tabular-nums font-bold text-primary">
+                      {formatINR(exp.amount)}
+                    </span>
+                    {(exp.originalCurrency || (exp as any).original_currency) &&
+                      (exp.originalCurrency || (exp as any).original_currency) !== 'INR' && (
+                        <span className="text-[10px] font-mono tabular-nums text-muted">
+                          {formatForeignCurrency(
+                            exp.originalAmount || (exp as any).original_amount,
+                            exp.originalCurrency || (exp as any).original_currency
+                          )}{' '}
+                          @ ₹{Number(exp.exchangeRate || (exp as any).exchange_rate || 1).toFixed(2)}
+                        </span>
+                      )}
+                  </div>
                 </div>
               ))}
             </div>

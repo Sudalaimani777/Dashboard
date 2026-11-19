@@ -83,7 +83,13 @@ export class TravelRepository {
         effectiveManagerId = userRes.rows[0]?.manager_id || null;
       }
 
-      const totalExpenses = data.expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+      const totalExpenses = data.expenses.reduce((sum, e: any) => {
+        const origCur = (e.originalCurrency || e.original_currency || e.currency || 'INR').toUpperCase().trim();
+        const origAmt = Number(e.originalAmount || e.original_amount || e.amount || 0);
+        const rate = Number(e.exchangeRate || e.exchange_rate || 1.0);
+        const inr = origCur === 'INR' ? origAmt : Math.round(origAmt * rate * 100) / 100;
+        return sum + inr;
+      }, 0);
       const initialStatus: TravelStatus = data.status || 'PENDING_MANAGER_REVIEW';
       const currency = data.currency || 'INR';
       const docsJson = JSON.stringify(data.supportingDocs || (data.supportingDocUrl ? [{
@@ -127,19 +133,29 @@ export class TravelRepository {
 
       // Insert itemized expenses
       const expenseRows: any[] = [];
-      for (const exp of data.expenses) {
+      for (const exp of data.expenses as any[]) {
+        const origCur = (exp.originalCurrency || exp.original_currency || exp.currency || 'INR').toUpperCase().trim();
+        const origAmt = Number(exp.originalAmount || exp.original_amount || exp.amount || 0);
+        const rate = Number(exp.exchangeRate || exp.exchange_rate || 1.0);
+        const calculatedInrAmount = origCur === 'INR' ? origAmt : Math.round(origAmt * rate * 100) / 100;
+
         const expRes = await client.query(
           `INSERT INTO travel_expenses (
-            travel_request_id, category, merchant, amount, expense_date, receipt_image_url, notes
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            travel_request_id, category, merchant, amount, original_currency, original_amount,
+            exchange_rate, inr_amount, expense_date, receipt_image_url, notes
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
           RETURNING *`,
           [
             requestRow.id,
             exp.category,
             exp.merchant,
-            exp.amount,
-            exp.expenseDate,
-            exp.receiptImageUrl || null,
+            calculatedInrAmount,
+            origCur,
+            origAmt,
+            rate,
+            calculatedInrAmount,
+            exp.expenseDate || exp.expense_date,
+            exp.receiptImageUrl || exp.receipt_image_url || null,
             exp.notes || null
           ]
         );
@@ -520,21 +536,37 @@ export class TravelRepository {
       // Delete existing expenses
       await client.query('DELETE FROM travel_expenses WHERE travel_request_id = $1', [requestId]);
 
-      // Insert new expenses
-      const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+      // Insert new expenses with multi-currency calculation
+      const totalExpenses = (expenses as any[]).reduce((sum, e) => {
+        const origCur = (e.originalCurrency || e.original_currency || e.currency || 'INR').toUpperCase().trim();
+        const origAmt = Number(e.originalAmount || e.original_amount || e.amount || 0);
+        const rate = Number(e.exchangeRate || e.exchange_rate || 1.0);
+        const inr = origCur === 'INR' ? origAmt : Math.round(origAmt * rate * 100) / 100;
+        return sum + inr;
+      }, 0);
 
-      for (const exp of expenses) {
+      for (const exp of expenses as any[]) {
+        const origCur = (exp.originalCurrency || exp.original_currency || exp.currency || 'INR').toUpperCase().trim();
+        const origAmt = Number(exp.originalAmount || exp.original_amount || exp.amount || 0);
+        const rate = Number(exp.exchangeRate || exp.exchange_rate || 1.0);
+        const calculatedInrAmount = origCur === 'INR' ? origAmt : Math.round(origAmt * rate * 100) / 100;
+
         await client.query(
           `INSERT INTO travel_expenses (
-            travel_request_id, category, merchant, amount, expense_date, receipt_image_url, notes
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            travel_request_id, category, merchant, amount, original_currency, original_amount,
+            exchange_rate, inr_amount, expense_date, receipt_image_url, notes
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [
             requestId,
             exp.category,
             exp.merchant,
-            exp.amount,
-            exp.expenseDate,
-            exp.receiptImageUrl || null,
+            calculatedInrAmount,
+            origCur,
+            origAmt,
+            rate,
+            calculatedInrAmount,
+            exp.expenseDate || exp.expense_date,
+            exp.receiptImageUrl || exp.receipt_image_url || null,
             exp.notes || null
           ]
         );
@@ -830,6 +862,10 @@ export class TravelRepository {
 
   private mapRowToExpense = (row: any): TravelExpense => {
     const amt = Number(row.amount);
+    const origAmt = row.original_amount !== null && row.original_amount !== undefined ? Number(row.original_amount) : amt;
+    const rate = row.exchange_rate !== null && row.exchange_rate !== undefined ? Number(row.exchange_rate) : 1.0;
+    const inrAmt = row.inr_amount !== null && row.inr_amount !== undefined ? Number(row.inr_amount) : amt;
+
     return {
       id: row.id,
       travel_request_id: row.travel_request_id,
@@ -837,6 +873,14 @@ export class TravelRepository {
       category: row.category,
       merchant: row.merchant,
       amount: amt,
+      original_currency: row.original_currency || 'INR',
+      originalCurrency: row.original_currency || 'INR',
+      original_amount: origAmt,
+      originalAmount: origAmt,
+      exchange_rate: rate,
+      exchangeRate: rate,
+      inr_amount: inrAmt,
+      inrAmount: inrAmt,
       expense_date: formatDateOnly(row.expense_date),
       expenseDate: formatDateOnly(row.expense_date),
       receipt_image_url: row.receipt_image_url,
