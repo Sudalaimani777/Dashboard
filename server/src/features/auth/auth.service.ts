@@ -30,6 +30,10 @@ export class AuthService {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role || 'EMPLOYEE',
+      department: user.department || 'Engineering',
+      manager_id: user.manager_id || null,
+      is_active: user.is_active !== false,
       created_at: user.created_at,
       updated_at: user.updated_at,
     };
@@ -39,6 +43,8 @@ export class AuthService {
     const payload: JwtPayload = {
       userId: user.id,
       email: user.email,
+      role: user.role || 'EMPLOYEE',
+      department: user.department || 'Engineering',
     };
 
     return jwt.sign(payload, config.jwt.secret as jwt.Secret, {
@@ -55,13 +61,22 @@ export class AuthService {
       throw new Error('Name must be at least 2 characters long');
     }
 
+    if (name.length > 100) {
+      throw new Error('Name cannot exceed 100 characters');
+    }
+
+    const nameRegex = /^[\p{L}][\p{L}\s'.-]{1,99}$/u;
+    if (!nameRegex.test(name)) {
+      throw new Error('Name can only contain letters, spaces, hyphens, and apostrophes');
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
       throw new Error('Please provide a valid email address');
     }
 
-    if (!password || password.length < 6) {
-      throw new Error('Password must be at least 6 characters long');
+    if (!password || password.trim().length < 6) {
+      throw new Error('Password must be at least 6 characters long and cannot be only spaces');
     }
 
     const existingUser = await this.repo.findByEmail(email);
@@ -85,13 +100,17 @@ export class AuthService {
     const email = dto.email?.trim().toLowerCase();
     const password = dto.password;
 
-    if (!email || !password) {
+    if (!email || !password || !password.trim()) {
       throw new Error('Email and password are required');
     }
 
     const user = await this.repo.findByEmail(email);
     if (!user) {
       throw new Error('Invalid email or password');
+    }
+
+    if (user.is_active === false) {
+      throw new Error('Your account has been deactivated. Please contact your administrator.');
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
@@ -155,12 +174,12 @@ export class AuthService {
     const token = dto.token?.trim();
     const newPassword = dto.newPassword;
 
-    if (!token || !newPassword) {
+    if (!token || !newPassword || !newPassword.trim()) {
       throw new Error('Token and new password are required');
     }
 
-    if (newPassword.length < 6) {
-      throw new Error('Password must be at least 6 characters long');
+    if (newPassword.trim().length < 6) {
+      throw new Error('Password must be at least 6 characters long and cannot be only spaces');
     }
 
     const hashedToken = this.hashToken(token);

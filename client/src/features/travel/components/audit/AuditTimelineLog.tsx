@@ -1,0 +1,75 @@
+import React from 'react';
+import { History } from 'lucide-react';
+import type { TravelTimelineEvent } from '../../types/travel.types';
+
+export interface AuditTimelineLogProps {
+  timeline?: TravelTimelineEvent[];
+}
+
+export const AuditTimelineLog: React.FC<AuditTimelineLogProps> = ({ timeline = [] }) => {
+  if (!timeline || timeline.length === 0) return null;
+
+  return (
+    <div className="bg-surface rounded-xl border border-border-warm p-5 flex flex-col gap-4 shadow-xs">
+      <h3 className="text-sm font-semibold text-ink flex items-center gap-2 border-b border-border-warm pb-3">
+        <History className="size-4 text-primary" /> Event History
+      </h3>
+
+      <div className="relative pl-3 flex flex-col gap-4 border-l-2 border-border-warm ml-2">
+        {timeline.map((event, idx) => {
+          const rawStatus = event.toStatus || event.to_status || event.eventType || event.event_type || 'STATUS_UPDATE';
+          const formattedStatus = String(rawStatus).replace(/_/g, ' ');
+          const actorRole = event.actorRole || event.actor_role || 'SYSTEM';
+          const actorName = event.actorName || event.actor_name;
+          const rawDate = event.createdAt || event.created_at;
+          const formattedDate = rawDate
+            ? new Date(rawDate).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '';
+
+          return (
+            <div key={event.id || idx} className="relative pl-4 flex flex-col gap-1.5 text-xs">
+              {/* Timeline node */}
+              <span className="absolute -left-[18px] top-1.5 size-2 rounded-full bg-primary ring-2 ring-surface" />
+
+              {/* Row 1: Actor Role Badge, Name, and Timestamp */}
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-surface-subtle border border-border-warm text-muted shrink-0">
+                    {actorRole}
+                  </span>
+                  {actorName && (
+                    <span className="text-xs font-medium text-ink truncate">
+                      {actorName}
+                    </span>
+                  )}
+                </div>
+                {formattedDate && (
+                  <span className="text-[10px] text-faint font-mono whitespace-nowrap shrink-0">
+                    {formattedDate}
+                  </span>
+                )}
+              </div>
+
+              {/* Row 2: Status Text */}
+              <div className="font-semibold text-xs text-ink uppercase tracking-wide leading-snug break-words">
+                {formattedStatus}
+              </div>
+
+              {/* Row 3: Remarks (if present) */}
+              {event.remarks && (
+                <p className="text-[11px] text-muted italic border-l-2 border-border-warm pl-2.5 py-0.5 mt-0.5 break-words">
+                  "{event.remarks}"
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};

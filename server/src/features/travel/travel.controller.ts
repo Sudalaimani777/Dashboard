@@ -1,0 +1,343 @@
+// server/src/features/travel/travel.controller.ts
+import fs from 'node:fs';
+import path from 'node:path';
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../../shared/middleware/auth.middleware.js';
+import { sendError, sendSuccess } from '../../shared/utils/response.js';
+import { ExchangeRateService } from '../../shared/services/exchangeRate.service.js';
+import { cloudinaryService } from '../../shared/services/cloudinary.service.js';
+import { TravelService } from './travel.service.js';
+import { TravelRole, TravelStatus } from './travel.types.js';
+
+export class TravelController {
+  private service: TravelService;
+
+  constructor(service?: TravelService) {
+    this.service = service || new TravelService();
+  }
+
+  /**
+   * POST /api/travel/requests
+   * Submits a new travel request with itemized expenses and quotation/receipt proofs.
+   */
+  createRequest = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return sendError(res, 'Authentication required', 401);
+      }
+
+      const request = await this.service.createRequest(userId, req.body);
+      return sendSuccess(res, request, 'Travel request created successfully', 201);
+    } catch (err: any) {
+      return sendError(res, err.message, 400);
+    }
+  };
+
+  /**
+   * GET /api/travel/requests
+   * Returns scoped requests based on caller's role (Employee: own, Manager: team, Admin: all).
+   */
+  getRequests = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      const role = (req.user?.role || 'EMPLOYEE') as TravelRole;
+      if (!userId) {
+        return sendError(res, 'Authentication required', 401);
+      }
+
+      const statusFilter = req.query.status as TravelStatus | undefined;
+      const isPersonal = req.query.scope === 'personal' || req.query.personal === 'true';
+
+      const requests = isPersonal
+        ? await this.service.getMyRequests(userId, statusFilter)
+        : await this.service.getScopedRequests(userId, role, statusFilter);
+      return sendSuccess(res, requests, 'Travel requests fetched successfully');
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
+    }
+  };
+
+  /**
+   * GET /api/travel/requests/:id
+   * Returns single travel request with itemized expenses and audit timeline.
+   */
+  getRequestById = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      const role = (req.user?.role || 'EMPLOYEE') as TravelRole;
+      const id = String(req.params.id);
+
+      const request = await this.service.getRequestById(id, userId, role);
+      return sendSuccess(res, request, 'Travel request details fetched');
+    } catch (err: any) {
+      const statusCode = err.message.includes('not found') ? 404 : err.message.includes('Access denied') ? 403 : 400;
+      return sendError(res, err.message, statusCode);
+    }
+  };
+
+  /**
+   * GET /api/travel/manager-queue
+   * Returns requests pending Tier 1 Manager audit.
+   */
+  getManagerQueue = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      const role = req.user?.role;
+      // Admins have org-wide oversight, whereas Managers see their direct reports & unassigned requests
+      const targetManagerId = role === 'ADMIN' ? undefined : userId;
+      const queue = await this.service.getManagerQueue(targetManagerId);
+      return sendSuccess(res, queue, 'Manager review queue fetched');
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
+    }
+  };
+
+  /**
+   * GET /api/travel/admin-queue
+   * Returns requests pending Tier 2 Admin executive clearance / settlement.
+   */
+  getAdminQueue = async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+      const queue = await this.service.getAdminQueue();
+      return sendSuccess(res, queue, 'Admin governance queue fetched');
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
+    }
+  };
+
+  /**
+   * POST /api/travel/requests/:id/manager-review
+   * Tier 1 Line Manager review action: APPROVE, REVISE, REJECT.
+   */
+  managerReview = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      const id = String(req.params.id);
+      if (!userId) {
+        return sendError(res, 'Authentication required', 401);
+      }
+
+      const updated = await this.service.managerReview(userId, id, req.body);
+      return sendSuccess(res, updated, 'Manager review action recorded');
+    } catch (err: any) {
+      return sendError(res, err.message, 400);
+    }
+  };
+
+  /**
+   * POST /api/travel/requests/:id/admin-review
+   * Tier 2 Admin review action: APPROVE (clearance/settlement), REVISE (Route A / Route B), REJECT.
+   */
+  adminReview = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      const id = String(req.params.id);
+      if (!userId) {
+        return sendError(res, 'Authentication required', 401);
+      }
+
+      const updated = await this.service.adminReview(userId, id, req.body);
+      return sendSuccess(res, updated, 'Admin review action recorded');
+    } catch (err: any) {
+      return sendError(res, err.message, 400);
+    }
+  };
+
+  /**
+   * POST /api/travel/requests/:id/resubmit
+   * Resubmission by employee after alterations.
+   * INVARIANT: strictly returns to PENDING_MANAGER_REVIEW.
+   */
+  employeeResubmit = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      const id = String(req.params.id);
+      if (!userId) {
+        return sendError(res, 'Authentication required', 401);
+      }
+
+      const updated = await this.service.employeeResubmit(userId, id, req.body);
+      return sendSuccess(res, updated, 'Travel request resubmitted for manager re-verification');
+    } catch (err: any) {
+      return sendError(res, err.message, 400);
+    }
+  };
+
+  /**
+   * POST /api/travel/requests/:id/cancel
+   * Cancels request by requester.
+   */
+  cancelRequest = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      const id = String(req.params.id);
+      if (!userId) {
+        return sendError(res, 'Authentication required', 401);
+      }
+
+      const cancelled = await this.service.cancelRequest(userId, id, req.body?.remarks);
+      return sendSuccess(res, cancelled, 'Travel request cancelled successfully');
+    } catch (err: any) {
+      return sendError(res, err.message, 400);
+    }
+  };
+
+  /**
+   * GET /api/travel/budgets
+   * Retrieves department quarterly budget and available headroom.
+   */
+  getDepartmentBudget = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const department = (req.query.department as string) || req.user?.department || 'Engineering';
+      const year = req.query.year ? Number(req.query.year) : 2026;
+      const quarter = (req.query.quarter as string) || 'Q4';
+
+      const budget = await this.service.getDepartmentBudget(department, year, quarter);
+      if (!budget) {
+        return sendError(res, `Budget not found for ${department} ${year} ${quarter}`, 404);
+      }
+
+      return sendSuccess(res, budget, 'Department budget fetched successfully');
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
+    }
+  };
+
+  /**
+   * POST /api/travel/upload
+   * Uploads an itinerary or quotation proof file to Cloudinary and returns metadata.
+   */
+  uploadProof = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return sendError(res, 'Authentication required', 401);
+      }
+
+      if (!req.file || req.file.size === 0 || !req.file.buffer || req.file.buffer.length === 0) {
+        return sendError(res, 'Uploaded file is empty (0 bytes). Please attach a valid document with content.', 400);
+      }
+
+      const doc = await this.service.uploadProof(req.file, userId);
+      return sendSuccess(res, doc, 'File uploaded successfully', 201);
+    } catch (err: any) {
+      const statusCode = err.statusCode || (err.name === 'FileSecurityValidationError' ? 400 : 500);
+      return sendError(res, err.message, statusCode);
+    }
+  };
+
+  /**
+   * GET /api/travel/download-proof
+   * Authenticated download proxy to retrieve proof files (bypassing Cloudinary raw ACL restrictions for PDFs).
+   */
+  downloadProof = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const rawUrl = req.query.url as string;
+      const requestedFilename = (req.query.filename as string) || (req.query.name as string) || 'proof-document';
+
+      if (!rawUrl) {
+        return sendError(res, 'Missing file URL parameter', 400);
+      }
+
+      // 1. Cloudinary asset
+      if (rawUrl.includes('res.cloudinary.com')) {
+        const parsed = cloudinaryService.parseCloudinaryUrl(rawUrl);
+        if (parsed) {
+          const downloadUrl = cloudinaryService.getPrivateDownloadUrl(parsed.publicId, parsed.format);
+          if (downloadUrl) {
+            const ext = parsed.format.toLowerCase();
+            const safeFilename = requestedFilename.toLowerCase().endsWith(`.${ext}`)
+              ? requestedFilename
+              : `${requestedFilename}.${ext}`;
+
+            res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeFilename)}"`);
+            res.setHeader('Content-Type', ext === 'pdf' ? 'application/pdf' : `image/${ext}`);
+
+            const response = await fetch(downloadUrl);
+            if (!response.ok) {
+              return sendError(res, `Failed to retrieve asset from storage (status ${response.status})`, 502);
+            }
+            const arrayBuf = await response.arrayBuffer();
+            return res.send(Buffer.from(arrayBuf));
+          }
+        }
+      }
+
+      // 2. Local uploads fallback
+      const localMatch = rawUrl.match(/\/uploads\/proofs\/([^?#]+)/);
+      if (localMatch) {
+        const filename = path.basename(localMatch[1]);
+        const filePath = path.resolve(process.cwd(), 'uploads/proofs', filename);
+        if (fs.existsSync(filePath)) {
+          return res.download(filePath, requestedFilename);
+        }
+      }
+
+      // 3. Fallback redirect
+      return res.redirect(rawUrl);
+    } catch (err: any) {
+      return sendError(res, err.message || 'Failed to download proof file', 500);
+    }
+  };
+
+  /**
+   * GET /api/travel/budgets/overview
+   * Lists all configured department budgets and known departments for executive oversight.
+   */
+  getBudgetOverview = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const year = req.query.year ? Number(req.query.year) : undefined;
+      const quarter = req.query.quarter ? String(req.query.quarter).toUpperCase() : undefined;
+
+      const overview = await this.service.getBudgetOverview(
+        year && Number.isInteger(year) ? year : undefined,
+        quarter && ['Q1', 'Q2', 'Q3', 'Q4'].includes(quarter) ? quarter : undefined
+      );
+
+      return sendSuccess(res, overview, 'Department budget overview fetched successfully');
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
+    }
+  };
+
+  /**
+   * PUT /api/travel/budgets
+   * Creates or updates a quarterly department travel budget allocation.
+   */
+  upsertDepartmentBudget = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const budget = await this.service.upsertDepartmentBudget(req.body);
+      return sendSuccess(res, budget, 'Department budget allocation saved successfully');
+    } catch (err: any) {
+      const status = err.message.includes('validation') ? 400 : 500;
+      return sendError(res, err.message, status);
+    }
+  };
+
+  /**
+   * GET /api/travel/fx-rate
+   * Fetches exchange rate for a given currency and optional expense date against INR.
+   */
+  getFxRate = async (req: any, res: Response) => {
+    try {
+      const from = ((req.query.from as string) || '').toUpperCase().trim();
+      const date = ((req.query.date as string) || '').trim();
+
+      if (!from || !ExchangeRateService.ALLOWED_CURRENCIES.has(from)) {
+        return sendError(
+          res,
+          `Invalid or unsupported currency. Allowed: ${Array.from(ExchangeRateService.ALLOWED_CURRENCIES).join(', ')}`,
+          400
+        );
+      }
+
+      const fxData = await ExchangeRateService.getRate(from, date || undefined);
+      return sendSuccess(res, fxData, 'Exchange rate retrieved successfully');
+    } catch (err: any) {
+      return sendError(res, err.message, 500);
+    }
+  };
+}
+
+export const travelController = new TravelController();

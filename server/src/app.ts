@@ -1,8 +1,12 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import path from 'path';
 import { config } from './config/env.js';
 import { authRoutes } from './features/auth/auth.routes.js';
+import { travelRoutes } from './features/travel/travel.routes.js';
+import { usersRoutes } from './features/users/users.routes.js';
+import { notificationRoutes } from './features/notifications/notification.routes.js';
 import { pool } from './shared/db/pool.js';
 import { errorHandler } from './shared/middleware/error.middleware.js';
 
@@ -17,11 +21,12 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.json());
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
 // Base Route
 app.get('/', (_req, res) => {
   res.status(200).json({
-    message: 'Readventure Authentication API is running',
+    message: 'TripFlow API is running',
     version: '1.0.0',
   });
 });
@@ -46,6 +51,9 @@ app.get('/api/health', async (_req, res) => {
 
 // Feature Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/travel', travelRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Centralized error handler
 app.use(errorHandler);

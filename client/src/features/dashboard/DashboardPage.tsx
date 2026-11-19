@@ -1,121 +1,88 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/hooks/useAuth';
-import type { BookItem } from './types/dashboard.types';
-import {
-  DashboardTopbar,
-  LogPagesModal,
-  MarginaliaQuoteCard,
-  NowReadingCard,
-  OnDeckBookshelf,
-  ReaderCadenceStats,
-} from './components';
+import { AlertCircle } from 'lucide-react';
+
+const EmployeeTravelPortal = lazy(() =>
+  import('../travel/components/EmployeeTravelPortal').then((m) => ({ default: m.EmployeeTravelPortal })),
+);
+const EmployeeSpendAnalyticsPage = lazy(() =>
+  import('../travel/pages/EmployeeSpendAnalyticsPage').then((m) => ({ default: m.EmployeeSpendAnalyticsPage })),
+);
+const ManagerQueuePortal = lazy(() =>
+  import('../travel/components/ManagerQueuePortal').then((m) => ({ default: m.ManagerQueuePortal })),
+);
+const ManagerTeamAnalyticsPage = lazy(() =>
+  import('../travel/pages/ManagerTeamAnalyticsPage').then((m) => ({ default: m.ManagerTeamAnalyticsPage })),
+);
+const AdminGovernancePortal = lazy(() =>
+  import('../travel/components/AdminGovernancePortal').then((m) => ({ default: m.AdminGovernancePortal })),
+);
+const NotificationsHubPage = lazy(() =>
+  import('../notifications/pages/NotificationsHubPage').then((m) => ({ default: m.NotificationsHubPage })),
+);
+
+const PortalLoadingFallback: React.FC = () => (
+  <div className="min-h-[60vh] flex items-center justify-center">
+    <div className="flex flex-col items-center gap-3">
+      <div className="flex size-10 items-center justify-center rounded-xl bg-[#061B31] text-white font-bold text-xs shadow-sm ring-1 ring-[#533AFD]/20 animate-pulse">
+        TF
+      </div>
+      <p className="text-xs font-medium text-[#50617A]">Loading TripFlow workspace...</p>
+    </div>
+  </div>
+);
 
 export const DashboardPage: React.FC = () => {
-  const { user, signout } = useAuth();
-  const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
 
-  // Navigation tab state
-  const [activeTab, setActiveTab] = useState<'library' | 'goal' | 'notes'>('library');
+  const searchParams = new URLSearchParams(location.search);
+  const defaultTab =
+    user?.role === 'ADMIN' ? 'governance' : user?.role === 'MANAGER' ? 'team' : 'trips';
+  const activeTab = searchParams.get('tab') || defaultTab;
 
-  // Active reading state
-  const [currentPage, setCurrentPage] = useState(184);
-  const totalPages = 487;
-  const [totalAnnualPages, setTotalAnnualPages] = useState(4320);
-  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  if (isLoading) {
+    return <PortalLoadingFallback />;
+  }
 
-  // Curated bookshelf collection
-  const bookshelf: BookItem[] = [
-    {
-      id: '1',
-      title: 'Piranesi',
-      author: 'Susanna Clarke',
-      tag: 'Up next',
-      isFinished: false,
-      coverGradient: 'from-[#2F3E46] via-[#354F52] to-[#1A2629]',
-    },
-    {
-      id: '2',
-      title: 'A Gentleman in Moscow',
-      author: 'Amor Towles',
-      tag: 'Finished ★★★★★',
-      isFinished: true,
-      coverGradient: 'from-[#5C241C] via-[#3D140E] to-[#240B07]',
-    },
-    {
-      id: '3',
-      title: 'Klara and the Sun',
-      author: 'Kazuo Ishiguro',
-      tag: 'Finished ★★★★★',
-      isFinished: true,
-      coverGradient: 'from-[#BD4B32] via-[#8C331E] to-[#591C0E]',
-    },
-  ];
+  if (!user) {
+    return null;
+  }
 
-  const handleSignout = async () => {
-    await signout();
-    navigate('/signin');
+  const renderPortal = () => {
+    if (activeTab === 'notifications') {
+      return <NotificationsHubPage />;
+    }
+    switch (user.role) {
+      case 'EMPLOYEE':
+        if (activeTab === 'analytics') {
+          return <EmployeeSpendAnalyticsPage />;
+        }
+        return <EmployeeTravelPortal activeTab={activeTab} />;
+      case 'MANAGER':
+        if (activeTab === 'analytics') {
+          return <ManagerTeamAnalyticsPage />;
+        }
+        return <ManagerQueuePortal activeTab={activeTab} />;
+      case 'ADMIN':
+        return <AdminGovernancePortal activeTab={activeTab} />;
+      default:
+        return (
+          <div className="min-h-[60vh] flex items-center justify-center p-6 text-left">
+            <div className="max-w-md w-full rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-2 text-red-600 mb-2">
+                <AlertCircle className="size-5" />
+                <h2 className="text-sm font-bold">Unrecognized User Role</h2>
+              </div>
+              <p className="text-xs text-[#756F68] leading-relaxed">
+                Your account role <code className="font-mono bg-red-50 px-1 py-0.5 rounded text-red-700">{user.role}</code> is not assigned to a known governance workspace. Please contact your administrator.
+              </p>
+            </div>
+          </div>
+        );
+    }
   };
 
-  const handleSaveLoggedPages = (pages: number) => {
-    setCurrentPage((prev) => Math.min(prev + pages, totalPages));
-    setTotalAnnualPages((prev) => prev + pages);
-  };
-
-  return (
-    <div className="min-h-screen bg-[#F7F4EE] flex flex-col text-[#2B231D] antialiased">
-      {/* Topbar */}
-      <DashboardTopbar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        userName={user?.name}
-        userEmail={user?.email}
-        onSignout={handleSignout}
-      />
-
-      {/* Main Dashboard Layout */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-7 sm:py-9 w-full flex-1 space-y-5">
-        {/* Active Read Card */}
-        <NowReadingCard
-          title="The Shadow of the Wind"
-          author="Carlos Ruiz Zafón"
-          currentPage={currentPage}
-          totalPages={totalPages}
-          estimatedFinishDays={4}
-          dailyPace={32}
-          onOpenLogModal={() => setIsLogModalOpen(true)}
-        />
-
-        {/* Reader Cadence Stats (Clean Editorial Ribbon) */}
-        <ReaderCadenceStats
-          annualGoalRead={14}
-          annualGoalTotal={24}
-          streakDays={19}
-          totalAnnualPages={totalAnnualPages}
-        />
-
-        {/* Bottom Section: Asymmetric 60/40 Split (Bookshelf + Marginalia) */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-7">
-            <OnDeckBookshelf books={bookshelf} />
-          </div>
-          <div className="lg:col-span-5 flex flex-col">
-            <MarginaliaQuoteCard
-              quote="A reader lives a thousand lives before he dies... The man who never reads lives only one."
-              author="George R.R. Martin"
-            />
-          </div>
-        </section>
-      </main>
-
-      {/* Log Pages Modal */}
-      <LogPagesModal
-        isOpen={isLogModalOpen}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onClose={() => setIsLogModalOpen(false)}
-        onSave={handleSaveLoggedPages}
-      />
-    </div>
-  );
+  return <Suspense fallback={<PortalLoadingFallback />}>{renderPortal()}</Suspense>;
 };

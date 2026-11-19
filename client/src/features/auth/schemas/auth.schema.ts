@@ -8,18 +8,26 @@ export const signInSchema = z.object({
     .email('Please provide a valid email address'),
   password: z
     .string()
-    .min(1, 'Password is required'),
+    .min(1, 'Password is required')
+    .refine((p) => p.trim().length > 0, 'Password cannot be blank or whitespace'),
+  remember: z.boolean().optional(),
 });
 
 export type SignInInput = z.infer<typeof signInSchema>;
+
+export const NAME_REGEX = /^[\p{L}][\p{L}\s'.-]{1,99}$/u;
 
 export const signUpSchema = z
   .object({
     name: z
       .string()
       .trim()
-      .min(1, 'Please provide your full name')
-      .max(100, 'Name cannot exceed 100 characters'),
+      .min(2, 'Name must be at least 2 characters long')
+      .max(100, 'Name cannot exceed 100 characters')
+      .regex(
+        NAME_REGEX,
+        'Name can only contain letters, spaces, hyphens, and apostrophes'
+      ),
     email: z
       .string()
       .trim()
@@ -27,10 +35,12 @@ export const signUpSchema = z
       .email('Please provide a valid email address'),
     password: z
       .string()
-      .min(6, 'Password must be at least 6 characters long'),
+      .min(6, 'Password must be at least 6 characters long')
+      .refine((p) => p.trim().length >= 6, 'Password cannot be blank spaces or contain only whitespace'),
     confirmPassword: z
       .string()
-      .min(1, 'Please confirm your password'),
+      .min(1, 'Please confirm your password')
+      .refine((p) => p.trim().length > 0, 'Password confirmation cannot be blank'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
@@ -53,10 +63,12 @@ export const resetPasswordSchema = z
   .object({
     password: z
       .string()
-      .min(8, 'Password must be at least 8 characters long'),
+      .min(8, 'Password must be at least 8 characters long')
+      .refine((p) => p.trim().length >= 8, 'Password cannot be blank spaces or contain only whitespace'),
     confirmPassword: z
       .string()
-      .min(1, 'Please confirm your password'),
+      .min(1, 'Please confirm your password')
+      .refine((p) => p.trim().length > 0, 'Password confirmation cannot be blank'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',

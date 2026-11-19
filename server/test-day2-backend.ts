@@ -47,7 +47,7 @@ async function runTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: 'Day2 Tester',
+        name: 'Day Two Tester',
         email: testEmail,
         password: originalPassword,
       }),

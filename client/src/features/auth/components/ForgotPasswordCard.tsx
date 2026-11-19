@@ -1,176 +1,134 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  Alert,
-  AlertDescription,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-} from '../../../shared/components/ui';
-import { forgotPasswordSchema } from '../schemas/auth.schema';
+import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowLeft, CheckCircle2, Loader2, Mail } from 'lucide-react';
+import { forgotPasswordSchema, type ForgotPasswordInput } from '../schemas/auth.schema';
 import { authApi } from '../services/auth.api';
+import { AuthLayout } from './AuthLayout';
+import { AuthField } from './AuthField';
 
 export const ForgotPasswordCard: React.FC = () => {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [fieldError, setFieldError] = useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<ForgotPasswordInput>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: '' },
+    mode: 'onTouched',
+  });
+
+  const onSubmit = async (data: ForgotPasswordInput) => {
     setErrorMessage(null);
-    setFieldError(null);
-
-    const validation = forgotPasswordSchema.safeParse({ email });
-    if (!validation.success) {
-      setFieldError(validation.error.issues[0]?.message || 'Please provide a valid email address');
-      return;
-    }
-
-    setIsLoading(true);
     try {
-      await authApi.forgotPassword(validation.data.email);
-      setSubmittedEmail(validation.data.email);
+      await authApi.forgotPassword(data.email);
+      setSubmittedEmail(data.email);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unable to send recovery link. Please try again.';
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Unable to send recovery link. Please try again.';
       setErrorMessage(msg);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleResetForm = () => {
+  const handleUseDifferentEmail = () => {
     setSubmittedEmail(null);
-    setEmail('');
-    setFieldError(null);
+    reset();
     setErrorMessage(null);
   };
+
+  if (submittedEmail) {
+    return (
+      <AuthLayout
+        title="Check your inbox"
+        subtitle="Password recovery instructions have been sent."
+      >
+        <div className="space-y-5 text-left">
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-900">
+            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+            <div className="space-y-1">
+              <p className="font-semibold text-emerald-950">Recovery link sent</p>
+              <p className="text-emerald-800 leading-relaxed">
+                If an account exists for{' '}
+                <strong className="font-semibold text-emerald-950">{submittedEmail}</strong>,
+                a password reset link will arrive shortly.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-2">
+            <button
+              type="button"
+              onClick={handleUseDifferentEmail}
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-border-warm bg-surface text-xs font-semibold text-ink hover:bg-surface-subtle transition-colors cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              Use a different email
+            </button>
+            <Link
+              to="/signin"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold transition-all shadow-xs active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <ArrowLeft className="size-4" />
+              <span>Back to sign in</span>
+            </Link>
+          </div>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F7F4EE] px-4 py-12">
-      <Card className="w-full max-w-md bg-[#FFFFFF] border-[#E8DFD3] shadow-md shadow-[#8A582B]/5 rounded-2xl">
-        <CardHeader className="text-center pb-6">
-          <Link
-            to="/"
-            className="inline-block mb-3 text-sm font-semibold tracking-wide text-[#8A582B] hover:text-[#754820] transition-colors"
-          >
-            Readventure
-          </Link>
-          <CardTitle className="text-2xl font-bold text-[#2B231D]">
-            {submittedEmail ? 'Check your inbox' : 'Reset your password'}
-          </CardTitle>
-          <CardDescription className="text-sm text-[#756F68] mt-1">
-            {submittedEmail
-              ? 'Recovery instructions have been dispatched'
-              : 'Enter the email address associated with your account, and we will send you a recovery link.'}
-          </CardDescription>
-        </CardHeader>
+    <AuthLayout
+      title="Reset your password"
+      subtitle="Enter your work email to receive a password reset link."
+      error={errorMessage}
+      onClearError={() => setErrorMessage(null)}
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-left" noValidate>
+        <AuthField
+          id="forgot-email"
+          type="email"
+          label="Work email"
+          autoComplete="email"
+          placeholder="name@company.com"
+          error={errors.email?.message}
+          {...register('email')}
+        />
 
-        <CardContent>
-          {submittedEmail ? (
-            /* Quiet Confirmation State (In-place swap, no AI-slop badges) */
-            <div className="space-y-6">
-              <div className="rounded-xl border border-[#E8DFD3] bg-[#FAF8F5] p-5 text-left">
-                <p className="text-sm leading-relaxed text-[#2B231D]">
-                  We have sent a password reset link to{' '}
-                  <span className="font-semibold text-[#8A582B]">{submittedEmail}</span>.
-                </p>
-                <p className="text-xs text-[#756F68] mt-2 leading-normal">
-                  If an account exists under this email, you will receive instructions within a few moments. For security, the link expires in 1 hour.
-                </p>
-              </div>
-
-              <div className="space-y-3 pt-1">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="md"
-                  className="w-full"
-                  onClick={() => navigate('/signin')}
-                >
-                  Return to sign in
-                </Button>
-
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={handleResetForm}
-                    className="text-xs text-[#756F68] hover:text-[#2B231D] underline underline-offset-2 transition-colors cursor-pointer"
-                  >
-                    Didn't receive the email? Try another address
-                  </button>
-                </div>
-              </div>
-            </div>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full h-11 flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-semibold text-sm transition-all duration-150 shadow-xs cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              <span>Sending recovery link...</span>
+            </>
           ) : (
-            /* Default Form State */
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              {errorMessage && (
-                <Alert>
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (fieldError) setFieldError(null);
-                    if (errorMessage) setErrorMessage(null);
-                  }}
-                  disabled={isLoading}
-                  autoComplete="email"
-                  error={!!fieldError}
-                  autoFocus
-                  required
-                />
-                {fieldError && (
-                  <p className="text-xs text-[#9E2A2B] font-medium mt-1">
-                    {fieldError}
-                  </p>
-                )}
-              </div>
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                className="w-full mt-2"
-                isLoading={isLoading}
-              >
-                Send recovery link
-              </Button>
-            </form>
+            <>
+              <Mail className="size-4" />
+              <span>Send recovery link</span>
+            </>
           )}
-        </CardContent>
+        </button>
 
-        {!submittedEmail && (
-          <CardFooter className="justify-center border-t border-[#E8DFD3]/60 pt-4">
-            <p className="text-xs text-[#756F68]">
-              Remembered your password?{' '}
-              <Link
-                to="/signin"
-                className="font-semibold text-[#8A582B] hover:text-[#754820] cursor-pointer"
-              >
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
-        )}
-      </Card>
-    </div>
+        <div className="pt-2 text-center">
+          <Link
+            to="/signin"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-hover hover:underline rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          >
+            <ArrowLeft className="size-3.5" />
+            <span>Return to sign in</span>
+          </Link>
+        </div>
+      </form>
+    </AuthLayout>
   );
 };

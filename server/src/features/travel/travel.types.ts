@@ -20,14 +20,38 @@ export type TravelStatus =
 
 export type RevisionTarget = 'MANAGER' | 'EMPLOYEE';
 
+export interface SupportingDoc {
+  id: string;
+  type: 'LINK' | 'FILE';
+  name: string;
+  url: string;
+  previewUrl?: string;
+  downloadUrl?: string;
+  format?: string;
+  size?: number;
+  uploadedAt?: string;
+}
+
 export interface TravelExpense {
   id?: string;
   travel_request_id?: string;
+  travelRequestId?: string;
   category: ExpenseCategory;
   merchant: string;
   amount: number;
-  expense_date: string;
+  original_currency?: string;
+  originalCurrency?: string;
+  original_amount?: number;
+  originalAmount?: number;
+  exchange_rate?: number;
+  exchangeRate?: number;
+  inr_amount?: number;
+  inrAmount?: number;
+  currency?: string;
+  expense_date?: string;
+  expenseDate?: string;
   receipt_image_url?: string | null;
+  receiptImageUrl?: string | null;
   notes?: string | null;
   created_at?: string;
 }
@@ -35,35 +59,62 @@ export interface TravelExpense {
 export interface TravelRequest {
   id: string;
   user_id: string;
+  userId?: string;
   manager_id?: string | null;
+  managerId?: string | null;
   admin_id?: string | null;
+  adminId?: string | null;
   travel_type: TravelType;
+  travelType?: TravelType;
   title: string;
   purpose: string;
   project_code: string;
+  projectCode?: string;
   origin: string;
   destination: string;
   departure_date: string;
+  departureDate?: string;
   return_date: string;
+  returnDate?: string;
   emergency_contact_name: string;
+  emergencyContactName?: string;
   emergency_contact_phone: string;
+  emergencyContactPhone?: string;
   supporting_doc_url?: string | null;
+  supportingDocUrl?: string | null;
+  supporting_docs?: SupportingDoc[];
+  supportingDocs?: SupportingDoc[];
   total_expenses: number;
+  totalExpenses?: number;
   status: TravelStatus;
   revision_target?: RevisionTarget | null;
+  revisionTarget?: RevisionTarget | null;
   manager_remarks?: string | null;
+  managerRemarks?: string | null;
   manager_reviewed_at?: string | null;
+  managerReviewedAt?: string | null;
   admin_remarks?: string | null;
+  adminRemarks?: string | null;
   admin_reviewed_at?: string | null;
+  adminReviewedAt?: string | null;
   currency: string;
   created_at: string;
+  createdAt?: string;
   updated_at: string;
+  updatedAt?: string;
   // Joined / populated fields
   requester_name?: string;
+  requesterName?: string;
   requester_email?: string;
+  requesterEmail?: string;
   requester_department?: string;
+  requesterDepartment?: string;
+  requester_role?: TravelRole;
+  requesterRole?: TravelRole;
   manager_name?: string;
+  managerName?: string;
   admin_name?: string;
+  adminName?: string;
   expenses?: TravelExpense[];
   timeline?: TimelineEvent[];
 }
@@ -71,14 +122,22 @@ export interface TravelRequest {
 export interface TimelineEvent {
   id: string;
   travel_request_id: string;
+  travelRequestId?: string;
   actor_id: string;
+  actorId?: string;
   actor_role: string;
+  actorRole?: string;
   actor_name?: string;
+  actorName?: string;
   event_type: string;
+  eventType?: string;
   from_status?: string | null;
+  fromStatus?: string | null;
   to_status: string;
+  toStatus?: string;
   remarks?: string | null;
   created_at: string;
+  createdAt?: string;
 }
 
 export interface DepartmentBudget {
@@ -90,6 +149,7 @@ export interface DepartmentBudget {
   utilized_amount: number;
   available_headroom?: number;
   utilization_percentage?: number;
+  categoryBreakdown?: Array<{ category: string; total: number }>;
   created_at: string;
   updated_at: string;
 }
@@ -106,7 +166,8 @@ export const ALLOWED_TRANSITIONS: Record<TravelStatus, TravelStatus[]> = {
   PENDING_MANAGER_REVIEW: [
     'PENDING_ADMIN_APPROVAL', 
     'REVISION_REQUESTED_BY_MANAGER', 
-    'REJECTED'
+    'REJECTED',
+    'CANCELLED'
   ],
   REVISION_REQUESTED_BY_MANAGER: [
     'PENDING_MANAGER_REVIEW', 

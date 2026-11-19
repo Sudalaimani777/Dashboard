@@ -11,10 +11,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          'flex h-11 w-full rounded-xl border bg-[#FAF8F5] px-3.5 py-2 text-sm text-[#2B231D] placeholder:text-[#756F68]/60 transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8A582B] focus-visible:border-transparent',
+          'flex h-11 w-full rounded-xl border bg-white px-3.5 py-2 text-sm text-[#1A2C44] placeholder:text-[#50617A] shadow-xs transition-colors',
+          'focus-visible:outline-none focus-visible:border-[#533AFD] focus-visible:ring-2 focus-visible:ring-[#533AFD]/20',
           'disabled:cursor-not-allowed disabled:opacity-50',
-          error ? 'border-[#9E2A2B] focus-visible:ring-[#9E2A2B]' : 'border-[#E8DFD3]',
+          error ? 'border-[#DC2626] focus-visible:ring-[#DC2626]/20' : 'border-[#CBD5E1]',
           className
         )}
         ref={ref}

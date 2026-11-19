@@ -1,42 +1,42 @@
 # TripFlow — Corporate Travel & Expense Governance Platform
 
-> An enterprise-grade, multi-tier corporate travel authorization and expense governance system built with **React 19**, **TypeScript**, **Tailwind CSS v4**, **Node.js**, **Express 5**, and **PostgreSQL**, styled with the bespoke **Warm Storycraft** design system.
+> An enterprise-grade, multi-tier corporate travel authorization, manager audit, and expense governance platform built with **React 19**, **TypeScript**, **Tailwind CSS v4**, **Vite 8**, **Node.js**, **Express 5**, and **PostgreSQL**, styled with the bespoke **Stripe Design System**.
 
 ---
 
 ## 🧭 Executive Summary & Core Workflows
 
-**TripFlow** enforces an auditable, two-tier approval workflow for enterprise corporate travel:
-- **Tier 1 (Line Manager)**: Evaluates travel necessity, dates, itineraries, and itemized expenses with supporting photo evidence.
-- **Tier 2 (Admin / Executive & Finance)**: Validates departmental budget impact, policy compliance, grants final pre-trip clearance, and authorizes post-trip reimbursement disbursements.
+**TripFlow** enforces an auditable, two-tier approval state machine for corporate travel governance:
+- **Tier 1 (Line Manager)**: Evaluates travel necessity, itinerary dates, policy compliance, and itemized expenses with supporting photo/document proof.
+- **Tier 2 (Admin / Executive & Finance)**: Validates departmental budget impact, grants final pre-trip authorization (`APPROVED`), and authorizes post-trip expense disbursements (`SETTLED`).
 
-### Two Dedicated Operational Cases
+### Two Dedicated Operational Lifecycles
 
 ```mermaid
 flowchart TD
-    subgraph Case1["Case 1: Already Travelled (Post-Trip Reimbursement)"]
-        E1["Employee"] -->|"Submits completed travel + actual expenses + receipt photos"| M1["Manager Review"]
-        M1 -->|"Request Changes"| E1
-        M1 -->|"Approve & Forward"| A1["Admin / Finance Review"]
-        A1 -->|"Revise Route A (via Manager)"| M1
-        A1 -->|"Revise Route B (Direct to Employee)"| E1
-        E1 -->|"Resubmit Alterations (Always returns to Manager)"| M1
-        A1 -->|"Authorize Payout"| S1["SETTLED (Reimbursement Disbursed)"]
+    subgraph Case1["Case 1: Upcoming Travel (Pre-Trip Authorization)"]
+        E1["Employee (Submission)"] -->|"Submit Travel Plan + Quotation Proofs"| M1["Line Manager (Tier 1 Review)"]
+        M1 -->|"Request Revision"| E1
+        M1 -->|"Approve & Forward"| A1["Admin / Finance (Tier 2 Review)"]
+        A1 -->|"Route A: Revise via Manager"| M1
+        A1 -->|"Route B: Revise Direct to Employee"| E1
+        E1 -->|"Resubmit Alterations (Strict Re-routing)"| M1
+        A1 -->|"Grant Travel Clearance"| S1["APPROVED (Cleared for Booking)"]
     end
 
-    subgraph Case2["Case 2: Upcoming Travel (Pre-Trip Authorization)"]
-        E2["Employee"] -->|"Submits travel plan + estimated expenses + quotation photos"| M2["Manager Review"]
-        M2 -->|"Request Changes"| E2
-        M2 -->|"Approve & Forward"| A2["Admin / Executive Review"]
-        A2 -->|"Revise Route A (via Manager)"| M2
-        A2 -->|"Revise Route B (Direct to Employee)"| E2
-        E2 -->|"Resubmit Alterations (Always returns to Manager)"| M2
-        A2 -->|"Grant Clearance"| S2["APPROVED (Cleared for Booking)"]
+    subgraph Case2["Case 2: Already Travelled (Post-Trip Reimbursement)"]
+        E2["Employee (Submission)"] -->|"Submit Completed Travel + Actual Receipts"| M2["Line Manager (Tier 1 Review)"]
+        M2 -->|"Request Revision"| E2
+        M2 -->|"Approve & Forward"| A2["Admin / Finance (Tier 2 Review)"]
+        A2 -->|"Route A: Revise via Manager"| M2
+        A2 -->|"Route B: Revise Direct to Employee"| E2
+        E2 -->|"Resubmit Alterations (Strict Re-routing)"| M2
+        A2 -->|"Authorize Payment Disbursement"| S2["SETTLED (Reimbursement Disbursed)"]
     end
 
-    classDef primary fill:#8A582B,stroke:#6B4320,stroke-width:2px,color:#FFFFFF;
-    classDef surface fill:#FFFFFF,stroke:#E8DFD3,stroke-width:1.5px,color:#2B231D;
-    classDef success fill:#2D5A27,stroke:#1E3E1A,stroke-width:2px,color:#FFFFFF;
+    classDef primary fill:#533AFD,stroke:#4834DB,stroke-width:2px,color:#FFFFFF;
+    classDef surface fill:#FFFFFF,stroke:#CBD5E1,stroke-width:1.5px,color:#061B31;
+    classDef success fill:#00D66F,stroke:#00A857,stroke-width:2px,color:#061B31;
 
     class E1,E2,M1,M2,A1,A2 surface;
     class S1,S2 success;
@@ -44,80 +44,89 @@ flowchart TD
 
 ---
 
-## 🔑 Core Business Invariants
+## 🔑 Core Business & Architectural Invariants
 
-1. **Unified Upfront Expenses & Proof**:
-   - Both **Upcoming** and **Already Travelled** requests require itemized expenses with image attachments (flight/hotel quote screenshots or tax invoice receipts) at the time of initial submission.
-2. **Two-Tier Verification Authority**:
-   - Direct Line **Managers** act as Tier 1 operational reviewers.
-   - **Admins** act as Tier 2 executive clearance & finance payout authorities.
-3. **Manager Verification Invariant on Revision**:
+1. **Strict Manager Re-routing Invariant**:
    - When an Admin requests revisions, they can route instructions either **Route A (via Manager)** or **Route B (direct to Employee)**.
-   - In **both cases**, upon Employee resubmission, the request **always returns to the Manager first for re-verification** before escalating back to Admin.
-4. **Indian Rupee (`₹` / `INR`) Currency Standard**:
-   - All financial figures are denominated in Indian Rupees (`INR`), displayed as `₹` with monospace tabular digits (`font-mono tabular-nums`) adhering to Indian numbering conventions (e.g., `₹1,48,000.00`).
-5. **Warm Storycraft Anti-AI-Slop Aesthetics**:
-   - Natural canvas `#F7F4EE`, deep ink `#2B231D`, warm brass accent `#8A582B`, hairline border `#E8DFD3`, Poppins typography, and clean typographic status tags (**zero colored circular status dots `●`**).
+   - In **both cases**, upon Employee resubmission, the request **always re-routes back to the Line Manager first** (`PENDING_MANAGER_REVIEW`) for re-verification. An employee cannot bypass the Line Manager directly to Admin approval.
+2. **Dual Terminal States**:
+   - `APPROVED`: Pre-trip upcoming travel is authorized and cleared for airline/hotel reservations.
+   - `SETTLED`: Post-trip reimbursement has been audited against uploaded receipts and disbursed.
+3. **Multi-Proof Cloudinary Attachment Hub**:
+   - Travel requests store an array of supporting documents (flight quotes, hotel vouchers, tax invoices) in PostgreSQL as a `JSONB` array (`supporting_docs`) with a GIN index, backed by Cloudinary uploads and local disk fallbacks.
+4. **Indian Rupee (`INR` / `₹`) Currency Standard**:
+   - All financial figures are denominated in Indian Rupees (`INR`), formatted as `₹` with monospace tabular digits (`font-mono tabular-nums`) adhering to Indian numbering conventions (e.g., `₹1,48,000.00`).
+5. **Real-Time Department Budget Headroom**:
+   - Departmental spending is tracked against quarterly fiscal allocations (`department_budgets`), with live velocity tracking, category mix charts, and headroom calculations.
+6. **Stripe Design System**:
+   - Clean, high-density corporate aesthetics featuring cool canvas (`#F2F7FE`), card surfaces (`#FFFFFF`), blurple primary (`#533AFD`), typography powered by **Plus Jakarta Sans** and **JetBrains Mono**, 5 elevation tiers, and 5 border radii.
 
 ---
 
 ## 🏛️ System Architecture
 
-TripFlow is structured around a decoupled full-stack architecture with strict separation of concerns:
+TripFlow is organized into a modular full-stack monorepo with clear feature boundaries:
 
 ```
 TripFlow/
-├── client/                               # Frontend (React 19 + Vite + Tailwind CSS v4)
+├── client/                               # Frontend Application (React 19 + Vite 8 + Tailwind v4)
 │   ├── src/
-│   │   ├── components/                   # UI components (Warm Storycraft design tokens)
-│   │   │   ├── auth/                     # Authentication cards (SignIn, SignUp, Forgot, Reset)
-│   │   │   └── travel/                   # Travel request components, cards, drawers, & modals
-│   │   ├── context/                      # AuthContext, TravelContext
-│   │   ├── services/                     # Axios API clients (authApi, travelApi)
-│   │   ├── types/                        # TypeScript domain contracts
-│   │   └── App.tsx                       # Client-side routing with role-based access guards
-│   └── docs/                             # Frontend documentation & design token guides
-├── server/                               # Backend (Node.js 20+ + Express 5 + PostgreSQL)
+│   │   ├── features/
+│   │   │   ├── auth/                     # Authentication & recovery (SignIn, ForgotPassword, ResetPassword)
+│   │   │   ├── dashboard/                # Dynamic role dashboard orchestrator (Employee, Manager, Admin)
+│   │   │   ├── travel/                   # Travel request workstations, portals, analytics, and modals
+│   │   │   └── users/                    # Admin user directory, provisioning, and status management
+│   │   ├── routes/                       # AppRoutes (code-split lazy routes) & ProtectedRoute gates
+│   │   ├── shared/                       # Accessible UI primitives (Button, Input, Card, Chart, Alert)
+│   │   ├── App.tsx                       # Root component with AuthProvider & TravelProvider
+│   │   └── index.css                     # Tailwind v4 configuration, font imports & Stripe tokens
+│   ├── tests/                            # 45+ standalone assertion verification suites
+│   └── package.json
+├── server/                               # Backend Service (Node.js 20+ + Express 5 + PostgreSQL)
 │   ├── src/
-│   │   ├── config/                       # Database pool (pg) & environment configurations
-│   │   ├── controllers/                  # TravelController, AuthController
-│   │   ├── middleware/                   # JWT auth guard, role-based authorization guards
-│   │   ├── repositories/                 # TravelRepository (parameterized SQL queries)
-│   │   ├── services/                     # TravelService (state machine & transition guards)
-│   │   ├── types/                        # Server domain & DTO interfaces
-│   │   └── validations/                  # Zod validation schemas
-│   ├── migrations/                       # PostgreSQL SQL migration scripts
-│   │   ├── 001_create_users_table.sql    # Base authentication & users
-│   │   └── 002_create_travel_governance_tables.sql # Travel requests, expenses, budgets, timeline
-│   └── tests/                            # Automated unit, integration, and E2E test suites
-└── docs/                                 # Central project documentation
-    ├── superpowers/specs/                # Approved architectural specifications
-    ├── superpowers/plans/                # Step-by-step TDD implementation plans
-    └── mockups/                          # Interactive visual mockups
+│   │   ├── config/                       # Type-safe environment variables (env.ts)
+│   │   ├── features/
+│   │   │   ├── auth/                     # JWT session, bcrypt hashing, SHA-256 password recovery
+│   │   │   ├── travel/                   # State machine, travel repository, audit actions, budgets
+│   │   │   └── users/                    # Admin user CRUD, status toggling, deletion safeguards
+│   │   ├── shared/
+│   │   │   ├── db/                       # Connection pool & migrations (001 to 004)
+│   │   │   ├── middleware/               # Auth guard, role RBAC guard, upload middleware, error handler
+│   │   │   └── services/                 # Cloudinary upload service & Nodemailer email service
+│   │   ├── app.ts                        # Express pipeline, CORS, cookie parser, route mounting
+│   │   └── index.ts                      # Server bootstrap
+│   ├── tests/                            # Comprehensive backend test suites (state machine, repos, APIs)
+│   └── package.json
+└── docs/                                 # Architectural specifications and visual mockups
 ```
 
 ---
 
 ## 🗄️ Database Architecture
 
-TripFlow uses PostgreSQL with relational integrity, foreign key cascades, and check constraints:
+TripFlow uses PostgreSQL with relational integrity, foreign key cascades, check constraints, and GIN indexing:
 
 ```mermaid
 erDiagram
-    users ||--o{ travel_requests : "requests"
-    users ||--o{ travel_requests : "manages"
-    users ||--o{ travel_requests : "administers"
-    travel_requests ||--|{ travel_expenses : "contains"
-    travel_requests ||--|{ request_timeline_events : "logs"
-    department_budgets ||--o{ travel_requests : "funds"
+    users ||--o{ travel_requests : "submits"
+    users ||--o{ travel_requests : "audits (as manager)"
+    users ||--o{ travel_requests : "clears (as admin)"
+    travel_requests ||--|{ travel_expenses : "itemizes"
+    travel_requests ||--|{ request_timeline_events : "tracks"
+    department_budgets ||--o{ travel_requests : "allocates"
 
     users {
         uuid id PK
-        varchar name
         varchar email UK
+        varchar password_hash
+        varchar first_name
+        varchar last_name
         varchar role "EMPLOYEE | MANAGER | ADMIN"
         varchar department
         uuid manager_id FK
+        boolean is_active
+        varchar reset_token_hash
+        timestamptz reset_token_expires_at
     }
 
     department_budgets {
@@ -125,7 +134,7 @@ erDiagram
         varchar department
         int fiscal_year
         varchar fiscal_quarter
-        numeric total_allocation "₹ default 35,00,000.00"
+        numeric total_allocation "Default ₹35,00,000.00"
         numeric utilized_amount
     }
 
@@ -142,11 +151,16 @@ erDiagram
         varchar destination
         date departure_date
         date return_date
+        varchar emergency_contact_name
+        varchar emergency_contact_phone
+        jsonb supporting_docs "Multi-proof receipts & quotes array"
         numeric total_expenses "₹ INR"
         varchar status
         varchar revision_target "MANAGER | EMPLOYEE"
         text manager_remarks
+        timestamptz manager_reviewed_at
         text admin_remarks
+        timestamptz admin_reviewed_at
         varchar currency "INR"
     }
 
@@ -170,9 +184,15 @@ erDiagram
         varchar from_status
         varchar to_status
         text remarks
-        timestamp created_at
+        timestamptz created_at
     }
 ```
+
+### Applied Schema Migrations (`server/src/shared/db/migrations/`)
+1. **`001_create_users_table.sql`**: Base users table, bcrypt password hash, and SHA-256 reset token storage.
+2. **`002_create_travel_governance_tables.sql`**: Roles hierarchy, `department_budgets`, `travel_requests`, `travel_expenses`, and `request_timeline_events`.
+3. **`003_add_supporting_docs.sql`**: Multi-proof `supporting_docs` JSONB column with GIN index on `travel_requests`.
+4. **`004_add_user_lifecycle.sql`**: User activation flag (`is_active`) and index for governance lifecycle.
 
 ---
 
@@ -180,71 +200,114 @@ erDiagram
 
 | Status Code | Applicable Flow | Description | Actionable By |
 | :--- | :--- | :--- | :--- |
-| `DRAFT` | Both | Travel request initialized; expenses/receipts being assembled | Requester (Employee) |
-| `PENDING_MANAGER_REVIEW` | Both | Submitted with expenses & proof; awaiting Tier 1 Manager audit | Direct Manager |
-| `REVISION_REQUESTED_BY_MANAGER` | Both | Manager returned request with revision instructions | Requester (Employee) |
-| `PENDING_ADMIN_APPROVAL` | Both | Manager audited & approved; awaiting Tier 2 Admin executive review | Admin / Finance |
-| `REVISION_REQUESTED_BY_ADMIN_TO_MANAGER` | Both | Admin returned request to Manager with policy/budget instructions | Manager |
-| `REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE` | Both | Admin dispatched revision instructions directly to Employee | Requester (Employee) |
-| `APPROVED` | Upcoming | Admin granted final travel clearance; ready for ticket issuance | Terminal |
-| `SETTLED` | Past | Admin authorized payment disbursement; reimbursement completed | Terminal |
-| `REJECTED` | Both | Formally denied by Manager or Admin with audit rationale | Terminal |
-| `CANCELLED` | Both | Request withdrawn by Requester prior to approval | Terminal |
+| `DRAFT` | Both | Request initialized; itinerary and expenses being assembled | Requester (Employee) |
+| `PENDING_MANAGER_REVIEW` | Both | Submitted with itemized expenses & receipts; awaiting Tier 1 Manager audit | Direct Manager |
+| `REVISION_REQUESTED_BY_MANAGER` | Both | Manager requested alterations with inline remarks | Requester (Employee) |
+| `PENDING_ADMIN_APPROVAL` | Both | Manager approved; awaiting Tier 2 Admin executive & budget review | Admin / Finance |
+| `REVISION_REQUESTED_BY_ADMIN_TO_MANAGER` | Both | Admin returned request to Line Manager (Route A) for clarification | Line Manager |
+| `REVISION_REQUESTED_BY_ADMIN_TO_EMPLOYEE` | Both | Admin returned request directly to Employee (Route B) | Requester (Employee) |
+| `APPROVED` | Upcoming | Admin granted pre-trip clearance; cleared for ticket booking | Terminal |
+| `SETTLED` | Past | Admin authorized payment disbursement; reimbursement disbursed | Terminal |
+| `REJECTED` | Both | Denied by Manager or Admin with formal audit rationale | Terminal |
+| `CANCELLED` | Both | Withdrawn by Requester prior to final approval | Terminal |
+
+---
+
+## 🎨 Visual Philosophy: Stripe Design System
+
+TripFlow replaces generic templates with an information-dense, high-legibility enterprise design system:
+
+| Token Category | Token / Value | Application |
+| :--- | :--- | :--- |
+| **Canvas** | `#F2F7FE` | Cool neutral page canvas |
+| **Surface** | `#FFFFFF` | Workstation cards, data tables, modals |
+| **Subtle Surface** | `#F8FAFC` | Table headers, secondary panels |
+| **Primary** | `#533AFD` | Interactive CTAs, active segmented tabs, focal highlights |
+| **Ink** | `#061B31` / `#1A2C44` | High-contrast typography & headings |
+| **Muted / Faint** | `#334155` / `#50617A` | Captions, secondary labels, helper text |
+| **Hairline Border** | `#CBD5E1` | Card borders, inputs, and table dividers |
+| **Success** | `#00D66F` | Approved/settled badges, positive budget headroom |
+| **Destructive** | `#DC2626` | Rejections, cancellations, budget deficit alerts |
+| **Typography (UI)** | `Plus Jakarta Sans` | Primary clean interface typography |
+| **Typography (Data)** | `JetBrains Mono` | Monospace tabular numbers for `₹` amounts and dates |
+| **Elevation** | `--shadow-xs` to `--shadow-xl` | 5 elevation tiers with navy-tinted drop shadows |
+| **Border Radii** | `--radius-xs` to `--radius-full` | 5 border radii (1px, 4px, 8px, 16px, 100px) |
+
+---
+
+## 💻 Client Routes & Workstation Map
+
+| Path | Access Tier | Component | Purpose |
+| :--- | :--- | :--- | :--- |
+| `/signin` | Public | `SignInCard` | Secure user sign-in with HttpOnly cookie persistence |
+| `/signup` | Public | *Redirect to `/signin`* | User registration is managed by Admin governance |
+| `/forgot-password` | Public | `ForgotPasswordCard` | Request password reset token with anti-enumeration |
+| `/reset-password` | Public | `ResetPasswordCard` | Token-guarded credential update |
+| `/dashboard` | **Protected** | `DashboardPage` | Role-based dashboard (`EMPLOYEE`, `MANAGER`, `ADMIN`) |
+| `/dashboard?tab=analytics` | **Protected** | `SpendAnalytics` | Role-specific spend velocity & budget analytics |
+| `/travel/new` | **Protected** | `NewTravelRequestPage` | Create travel request (Upcoming travel or reimbursement) |
+| `/travel/requests/:id` | **Protected** | `TravelDetailPage` | Detailed inspection, receipts viewer & audit actions |
+| `/travel/requests/:id/edit` | **Protected** | `ResubmitTravelRequestPage` | Revise and resubmit request based on audit remarks |
+| `/admin/users/new` | **Protected (Admin)** | `NewUserPage` | Provision new employee, manager, or admin user |
+| `/` | Public | *Redirect to `/dashboard`* | Default entry point routing to authenticated dashboard |
 
 ---
 
 ## 📡 REST API Specifications
 
-### Authentication Endpoints
+### 1. Authentication (`/api/auth`)
 | Method | Endpoint | Access | Purpose |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/signup` | Public | Register new user account (`EMPLOYEE`, `MANAGER`, `ADMIN`) |
-| `POST` | `/api/auth/signin` | Public | Authenticate with credentials; issue HttpOnly session cookie |
-| `POST` | `/api/auth/signout` | Public | Clear session cookie |
-| `GET` | `/api/auth/me` | Protected | Retrieve authenticated user profile and permissions |
-| `POST` | `/api/auth/forgot-password` | Public | Anti-enumeration password recovery email trigger |
-| `POST` | `/api/auth/reset-password` | Public | Reset password via single-use SHA-256 token |
+| `POST` | `/api/auth/signin` | Public | Authenticates credentials and sets HttpOnly JWT cookie |
+| `POST` | `/api/auth/signup` | Public | User registration endpoint |
+| `POST` | `/api/auth/signout` | Public | Clears authentication session cookie |
+| `GET` | `/api/auth/me` | Authenticated | Retrieves current authenticated user profile & role |
+| `POST` | `/api/auth/forgot-password` | Public | Dispatches 1-hour password recovery token via email |
+| `POST` | `/api/auth/reset-password` | Public | Updates password using validated SHA-256 token |
 
-### Travel Governance Endpoints
+### 2. Travel & Governance (`/api/travel`)
 | Method | Endpoint | Role Guard | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/travel/requests` | All Roles | Fetch travel requests (filtered by user/team/all depending on role) |
-| `GET` | `/api/travel/requests/:id` | All Roles | Fetch comprehensive request details, itemized expenses, and timeline |
-| `POST` | `/api/travel/requests` | `EMPLOYEE` | Create new travel request with itemized expenses & receipt images |
-| `PUT` | `/api/travel/requests/:id/submit` | `EMPLOYEE` | Submit draft travel request for Manager review |
-| `POST` | `/api/travel/requests/:id/manager-review` | `MANAGER` | Tier 1 review: `APPROVE_AND_FORWARD` or `REQUEST_REVISION` |
-| `POST` | `/api/travel/requests/:id/manager-forward-revision` | `MANAGER` | Forward Admin revision instructions to Employee with added notes |
-| `POST` | `/api/travel/requests/:id/admin-review` | `ADMIN` | Tier 2 review: `APPROVE`, `SETTLE`, `REJECT`, or `REQUEST_REVISION` (Route A or B) |
-| `POST` | `/api/travel/requests/:id/resubmit` | `EMPLOYEE` | Resubmit modified request (always routes back to Manager for re-verification) |
-| `GET` | `/api/travel/budgets` | `ADMIN`, `MANAGER` | Fetch department budget utilization vs fiscal allocations |
+| `POST` | `/api/travel/upload` | Authenticated | Uploads receipt/quotation proof to Cloudinary |
+| `POST` | `/api/travel/requests` | Authenticated | Creates new travel request with itemized expenses & proofs |
+| `GET` | `/api/travel/requests` | Authenticated | Retrieves requests scoped to authenticated user or team |
+| `GET` | `/api/travel/requests/:id` | Authenticated | Retrieves full request details, line items, and audit trail |
+| `POST` | `/api/travel/requests/:id/manager-review` | `MANAGER`, `ADMIN` | Tier 1 Line Manager review (Approve, Revise, Reject) |
+| `POST` | `/api/travel/requests/:id/admin-review` | `ADMIN` | Tier 2 Admin clearance (Approve, Settle, Revise Route A/B) |
+| `POST` | `/api/travel/requests/:id/resubmit` | Authenticated | Resubmits revised request (strictly re-routes to Manager) |
+| `POST` | `/api/travel/requests/:id/cancel` | Authenticated | Cancels draft or pending travel request |
+| `GET` | `/api/travel/manager-queue` | `MANAGER`, `ADMIN` | Retrieves pending review queue for direct subordinates |
+| `GET` | `/api/travel/admin-queue` | `ADMIN` | Retrieves corporate clearance and settlement queue |
+| `GET` | `/api/travel/budgets` | Authenticated | Retrieves department budget allocation for a given quarter |
+| `GET` | `/api/travel/budgets/overview` | `ADMIN` | Comprehensive multi-quarter department budget ledger |
+| `PUT` | `/api/travel/budgets` | `ADMIN` | Creates or updates quarterly department budget allocation |
 
----
-
-## 💻 Client Routes & Views
-
-| Path | Access | Component | Purpose |
+### 3. User Administration (`/api/users`)
+| Method | Endpoint | Role Guard | Description |
 | :--- | :--- | :--- | :--- |
-| `/signin` | Public | `SignInCard` | Secure user sign-in |
-| `/signup` | Public | `SignUpCard` | New employee/manager/admin onboarding |
-| `/forgot-password` | Public | `ForgotPasswordCard` | Password recovery flow |
-| `/reset-password` | Public | `ResetPasswordCard` | Token-guarded credential update |
-| `/travel/employee` | `EMPLOYEE` | `EmployeeTravelPage` | Travel overview, new request modal, itemized expense builder, revision inbox |
-| `/travel/manager` | `MANAGER` | `ManagerQueuePage` | Line manager audit queue, proof inspector, revision dialog |
-| `/travel/admin` | `ADMIN` | `AdminGovernancePage` | Executive governance dashboard, budget meters, dual-route revision dispatch, payout settlement drawer |
+| `GET` | `/api/users` | `ADMIN` | Lists all corporate users, roles, and status |
+| `POST` | `/api/users` | `ADMIN` | Provisions a new user account with role and department |
+| `PATCH` | `/api/users/:id/status` | `ADMIN` | Activates or deactivates user account access (`is_active`) |
+| `PATCH` | `/api/users/:id` | `ADMIN` | Updates user details, department, or manager assignment |
+| `DELETE` | `/api/users/:id` | `ADMIN` | Deletes user account with cascade and safety checks |
+
+### 4. Health Check
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | Public | Returns database connection status and server timestamp |
 
 ---
 
 ## ⚡ Quickstart & Local Setup
 
 ### Prerequisites
-- **Node.js** v20.0+
-- **npm** v10.0+
-- **PostgreSQL** v14+ running locally with database `TripFlow`
+- **Node.js** v20.0 or higher
+- **PostgreSQL** v14+ running locally on port `5432`
 
 ### 1. Database Configuration
-Ensure PostgreSQL is active and create the database:
+Create the PostgreSQL database:
 ```sql
-CREATE DATABASE "TripFlow";
+CREATE DATABASE tripflow;
 ```
 
 ### 2. Backend Setup
@@ -256,7 +319,7 @@ npm install
 
 # Configure environment variables
 cp .env.example .env
-# Edit .env to set DB_NAME=TripFlow, DB_USER, DB_PASSWORD, JWT_SECRET
+# Edit .env with your DATABASE_URL, JWT_SECRET, and Cloudinary keys
 
 # Execute database migrations
 npm run migrate
@@ -280,40 +343,51 @@ npm run dev
 
 ---
 
-## 🧪 Automated Testing
+## 🧪 Automated Testing Suite
 
-TripFlow includes full-spectrum test suites covering authentication, relational constraints, state machine transitions, and dual-tier governance flows:
+TripFlow includes automated testing across state machine invariants, database repositories, API endpoints, and client UI components:
 
 ```bash
+# --- Backend Test Suites ---
 cd server
 
-# Run base unit & auth test suite
+# 1. State machine transition invariants (47 tests)
+npm run test:fsm
+
+# 2. Database migration integrity
+npm run test:migration
+
+# 3. Travel repository & transaction rollbacks
+npm run test:repo
+
+# 4. Travel service logic & calculations
+npm run test:service
+
+# 5. Travel API endpoints & RBAC enforcement
+npm run test:api
+
+# 6. Date validation & timezone handling
+npm run test:dates
+
+# 7. Authentication lifecycle
 npm test
-
-# Run Day 2 cryptographic password reset verification
 npm run test:day2
-
-# Run full end-to-end travel governance lifecycle tests
 npm run test:e2e
+
+# --- Frontend Test Suites ---
+cd ../client
+
+# Run UI theme token & contrast verification
+npx tsx tests/stripe-theme-tokens.test.ts
+npx tsx tests/stripe-contrast-readability.test.ts
+
+# Run form date boundaries & validation tests
+npx tsx tests/travel-form-date-validation.test.ts
+npx tsx tests/expense-date-boundaries.test.ts
+
+# Run department budget analytics tests
+npx tsx tests/department-budget-redesign.test.ts
 ```
-
----
-
-## 🎨 Warm Storycraft Design Tokens
-
-TripFlow adheres strictly to the **Warm Storycraft** design philosophy:
-
-| Token | Hex Value | Application |
-| :--- | :--- | :--- |
-| **Canvas** | `#F7F4EE` | Global background & warm page foundation |
-| **Pure Surface** | `#FFFFFF` | Cards, modals, drawers, input containers |
-| **Muted Surface** | `#FAF8F5` | Secondary panels, table headers, hover states |
-| **Hairline Border** | `#E8DFD3` | Card borders, dividers, subtle separators |
-| **Warm Accent** | `#8A582B` | Primary CTAs, active highlights, key metrics |
-| **Deep Ink** | `#2B231D` | Primary typography & high-contrast titles |
-| **Muted Ink** | `#7A6B5D` | Secondary labels, captions, metadata |
-| **Status Tag Text** | Typographic | Muted pill tags without colored circular dots (`●`) |
-| **Currency Font** | Monospace | `font-mono tabular-nums` for precise alignment of `₹` figures |
 
 ---
 

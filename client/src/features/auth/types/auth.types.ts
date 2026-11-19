@@ -2,6 +2,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  role: 'EMPLOYEE' | 'MANAGER' | 'ADMIN';
+  department: string;
+  manager_id?: string | null;
   created_at: string;
   updated_at: string;
 }
