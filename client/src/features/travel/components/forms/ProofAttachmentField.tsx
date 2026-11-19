@@ -32,6 +32,23 @@ export interface ProofAttachmentFieldProps {
 
 const ALLOWED_EXTENSIONS = new Set(['pdf', 'png', 'jpg', 'jpeg', 'webp']);
 
+export function resolveDocUrl(url?: string): string {
+  if (!url) return '';
+  if (
+    url.startsWith('http://') ||
+    url.startsWith('https://') ||
+    url.startsWith('blob:') ||
+    url.startsWith('data:')
+  ) {
+    return url;
+  }
+  const envApiUrl =
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) ||
+    'http://localhost:5000';
+  const backendBase = envApiUrl.replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
   travelType,
   setValue,
@@ -59,21 +76,12 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
     if (!doc.url || downloadingDocId) return;
     try {
       setDownloadingDocId(doc.id);
-      const res = await fetch(doc.url);
-      if (!res.ok) throw new Error('Direct fetch failed');
-      const blob = await res.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = doc.name || 'document';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(blobUrl);
+      await travelApi.downloadProofFile(doc.url, doc.name);
     } catch {
       // Fallback for cross-origin resources or web links
+      const resolvedUrl = resolveDocUrl(doc.url);
       const a = document.createElement('a');
-      a.href = doc.url;
+      a.href = resolvedUrl;
       a.download = doc.name || 'document';
       a.target = '_blank';
       a.rel = 'noreferrer';
@@ -102,6 +110,10 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
 
     // Validate size and format
     for (const file of files) {
+      if (file.size === 0) {
+        setUploadError(`File "${file.name}" is empty (0 KB). Please select a valid document with content.`);
+        return;
+      }
       const ext = file.name.split('.').pop()?.toLowerCase() || '';
       if (!ALLOWED_EXTENSIONS.has(ext)) {
         setUploadError(`File "${file.name}" is not supported. Allowed formats: PDF, PNG, JPG, WEBP`);
@@ -373,18 +385,42 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
                     >
                       <div className="pt-3 mt-2.5 border-t border-border-warm flex flex-col gap-2">
                         {isFile ? (
-                          isImg ? (
-                            <div className="relative rounded-lg overflow-hidden border border-border-warm bg-surface flex items-center justify-center p-3 max-h-80">
+                          doc.size === 0 ? (
+                            <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-900 flex items-center gap-2">
+                              <AlertCircle className="size-4 text-amber-600 shrink-0" />
+                              <span>This file is empty (0 KB). No preview or valid content available.</span>
+                            </div>
+                          ) : isImg || (doc.url && doc.url.includes('res.cloudinary.com') && /\.pdf($|\?)/i.test(doc.url)) || doc.previewUrl ? (
+                            <div className="relative rounded-lg overflow-hidden border border-border-warm bg-surface flex flex-col items-center justify-center p-3">
                               <img
-                                src={doc.url}
+                                src={
+                                  doc.previewUrl ||
+                                  (doc.url && doc.url.includes('res.cloudinary.com') && /\.pdf($|\?)/i.test(doc.url)
+                                    ? doc.url.replace(/\.pdf($|\?)/i, '.jpg$1')
+                                    : resolveDocUrl(doc.url))
+                                }
                                 alt={doc.name}
-                                className="max-h-72 max-w-full rounded object-contain shadow-xs"
+                                className="max-h-80 max-w-full rounded object-contain shadow-xs border border-border-warm/60"
                               />
+                              {(doc.format?.toLowerCase() === 'pdf' || (doc.url && /\.pdf($|\?)/i.test(doc.url))) && (
+                                <div className="mt-2.5 flex items-center justify-between w-full text-[11px] text-muted px-1 border-t border-border-warm/60 pt-2">
+                                  <span className="flex items-center gap-1 font-medium text-ink">
+                                    <FileText className="size-3 text-primary" /> Document Page 1 Visual Preview
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownload(doc)}
+                                    className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Download className="size-3" /> Download Full PDF
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div className="rounded-lg overflow-hidden border border-border-warm bg-surface h-72 w-full">
                               <iframe
-                                src={doc.url}
+                                src={resolveDocUrl(doc.url)}
                                 title={doc.name}
                                 className="w-full h-full border-0"
                               />
@@ -394,10 +430,10 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
                           <div className="rounded-lg border border-border-warm bg-surface p-3.5 flex items-center justify-between gap-3 text-xs">
                             <div className="flex items-center gap-2 truncate">
                               <ExternalLink className="size-4 text-primary shrink-0" />
-                              <span className="font-mono text-slate-700 truncate">{doc.url}</span>
+                              <span className="font-mono text-slate-700 truncate">{resolveDocUrl(doc.url)}</span>
                             </div>
                             <a
-                              href={doc.url}
+                              href={resolveDocUrl(doc.url)}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shrink-0 transition-colors"

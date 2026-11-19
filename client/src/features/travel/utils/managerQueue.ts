@@ -186,23 +186,23 @@ export function filterManagerRequests(
 }
 
 /**
- * Matches backend remark constraints: optional on APPROVE, min 3 chars on REQUEST_REVISION / REJECT.
+ * Remarks constraints: mandatory (min 3 chars) on APPROVE, REQUEST_REVISION, and REJECT.
  */
 export function validateManagerDecisionRemarks(
   action: ManagerDecisionAction,
   remarks: string
 ): { valid: boolean; error?: string } {
-  if (action === 'APPROVE') {
-    return { valid: true };
-  }
   const trimmed = (remarks || '').trim();
   if (trimmed.length < 3) {
+    let error = 'Please enter at least 3 characters of review remarks.';
+    if (action === 'REJECT') {
+      error = 'Please enter at least 3 characters explaining why this request is rejected.';
+    } else if (action === 'REQUEST_REVISION') {
+      error = 'Please enter at least 3 characters of revision instructions.';
+    }
     return {
       valid: false,
-      error:
-        action === 'REJECT'
-          ? 'Please enter at least 3 characters explaining why this request is rejected.'
-          : 'Please enter at least 3 characters of revision instructions.',
+      error,
     };
   }
   return { valid: true };

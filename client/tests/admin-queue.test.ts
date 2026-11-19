@@ -98,13 +98,16 @@ async function run() {
     ['arch-cancelled']
   );
 
-  // Remarks & budget override validation
+  // Remarks & budget override validation (>= 3 chars required for ALL actions)
   assert.equal(validateAdminDecisionRemarks('REJECT', 'no').valid, false);
   assert.equal(validateAdminDecisionRemarks('REJECT', 'Out of policy window').valid, true);
   assert.equal(validateAdminDecisionRemarks('REQUEST_REVISION', '  ').valid, false);
-  assert.equal(validateAdminDecisionRemarks('APPROVE', '', { isOverflow: true, forceOverride: false }).valid, false);
-  assert.equal(validateAdminDecisionRemarks('APPROVE', '', { isOverflow: true, forceOverride: true }).valid, true);
-  assert.equal(validateAdminDecisionRemarks('SETTLE', '', { isOverflow: false }).valid, true);
+  assert.equal(validateAdminDecisionRemarks('APPROVE', '', { isOverflow: false }).valid, false);
+  assert.equal(validateAdminDecisionRemarks('APPROVE', 'ab', { isOverflow: false }).valid, false);
+  assert.equal(validateAdminDecisionRemarks('APPROVE', 'Approved for travel', { isOverflow: true, forceOverride: false }).valid, false);
+  assert.equal(validateAdminDecisionRemarks('APPROVE', 'Approved for travel', { isOverflow: true, forceOverride: true }).valid, true);
+  assert.equal(validateAdminDecisionRemarks('SETTLE', '', { isOverflow: false }).valid, false);
+  assert.equal(validateAdminDecisionRemarks('SETTLE', 'Settlement cleared', { isOverflow: false }).valid, true);
 
   // Fiscal quarter extraction
   assert.deepEqual(getFiscalQuarterFromDate('2026-02-14'), { year: 2026, quarter: 'Q1' });

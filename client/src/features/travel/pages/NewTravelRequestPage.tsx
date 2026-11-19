@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
-import { useTravelForm, getLocalDateString, type TravelFormValues } from '../hooks/useTravelForm';
+import { useTravelForm, getLocalDateString, PROJECT_CODE_REGEX, type TravelFormValues } from '../hooks/useTravelForm';
 import type { TravelType } from '../types/travel.types';
 import { isValidEmergencyPhone } from '../utils/countryDialCodes';
 import { TravelTypeToggle } from '../components/forms/TravelTypeToggle';
@@ -42,6 +42,7 @@ export const NewTravelRequestPage: React.FC = () => {
 
   const watchedTitle = form.watch('title');
   const watchedPurpose = form.watch('purpose');
+  const watchedProjectCode = form.watch('project_code');
   const watchedOrigin = form.watch('origin');
   const watchedDest = form.watch('destination');
   const watchedDep = form.watch('departure_date');
@@ -93,18 +94,50 @@ export const NewTravelRequestPage: React.FC = () => {
             : [],
         expenses:
           source.expenses && source.expenses.length > 0
-            ? source.expenses.map((e) => ({
-                category: e.category,
-                merchant: e.merchant,
-                amount: Number(e.amount) || 0,
-                expenseDate: source.travelType === 'ALREADY_TRAVELLED' && e.expenseDate > today ? today : (e.expenseDate || expenseDateDefault),
-                notes: e.notes || '',
-              }))
+            ? source.expenses.map((e) => {
+                const origCur = e.originalCurrency || (e as any).original_currency || 'INR';
+                const origAmt = Number(
+                  e.originalAmount !== undefined && e.originalAmount !== null
+                    ? e.originalAmount
+                    : (e as any).original_amount !== undefined && (e as any).original_amount !== null
+                    ? (e as any).original_amount
+                    : e.amount
+                ) || 0;
+                const rate = Number(
+                  e.exchangeRate !== undefined && e.exchangeRate !== null
+                    ? e.exchangeRate
+                    : (e as any).exchange_rate !== undefined && (e as any).exchange_rate !== null
+                    ? (e as any).exchange_rate
+                    : 1.0
+                );
+                const inr = Number(
+                  e.inrAmount !== undefined && e.inrAmount !== null
+                    ? e.inrAmount
+                    : (e as any).inr_amount !== undefined && (e as any).inr_amount !== null
+                    ? (e as any).inr_amount
+                    : e.amount
+                ) || 0;
+                return {
+                  category: e.category,
+                  merchant: e.merchant,
+                  amount: Number(e.amount) || 0,
+                  originalCurrency: origCur,
+                  originalAmount: origAmt,
+                  exchangeRate: rate,
+                  inrAmount: inr,
+                  expenseDate: source.travelType === 'ALREADY_TRAVELLED' && e.expenseDate > today ? today : (e.expenseDate || expenseDateDefault),
+                  notes: e.notes || '',
+                };
+              })
             : [
                 {
                   category: 'FLIGHT',
                   merchant: '',
                   amount: 0,
+                  originalCurrency: 'INR',
+                  originalAmount: 0,
+                  exchangeRate: 1.0,
+                  inrAmount: 0,
                   expenseDate: expenseDateDefault,
                   notes: '',
                 },
@@ -171,7 +204,9 @@ export const NewTravelRequestPage: React.FC = () => {
       const todayStr = getLocalDateString();
       const datesValid = Boolean(
         watchedOrigin &&
+          watchedOrigin.trim().length >= 2 &&
           watchedDest &&
+          watchedDest.trim().length >= 2 &&
           watchedDep &&
           watchedRet &&
           new Date(watchedRet) >= new Date(watchedDep) &&
@@ -183,6 +218,10 @@ export const NewTravelRequestPage: React.FC = () => {
       return [
         { label: 'Trip title (min 5 chars)', ok: Boolean(watchedTitle && watchedTitle.trim().length >= 5) },
         { label: 'Business purpose (min 10 chars)', ok: Boolean(watchedPurpose && watchedPurpose.trim().length >= 10) },
+        {
+          label: 'Project code (uppercase with hyphen, e.g. ENG-2026)',
+          ok: Boolean(watchedProjectCode && PROJECT_CODE_REGEX.test(watchedProjectCode.trim())),
+        },
         {
           label: 'Route & valid dates',
           ok: datesValid,
@@ -216,7 +255,7 @@ export const NewTravelRequestPage: React.FC = () => {
         },
       ];
     },
-    [watchedTitle, watchedPurpose, watchedOrigin, watchedDest, watchedDep, watchedRet, watchedType, watchedContactName, watchedContactPhone, watchedProof, watchedDocs, watchedExpenses]
+    [watchedTitle, watchedPurpose, watchedProjectCode, watchedOrigin, watchedDest, watchedDep, watchedRet, watchedType, watchedContactName, watchedContactPhone, watchedProof, watchedDocs, watchedExpenses]
   );
 
   const readyCount = readinessChecks.filter((c) => c.ok).length;
@@ -229,7 +268,7 @@ export const NewTravelRequestPage: React.FC = () => {
         travelType: values.travel_type,
         title: values.title,
         purpose: values.purpose,
-        projectCode: values.project_code || 'ENG-2026',
+        projectCode: values.project_code.trim().toUpperCase(),
         origin: values.origin,
         destination: values.destination,
         departureDate: values.departure_date,
@@ -242,6 +281,10 @@ export const NewTravelRequestPage: React.FC = () => {
           category: e.category,
           merchant: e.merchant,
           amount: Number(e.amount),
+          originalCurrency: e.originalCurrency || 'INR',
+          originalAmount: Number(e.originalAmount ?? e.amount),
+          exchangeRate: Number(e.exchangeRate ?? 1.0),
+          inrAmount: Number(e.inrAmount ?? e.amount),
           expenseDate: e.expenseDate,
           notes: e.notes,
         })),
@@ -263,7 +306,7 @@ export const NewTravelRequestPage: React.FC = () => {
         travelType: values.travel_type || 'UPCOMING',
         title: values.title || 'Untitled Travel Draft',
         purpose: values.purpose,
-        projectCode: values.project_code || 'ENG-2026',
+        projectCode: values.project_code ? values.project_code.trim().toUpperCase() : 'ENG-2026',
         origin: values.origin,
         destination: values.destination,
         departureDate: values.departure_date,
@@ -277,6 +320,10 @@ export const NewTravelRequestPage: React.FC = () => {
           category: e.category,
           merchant: e.merchant,
           amount: Number(e.amount) || 0,
+          originalCurrency: e.originalCurrency || 'INR',
+          originalAmount: Number(e.originalAmount ?? e.amount),
+          exchangeRate: Number(e.exchangeRate ?? 1.0),
+          inrAmount: Number(e.inrAmount ?? e.amount),
           expenseDate: e.expenseDate,
           notes: e.notes,
         })),

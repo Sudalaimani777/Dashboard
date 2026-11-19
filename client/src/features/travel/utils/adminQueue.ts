@@ -112,7 +112,7 @@ export function filterAdminRequests(
 }
 
 /**
- * Validates Admin decision remarks (>= 3 chars for Reject/Revision) and budget overflow override.
+ * Validates Admin decision remarks (>= 3 chars required for ALL actions) and budget overflow override.
  */
 export function validateAdminDecisionRemarks(
   action: AdminDecisionAction,
@@ -132,6 +132,13 @@ export function validateAdminDecisionRemarks(
     return {
       valid: false,
       message: 'Please provide rejection rationale (at least 3 characters).',
+    };
+  }
+
+  if ((action === 'APPROVE' || action === 'SETTLE') && trimmed.length < 3) {
+    return {
+      valid: false,
+      message: 'Executive remarks are required for travel clearance (at least 3 characters).',
     };
   }
 

@@ -13,6 +13,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import type { SupportingDoc } from '../../types/travel.types';
+import { travelApi } from '../../services/travel.api';
 
 export interface ProofInspectorViewerProps {
   proofUrl?: string | null;
@@ -54,21 +55,19 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({
       (activeDoc?.format && ['png', 'jpg', 'jpeg', 'webp'].includes(activeDoc.format.toLowerCase()))
     : false;
 
+  const isCloudinaryPdf = Boolean(
+    activeUrl && activeUrl.includes('res.cloudinary.com') && /\.pdf($|\?)/i.test(activeUrl)
+  );
+
+  const previewImgUrl = isCloudinaryPdf
+    ? activeUrl.replace(/\.pdf($|\?)/i, '.jpg$1')
+    : activeDoc?.previewUrl || activeUrl;
+
   const handleDownload = async () => {
     if (!activeUrl || isDownloading) return;
     try {
       setIsDownloading(true);
-      const res = await fetch(activeUrl);
-      if (!res.ok) throw new Error('Direct fetch failed');
-      const blob = await res.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = activeDoc?.name || 'document';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(blobUrl);
+      await travelApi.downloadProofFile(activeUrl, activeDoc?.name || 'document');
     } catch {
       // Fallback for cross-origin resources
       const a = document.createElement('a');
@@ -226,17 +225,33 @@ export const ProofInspectorViewer: React.FC<ProofInspectorViewerProps> = ({
                 className="overflow-hidden"
               >
                 <div
-                  className={`rounded-lg border border-border-warm/80 overflow-hidden bg-surface-subtle flex items-center justify-center p-3 mt-1 ${
-                    isImage && !imgError ? 'min-h-[260px]' : 'min-h-[150px]'
+                  className={`rounded-lg border border-border-warm/80 overflow-hidden bg-surface-subtle flex flex-col items-center justify-center p-3 mt-1 ${
+                    (isImage || isCloudinaryPdf) && !imgError ? 'min-h-[260px]' : 'min-h-[150px]'
                   }`}
                 >
-                  {isImage && !imgError ? (
-                    <img
-                      src={activeUrl}
-                      alt={`Proof: ${activeDoc.name} for ${title}`}
-                      className="max-h-[380px] w-auto object-contain rounded-md"
-                      onError={() => setImgError(true)}
-                    />
+                  {(isImage || isCloudinaryPdf) && !imgError ? (
+                    <div className="flex flex-col items-center w-full">
+                      <img
+                        src={previewImgUrl}
+                        alt={`Proof: ${activeDoc.name} for ${title}`}
+                        className="max-h-[380px] w-auto object-contain rounded-md shadow-xs border border-border-warm/50"
+                        onError={() => setImgError(true)}
+                      />
+                      {isCloudinaryPdf && (
+                        <div className="mt-2.5 flex items-center justify-between w-full text-[11px] text-muted px-2 border-t border-border-warm/60 pt-2">
+                          <span className="flex items-center gap-1 font-medium text-ink">
+                            <FileText className="size-3 text-primary" /> Document Page 1 Visual Preview
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleDownload}
+                            className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Download className="size-3" /> Download Full PDF
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ) : imgError ? (
                     <div className="flex flex-col items-center gap-2 text-muted p-6 text-center">
                       <AlertCircle className="size-8 text-amber-600" />

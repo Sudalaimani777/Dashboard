@@ -1,6 +1,6 @@
 import { CreateManagedUserDto, UpdateManagedUserDto } from './users.types.js';
 
-const NAME_REGEX = /^[A-Za-z\s'-]+$/;
+const NAME_REGEX = /^(?=.*[A-Za-z])[A-Za-z\s'-]+$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -21,7 +21,7 @@ export function validateCreateUserInput(raw: any): CreateManagedUserDto {
   const department = typeof raw?.department === 'string' ? raw.department.trim() : '';
   const managerId = raw?.managerId ? String(raw.managerId).trim() : null;
 
-  if (name.length < 2 || name.length > 100 || !NAME_REGEX.test(name)) {
+  if (name.length < 2 || name.length > 100 || !NAME_REGEX.test(name) || (name.match(/[A-Za-z]/g) || []).length < 2) {
     throw new UserValidationError(
       'Name must be 2–100 characters and contain only letters, spaces, hyphens, and apostrophes.'
     );
@@ -29,13 +29,13 @@ export function validateCreateUserInput(raw: any): CreateManagedUserDto {
   if (!EMAIL_REGEX.test(email)) {
     throw new UserValidationError('Please provide a valid work email address.');
   }
-  if (password.length < 8) {
-    throw new UserValidationError('Initial password must be at least 8 characters long.');
+  if (password.trim().length < 8) {
+    throw new UserValidationError('Initial password must be at least 8 characters long and cannot be only whitespace.');
   }
   if (role !== 'EMPLOYEE' && role !== 'MANAGER') {
     throw new UserValidationError('Role must be either EMPLOYEE or MANAGER.');
   }
-  if (department.length < 2 || department.length > 80) {
+  if (department.length < 2 || department.length > 80 || !/[A-Za-z0-9]/.test(department)) {
     throw new UserValidationError('Department must be between 2 and 80 characters.');
   }
   const effectiveManagerId = role === 'EMPLOYEE' ? managerId : null;
@@ -58,7 +58,7 @@ export function validateUpdateUserInput(raw: any): UpdateManagedUserDto {
 
   if (raw?.department !== undefined) {
     const department = typeof raw.department === 'string' ? raw.department.trim() : '';
-    if (department.length < 2 || department.length > 80) {
+    if (department.length < 2 || department.length > 80 || !/[A-Za-z0-9]/.test(department)) {
       throw new UserValidationError('Department must be between 2 and 80 characters.');
     }
     dto.department = department;

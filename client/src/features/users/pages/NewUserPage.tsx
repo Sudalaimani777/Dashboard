@@ -16,12 +16,14 @@ import { PasswordStrengthMeter } from '../../auth/components/PasswordStrengthMet
 import { usersApi } from '../services/users.api';
 import { createUserSchema, type CreateUserFormValues } from '../schemas/users.schema';
 import type { DirectoryUser } from '../utils/users.utils';
+import { useToast } from '../../../shared/context/ToastContext';
 
 const DEFAULT_DEPARTMENTS = ['Engineering', 'Sales', 'Product', 'Operations', 'Finance', 'Executive'];
 
 export const NewUserPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [managers, setManagers] = useState<DirectoryUser[]>([]);
   const [departments, setDepartments] = useState<string[]>(DEFAULT_DEPARTMENTS);
@@ -78,7 +80,7 @@ export const NewUserPage: React.FC = () => {
     () => [
       { label: 'Full name provided', ok: (name || '').trim().length >= 2 },
       { label: 'Valid work email', ok: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((email || '').trim()) },
-      { label: 'Initial password (8+ chars)', ok: (password || '').length >= 8 },
+      { label: 'Initial password (8+ chars)', ok: (password || '').trim().length >= 8 },
       { label: 'Department assigned', ok: (department || '').trim().length >= 2 },
     ],
     [name, email, password, department]
@@ -94,6 +96,12 @@ export const NewUserPage: React.FC = () => {
         role: values.role,
         department: values.department.trim(),
         managerId: values.role === 'EMPLOYEE' ? values.managerId || null : null,
+      });
+      showToast({
+        title: 'Team member added',
+        description: `${values.name.trim()} (${values.role.toLowerCase()}) has been added to ${values.department.trim()}.`,
+        type: 'USER_CREATED',
+        linkUrl: '/dashboard?tab=users',
       });
       navigate('/dashboard?tab=users', { replace: true });
     } catch (err) {

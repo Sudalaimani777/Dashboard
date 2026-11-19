@@ -225,6 +225,32 @@ class TravelApiService {
   }
 
   /**
+   * Securely download an attached proof document (PDF or image).
+   */
+  async downloadProofFile(url: string, filename?: string): Promise<void> {
+    try {
+      const response = await travelApiClient.get('/travel/download-proof', {
+        params: { url, filename },
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], {
+        type: String(response.headers['content-type'] || 'application/octet-stream'),
+      });
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      this.handleError(err, 'Failed to download document');
+    }
+  }
+
+  /**
    * Fetch live or historical exchange rate against INR.
    */
   async getFxRate(from: string, date?: string): Promise<{ rate: number; from: string; date: string; source: string }> {

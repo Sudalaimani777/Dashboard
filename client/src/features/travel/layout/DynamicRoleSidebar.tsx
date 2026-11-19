@@ -9,6 +9,7 @@ import {
   PinOff,
   PlusCircle,
   UserPlus,
+  Bell,
   type LucideIcon,
 } from 'lucide-react';
 import type { User } from '../../auth/types/auth.types';
@@ -27,19 +28,22 @@ export function getRoleNavItems(role: string): NavItemConfig[] {
   switch (role) {
     case 'MANAGER':
       return [
+        { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'team', label: 'Team Approvals', icon: Users },
-        { id: 'analytics', label: 'Team Analytics', icon: PieChart },
         { id: 'personal', label: 'My Travel', icon: Plane },
+        { id: 'analytics', label: 'Team Analytics', icon: PieChart },
       ];
     case 'ADMIN':
       return [
+        { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'governance', label: 'Travel Governance', icon: ShieldCheck },
-        { id: 'budgets', label: 'Department Budgets', icon: PieChart },
         { id: 'users', label: 'Team & Access', icon: Users },
+        { id: 'budgets', label: 'Department Budgets', icon: PieChart },
       ];
     case 'EMPLOYEE':
     default:
       return [
+        { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'trips', label: 'My Travel', icon: Plane },
         { id: 'analytics', label: 'Spend Analytics', icon: PieChart },
       ];
@@ -84,7 +88,7 @@ export interface DynamicRoleSidebarProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   onSignOut: () => void;
-  badgeCounts?: Record<string, number>;
+  badgeCounts?: Record<string, any>;
 }
 
 export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
@@ -203,19 +207,29 @@ export const DynamicRoleSidebar: React.FC<DynamicRoleSidebarProps> = ({
 
       {/* 4. Primary Role Navigation List */}
       <nav className="flex-1 py-1 flex flex-col gap-1 overflow-y-auto overflow-x-hidden scrollbar-none">
-        {navItems.map((item) => (
-          <SidebarNavItem
-            key={item.id}
-            id={item.id}
-            label={item.label}
-            icon={item.icon}
-            count={badgeCounts[item.id] ?? item.count}
-            countType={item.countType}
-            isActive={activeTab === item.id}
-            isCollapsed={isItemCollapsed}
-            onClick={() => onTabChange(item.id)}
-          />
-        ))}
+        {navItems.map((item) => {
+          const isNotif = item.id === 'notifications';
+          const count = isNotif
+            ? (Number(badgeCounts['notifications']) || 0)
+            : (badgeCounts[item.id] ?? item.count);
+          const countType = isNotif
+            ? (badgeCounts['notificationsDanger'] || badgeCounts['hasRevisions'] ? 'danger' : 'warning')
+            : item.countType;
+
+          return (
+            <SidebarNavItem
+              key={item.id}
+              id={item.id}
+              label={item.label}
+              icon={item.icon}
+              count={count}
+              countType={countType}
+              isActive={activeTab === item.id}
+              isCollapsed={isItemCollapsed}
+              onClick={() => onTabChange(item.id)}
+            />
+          );
+        })}
       </nav>
 
       {/* 5. Authenticated Current User Profile Footer */}

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { Search, Download, ShieldAlert } from 'lucide-react';
+import { Search, Download } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
@@ -408,20 +408,6 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
           )}
         </div>
       </div>
-
-      {/* Warning banner for manager personal travel pending oversight */}
-      {(statusSegment === 'OVERSIGHT' || statusSegment === 'ALL') && managerPersonalPendingCount > 0 && (
-        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-amber-200 bg-amber-50/90 text-xs text-amber-900">
-          <ShieldAlert className="size-4 text-amber-700 shrink-0" />
-          <span>
-            <strong>
-              {managerPersonalPendingCount} Manager personal travel request
-              {managerPersonalPendingCount > 1 ? 's' : ''}
-            </strong>{' '}
-            awaiting Tier 1 clearance (Managers cannot self-approve their own travel).
-          </span>
-        </div>
-      )}
 
       {/* Single Unified Table for the Governance Queue */}
       <TravelRequestsTable

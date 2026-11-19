@@ -25,6 +25,8 @@ export interface SupportingDoc {
   type: 'LINK' | 'FILE';
   name: string;
   url: string;
+  previewUrl?: string;
+  downloadUrl?: string;
   format?: string;
   size?: number;
   uploadedAt?: string;
@@ -130,6 +132,14 @@ export interface CreateTravelRequestInput {
     category: ExpenseCategory;
     merchant: string;
     amount: number;
+    originalCurrency?: string;
+    original_currency?: string;
+    originalAmount?: number;
+    original_amount?: number;
+    exchangeRate?: number;
+    exchange_rate?: number;
+    inrAmount?: number;
+    inr_amount?: number;
     expenseDate: string;
     receiptImageUrl?: string | null;
     notes?: string | null;
@@ -171,6 +181,14 @@ export interface ResubmitRequestInput {
     category: ExpenseCategory;
     merchant: string;
     amount: number;
+    originalCurrency?: string;
+    original_currency?: string;
+    originalAmount?: number;
+    original_amount?: number;
+    exchangeRate?: number;
+    exchange_rate?: number;
+    inrAmount?: number;
+    inr_amount?: number;
     expenseDate: string;
     receiptImageUrl?: string | null;
     notes?: string | null;

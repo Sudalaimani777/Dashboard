@@ -32,33 +32,37 @@ export const AuditTimelineLog: React.FC<AuditTimelineLogProps> = ({ timeline = [
             : '';
 
           return (
-            <div key={event.id || idx} className="relative pl-4 flex flex-col gap-1 text-xs">
+            <div key={event.id || idx} className="relative pl-4 flex flex-col gap-1.5 text-xs">
               {/* Timeline node */}
               <span className="absolute -left-[18px] top-1.5 size-2 rounded-full bg-primary ring-2 ring-surface" />
 
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-surface-subtle border border-border-warm text-muted">
+              {/* Row 1: Actor Role Badge, Name, and Timestamp */}
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-surface-subtle border border-border-warm text-muted shrink-0">
                     {actorRole}
                   </span>
-                  <span className="font-semibold text-ink">
-                    {formattedStatus}
-                  </span>
                   {actorName && (
-                    <span className="text-[11px] text-faint">
-                      ({actorName})
+                    <span className="text-xs font-medium text-ink truncate">
+                      {actorName}
                     </span>
                   )}
                 </div>
                 {formattedDate && (
-                  <span className="text-[10px] text-faint font-mono whitespace-nowrap">
+                  <span className="text-[10px] text-faint font-mono whitespace-nowrap shrink-0">
                     {formattedDate}
                   </span>
                 )}
               </div>
 
+              {/* Row 2: Status Text */}
+              <div className="font-semibold text-xs text-ink uppercase tracking-wide leading-snug break-words">
+                {formattedStatus}
+              </div>
+
+              {/* Row 3: Remarks (if present) */}
               {event.remarks && (
-                <p className="text-[11px] text-muted italic border-l-2 border-border-warm pl-2.5 py-0.5 mt-1">
+                <p className="text-[11px] text-muted italic border-l-2 border-border-warm pl-2.5 py-0.5 mt-0.5 break-words">
                   "{event.remarks}"
                 </p>
               )}

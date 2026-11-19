@@ -148,6 +148,8 @@ export function getLocalDateString(d: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+export const PROJECT_CODE_REGEX = /^(?=.*[A-Z])(?=.*-)[A-Z0-9]+(-[A-Z0-9]+)+$/;
+
 /**
  * Validates create travel request payload.
  */
@@ -172,8 +174,10 @@ export function validateCreateRequestPayload(data: any): ValidationResult {
     errors.push('Purpose is required and must be at least 5 characters.');
   }
 
-  if (!data.project_code || typeof data.project_code !== 'string' || data.project_code.trim().length < 2) {
+  if (!data.project_code || typeof data.project_code !== 'string' || !data.project_code.trim()) {
     errors.push('Project Code is required.');
+  } else if (!PROJECT_CODE_REGEX.test(data.project_code.trim())) {
+    errors.push('Project code must be uppercase letters with at least one hyphen (e.g. ENG-2026, PROJ-APAC).');
   }
 
   if (!data.origin || typeof data.origin !== 'string' || data.origin.trim().length < 2) {
@@ -291,10 +295,8 @@ export function validateManagerReviewPayload(data: any): ValidationResult {
     errors.push(`Action must be one of: ${validActions.join(', ')}.`);
   }
 
-  if (data.action === 'REQUEST_REVISION' || data.action === 'REJECT') {
-    if (!data.remarks || typeof data.remarks !== 'string' || data.remarks.trim().length < 3) {
-      errors.push(`Remarks are required (minimum 3 characters) when action is ${data.action}.`);
-    }
+  if (!data.remarks || typeof data.remarks !== 'string' || data.remarks.trim().length < 3) {
+    errors.push('Remarks are required (minimum 3 characters).');
   }
 
   return {
@@ -322,15 +324,10 @@ export function validateAdminReviewPayload(data: any): ValidationResult {
     if (data.revision_target && data.revision_target !== 'EMPLOYEE') {
       errors.push("Admin alterations can only be dispatched directly to the Employee ('EMPLOYEE'). Route A (Via Manager) is no longer permitted.");
     }
-    if (!data.remarks || typeof data.remarks !== 'string' || data.remarks.trim().length < 3) {
-      errors.push('Remarks with revision instructions are required.');
-    }
   }
 
-  if (data.action === 'REJECT') {
-    if (!data.remarks || typeof data.remarks !== 'string' || data.remarks.trim().length < 3) {
-      errors.push('Remarks explaining rejection rationale are required.');
-    }
+  if (!data.remarks || typeof data.remarks !== 'string' || data.remarks.trim().length < 3) {
+    errors.push('Executive remarks are required (minimum 3 characters).');
   }
 
   return {
