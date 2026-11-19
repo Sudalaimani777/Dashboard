@@ -8,6 +8,7 @@ import { travelRoutes } from './features/travel/travel.routes.js';
 import { usersRoutes } from './features/users/users.routes.js';
 import { notificationRoutes } from './features/notifications/notification.routes.js';
 import { pool } from './shared/db/pool.js';
+import { requireAuth } from './shared/middleware/auth.middleware.js';
 import { errorHandler } from './shared/middleware/error.middleware.js';
 
 export const app = express();
@@ -21,7 +22,7 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.json());
-app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+app.use('/uploads', requireAuth, express.static(path.resolve(process.cwd(), 'uploads')));
 
 // Base Route
 app.get('/', (_req, res) => {

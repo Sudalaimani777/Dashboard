@@ -32,6 +32,8 @@ export interface ProofAttachmentFieldProps {
 
 const ALLOWED_EXTENSIONS = new Set(['pdf', 'png', 'jpg', 'jpeg', 'webp']);
 
+import { SERVER_ORIGIN } from '../../../../config/api';
+
 export function resolveDocUrl(url?: string): string {
   if (!url) return '';
   if (
@@ -42,11 +44,7 @@ export function resolveDocUrl(url?: string): string {
   ) {
     return url;
   }
-  const envApiUrl =
-    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) ||
-    'http://localhost:5000';
-  const backendBase = envApiUrl.replace(/\/api\/?$/, '');
-  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+  return `${SERVER_ORIGIN}${url.startsWith('/') ? '' : '/'}${url}`;
 }
 
 export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({

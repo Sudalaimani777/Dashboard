@@ -64,7 +64,7 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
               <div key={req.id} className="p-4 flex flex-col gap-3 bg-surface hover:bg-surface-subtle/50 transition-colors">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-ink">{req.title}</span>
+                    <span className="text-xl font-bold text-ink">{req.title}</span>
                     <span className="text-[11px] text-slate-500 font-mono font-medium mt-0.5">
                       #{req.id.slice(0, 8)} • {req.projectCode}
                     </span>
@@ -144,14 +144,14 @@ export const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-border-warm text-[11px] uppercase font-bold tracking-wider text-slate-700 bg-slate-50/80">
-                  <th className="p-3.5">Trip Title</th>
+                  <th className="p-3.5 text-center">Trip Title</th>
                   {showRequester && <th className="p-3.5">Requester</th>}
                   <th className="p-3.5">Type</th>
-                  <th className="p-3.5">Route / Destination</th>
+                  <th className="p-3.5">Destination</th>
                   <th className="p-3.5">Dates</th>
                   <th className="p-3.5">Total Amount</th>
                   <th className="p-3.5">Status</th>
-                  <th className="p-3.5 text-right">Action</th>
+                  <th className="p-3.5 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-warm">

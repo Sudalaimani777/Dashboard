@@ -14,7 +14,7 @@ import type {
   SupportingDoc,
 } from '../types/travel.types';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../../config/api';
 
 export const travelApiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
