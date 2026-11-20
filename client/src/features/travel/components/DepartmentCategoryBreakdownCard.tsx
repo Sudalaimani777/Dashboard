@@ -38,9 +38,9 @@ export const DepartmentCategoryBreakdownCard: React.FC<DepartmentCategoryBreakdo
   }, [categoryShares]);
 
   return (
-    <div className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col justify-between gap-4">
+    <div className="bg-surface rounded-xl border border-border-warm p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-3 h-[300px] overflow-hidden">
       {/* Header */}
-      <div>
+      <div className="shrink-0 border-b border-border-warm/60 pb-2.5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-lg bg-surface-subtle border border-border-warm text-ink">
@@ -54,8 +54,8 @@ export const DepartmentCategoryBreakdownCard: React.FC<DepartmentCategoryBreakdo
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[11px] font-medium text-muted">Total Disbursed</div>
-            <div className="font-mono text-sm font-bold text-ink tabular-nums">
+            <div className="text-[10px] font-medium text-muted uppercase">Total Disbursed</div>
+            <div className="font-mono text-xs font-bold text-ink tabular-nums">
               {formatINR(totalDisbursed)}
             </div>
           </div>
@@ -64,24 +64,24 @@ export const DepartmentCategoryBreakdownCard: React.FC<DepartmentCategoryBreakdo
 
       {/* Visual Chart + Itemized Category Duo */}
       {totalDisbursed > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] items-center gap-4">
+        <div className="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-[160px_1fr] items-center gap-3.5 py-1">
           <DepartmentCategoryPieChart
             categories={categoryShares}
             totalDisbursed={totalDisbursed}
           />
 
           {/* Itemized Category List */}
-          <div className="divide-y divide-border-warm/60 overflow-y-auto max-h-[195px] pr-1">
+          <div className="h-full divide-y divide-border-warm/60 overflow-y-auto min-h-0 pr-1.5">
             {categoryShares
               .filter((c) => c.categoryKey !== 'UNSPENT' && c.amount > 0)
               .map((cat) => (
                 <div
                   key={cat.categoryKey}
-                  className="py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-2.5"
+                  className="py-1.5 first:pt-0 last:pb-0 flex items-center justify-between gap-2.5"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className="size-2.5 rounded-full shrink-0"
+                      className="size-2 rounded-full shrink-0"
                       style={{ backgroundColor: cat.color }}
                     />
                     <div className="min-w-0">
@@ -89,7 +89,7 @@ export const DepartmentCategoryBreakdownCard: React.FC<DepartmentCategoryBreakdo
                         {cat.label}
                       </span>
                       <span className="text-[10px] text-muted font-mono">
-                        {cat.pct}% of period disbursements
+                        {cat.pct}% of period
                       </span>
                     </div>
                   </div>
@@ -107,13 +107,13 @@ export const DepartmentCategoryBreakdownCard: React.FC<DepartmentCategoryBreakdo
           </div>
         </div>
       ) : (
-        <div className="py-8 text-center text-xs text-muted">
+        <div className="flex-1 flex flex-col items-center justify-center text-center text-xs text-muted py-4">
           No approved vouchers recorded for {selectedDepartment} in {selectedQuarter} {selectedYear}.
         </div>
       )}
 
       {/* Footer Takeaway */}
-      <div className="pt-3 border-t border-border-warm/70 flex items-center justify-between text-[11px] text-muted">
+      <div className="pt-2 border-t border-border-warm/70 flex items-center justify-between text-[11px] text-muted shrink-0">
         <span>
           {topCategory ? (
             <strong className="text-ink font-semibold">{topCategory.label}</strong>

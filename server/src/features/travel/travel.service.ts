@@ -968,6 +968,39 @@ export class TravelService {
    * Department budget allocation and headroom.
    */
   async getDepartmentBudget(department: string, year = 2026, quarter = 'Q4') {
+    if (department && department.toUpperCase() === 'ALL') {
+      const overview = await this.repo.getAllDepartmentBudgets({ year, quarter });
+      const budgets = overview.budgets;
+      let totalAllocation = 0;
+      let utilizedAmount = 0;
+      for (const b of budgets) {
+        totalAllocation += Number(b.total_allocation || 0);
+        utilizedAmount += Number(b.utilized_amount || 0);
+      }
+      const availableAmount = Math.max(0, totalAllocation - utilizedAmount);
+      const utilizationPercentage = totalAllocation > 0 ? (utilizedAmount / totalAllocation) * 100 : 0;
+      return {
+        id: 'ALL',
+        department: 'ALL',
+        fiscal_year: year,
+        fiscalYear: year,
+        fiscal_quarter: quarter,
+        fiscalQuarter: quarter,
+        total_allocation: totalAllocation,
+        totalAllocation,
+        utilized_amount: utilizedAmount,
+        utilizedAmount,
+        available_headroom: availableAmount,
+        availableAmount,
+        utilization_percentage: utilizationPercentage,
+        utilizationPercentage,
+        categoryBreakdown: [],
+        created_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
     return this.repo.getDepartmentBudget(department, year, quarter);
   }
 
