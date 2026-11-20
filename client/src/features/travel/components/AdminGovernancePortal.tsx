@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { Search, Download } from 'lucide-react';
+import { Search, Download, User, Building2 } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
@@ -14,6 +14,8 @@ import {
   classifyAdminQueue,
   filterAdminRequests,
   isManagerPersonalTrip,
+  isAssignedToAdmin,
+  type AdminScope,
   type AdminLedgerStatusFilter,
 } from '../utils/adminQueue';
 
@@ -46,6 +48,7 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
   }, [activeTab]);
 
   const [statusSegment, setStatusSegment] = useState<GovernanceStatusSegment>(initialSegment);
+  const [adminScope, setAdminScope] = useState<AdminScope>('ASSIGNED');
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string>('ALL');
   const [ledgerStatusFilter, setLedgerStatusFilter] = useState<AdminLedgerStatusFilter>('ALL');
@@ -69,16 +72,27 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
     }
   }, [activeTab, loadAdminQueue]);
 
-  const classified = useMemo(() => classifyAdminQueue(adminQueue), [adminQueue]);
   const currentUserId = user?.id;
+
+  const assignedRequests = useMemo(
+    () => adminQueue.filter((r) => isAssignedToAdmin(r, currentUserId)),
+    [adminQueue, currentUserId]
+  );
+
+  const displayedQueue = useMemo(
+    () => (adminScope === 'ASSIGNED' ? assignedRequests : adminQueue),
+    [adminScope, assignedRequests, adminQueue]
+  );
+
+  const classified = useMemo(() => classifyAdminQueue(displayedQueue), [displayedQueue]);
 
   const availableDepartments = useMemo(() => {
     const depts = new Set<string>();
-    for (const req of adminQueue) {
+    for (const req of displayedQueue) {
       if (req.requesterDepartment) depts.add(req.requesterDepartment);
     }
     return Array.from(depts).sort((a, b) => a.localeCompare(b));
-  }, [adminQueue]);
+  }, [displayedQueue]);
 
   // Exclude current Admin's own travel request from Tier 1 oversight to prevent self-audit
   const tier1OversightRequests = useMemo(
@@ -210,6 +224,12 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
         description: 'Try adjusting your search query, department, or trip type filters.',
       };
     }
+    if (adminScope === 'ASSIGNED' && assignedRequests.length === 0) {
+      return {
+        message: 'Your personal review queue is clear',
+        description: 'You have no travel requests assigned to you right now. Toggle to "All Organization" to review company-wide travel.',
+      };
+    }
     switch (statusSegment) {
       case 'CLEARANCE':
         return {
@@ -253,19 +273,62 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-ink tracking-tight">Travel Governance Queue</h1>
-          {/* <p className="text-xs text-muted">
-            Unified corporate queue: executive clearance, Tier 1 audits, dispatched revisions, and corporate ledger archive.
-          </p> */}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Executive Scope Switcher */}
+          <div
+            role="group"
+            aria-label="Queue scope"
+            className="inline-flex rounded-xl border border-border-warm bg-surface-subtle p-1 shadow-2xs"
+          >
+            <button
+              type="button"
+              aria-pressed={adminScope === 'ASSIGNED'}
+              onClick={() => setAdminScope('ASSIGNED')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
+                adminScope === 'ASSIGNED'
+                  ? 'bg-surface text-ink shadow-xs border border-border-warm/80'
+                  : 'text-muted hover:text-ink hover:bg-surface/50'
+              }`}
+            >
+              <User className="size-3.5 text-primary" />
+              <span>Assigned to Me</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  assignedRequests.length > 0
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-surface border border-border-warm text-muted'
+                }`}
+              >
+                {assignedRequests.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={adminScope === 'ALL'}
+              onClick={() => setAdminScope('ALL')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
+                adminScope === 'ALL'
+                  ? 'bg-surface text-ink shadow-xs border border-border-warm/80'
+                  : 'text-muted hover:text-ink hover:bg-surface/50'
+              }`}
+            >
+              <Building2 className="size-3.5 text-muted" />
+              <span>All Organization</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-surface border border-border-warm text-muted">
+                {adminQueue.length}
+              </span>
+            </button>
+          </div>
+
           {filteredRequests.length > 0 && (
             <button
               type="button"
               onClick={() =>
                 exportRequestsToCsv(
                   filteredRequests,
-                  `travel-governance-${statusSegment.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`
+                  `travel-governance-${adminScope.toLowerCase()}-${statusSegment.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`
                 )
               }
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-warm bg-surface text-xs font-semibold text-ink hover:border-primary/40 hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
@@ -411,7 +474,9 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
 
       {/* Single Unified Table for the Governance Queue */}
       <TravelRequestsTable
-        title={`Governance Queue: ${segmentConfig.find((s) => s.id === statusSegment)?.label || 'All Requests'}`}
+        title={`Governance Queue: ${segmentConfig.find((s) => s.id === statusSegment)?.label || 'All Requests'}${
+          adminScope === 'ASSIGNED' ? ' (Assigned to Me)' : ' (All Organization)'
+        }`}
         requests={filteredRequests}
         showRequester
         showRemarksPreview={statusSegment === 'REVISIONS' || statusSegment === 'ALL'}
@@ -419,6 +484,18 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
         onAction={(req) => navigate(`/travel/requests/${req.id}?tab=governance`)}
         emptyMessage={emptyInfo.message}
         emptyDescription={emptyInfo.description}
+        emptyAction={
+          adminScope === 'ASSIGNED' && adminQueue.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setAdminScope('ALL')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-warm bg-surface text-xs font-semibold text-primary hover:border-primary/40 hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <Building2 className="size-3.5 text-primary" />
+              <span>View All Organization Requests ({adminQueue.length})</span>
+            </button>
+          ) : undefined
+        }
       />
     </motion.div>
   );

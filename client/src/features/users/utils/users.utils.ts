@@ -2,6 +2,7 @@ import { createUserSchema } from '../schemas/users.schema';
 
 export type ManagedUserRole = 'EMPLOYEE' | 'MANAGER' | 'ADMIN';
 export type UserRole = ManagedUserRole;
+export type DirectoryScope = 'ALL' | 'LINE';
 
 export interface DirectoryUser {
   id: string;
@@ -11,6 +12,8 @@ export interface DirectoryUser {
   department: string;
   manager_id: string | null;
   manager_name: string | null;
+  reporting_admin_id?: string | null;
+  reporting_admin_name?: string | null;
   is_active?: boolean;
   created_at: string;
   updated_at?: string;
@@ -20,15 +23,17 @@ export interface CreateUserPayload {
   name: string;
   email: string;
   password: string;
-  role: 'EMPLOYEE' | 'MANAGER';
+  role: ManagedUserRole;
   department: string;
   managerId?: string | null;
+  reportingAdminId?: string | null;
 }
 
 export interface UpdateUserPayload {
   role?: ManagedUserRole;
   department?: string;
   managerId?: string | null;
+  reportingAdminId?: string | null;
   isActive?: boolean;
 }
 
@@ -119,4 +124,36 @@ export function validateNewUserForm(input: CreateUserPayload): { valid: boolean;
     };
   }
   return { valid: true };
+}
+
+/**
+ * Determines whether a user belongs to an admin's direct or indirect reporting line:
+ * 1. The admin themselves
+ * 2. Managers directly assigned to this admin (reporting_admin_id === adminId)
+ * 3. Employees whose managers report to this admin
+ */
+export function isUserInReportingLine(
+  user: DirectoryUser,
+  adminId?: string | null,
+  allUsers: DirectoryUser[] = []
+): boolean {
+  if (!adminId) return false;
+
+  // The admin themselves
+  if (user.id === adminId) return true;
+
+  // Direct reporting manager
+  if (user.role === 'MANAGER' && user.reporting_admin_id === adminId) {
+    return true;
+  }
+
+  // Indirect employee via line manager
+  if (user.role === 'EMPLOYEE' && user.manager_id) {
+    const manager = allUsers.find((u) => u.id === user.manager_id);
+    if (manager && manager.reporting_admin_id === adminId) {
+      return true;
+    }
+  }
+
+  return false;
 }

@@ -28,7 +28,7 @@ export const createUserSchema = z.object({
       (p) => p.trim().length >= 8,
       'Initial password cannot be blank spaces or contain only whitespace.'
     ),
-  role: z.enum(['EMPLOYEE', 'MANAGER']),
+  role: z.enum(['EMPLOYEE', 'MANAGER', 'ADMIN']),
   department: z
     .string()
     .trim()
@@ -39,6 +39,7 @@ export const createUserSchema = z.object({
       'Department must contain valid alphanumeric characters.'
     ),
   managerId: z.string().optional().nullable(),
+  reportingAdminId: z.string().optional().nullable(),
 });
 
 export type CreateUserFormValues = z.infer<typeof createUserSchema>;
@@ -55,6 +56,7 @@ export const updateUserSchema = z.object({
       'Department must contain valid alphanumeric characters.'
     ),
   managerId: z.string().optional().nullable(),
+  reportingAdminId: z.string().optional().nullable(),
 });
 
 export type UpdateUserFormValues = z.infer<typeof updateUserSchema>;

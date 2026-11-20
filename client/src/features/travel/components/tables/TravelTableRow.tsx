@@ -57,6 +57,11 @@ export const TravelTableRow: React.FC<TravelTableRowProps> = ({
             {request.requesterEmail}
             {request.requesterDepartment ? ` • ${request.requesterDepartment}` : ''}
           </div>
+          {request.adminName && (
+            <div className="text-[10px] text-primary font-medium mt-0.5">
+              Reviewer: {request.adminName}
+            </div>
+          )}
         </td>
       )}
 

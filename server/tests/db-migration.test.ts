@@ -57,6 +57,53 @@ async function testMigration() {
     throw new Error('Expected foreign key on travel_expenses referencing travel_requests');
   }
 
+  // 5. Verify users table has reporting_admin_id column (Migration 007)
+  const reportingAdminColRes = await pool.query(`
+    SELECT column_name, data_type, is_nullable
+    FROM information_schema.columns 
+    WHERE table_name = 'users' AND column_name = 'reporting_admin_id';
+  `);
+  if (reportingAdminColRes.rowCount === 0) {
+    throw new Error("Expected users table to have 'reporting_admin_id' column (Migration 007).");
+  }
+  const raCol = reportingAdminColRes.rows[0];
+  if (raCol.data_type !== 'uuid') {
+    throw new Error(`Expected reporting_admin_id to be UUID, got '${raCol.data_type}'.`);
+  }
+  if (raCol.is_nullable !== 'YES') {
+    throw new Error("Expected reporting_admin_id to be nullable (optional supervisor assignment).");
+  }
+  console.log('✓ Users table reporting_admin_id column verified (UUID, nullable)');
+
+  // 6. Verify reporting_admin_id foreign key references users(id)
+  const raFkRes = await pool.query(`
+    SELECT tc.constraint_name, ccu.table_name AS referenced_table, ccu.column_name AS referenced_column
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
+    JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+    WHERE tc.constraint_type = 'FOREIGN KEY'
+      AND tc.table_name = 'users'
+      AND kcu.column_name = 'reporting_admin_id';
+  `);
+  if (raFkRes.rowCount === 0) {
+    throw new Error("Expected reporting_admin_id to have a foreign key referencing users(id).");
+  }
+  const raFk = raFkRes.rows[0];
+  if (raFk.referenced_table !== 'users' || raFk.referenced_column !== 'id') {
+    throw new Error(`Expected reporting_admin_id FK to reference users(id), got ${raFk.referenced_table}(${raFk.referenced_column}).`);
+  }
+  console.log('✓ Users reporting_admin_id foreign key verified (references users.id)');
+
+  // 7. Verify index on reporting_admin_id exists
+  const raIdxRes = await pool.query(`
+    SELECT indexname FROM pg_indexes 
+    WHERE tablename = 'users' AND indexname = 'idx_users_reporting_admin';
+  `);
+  if (raIdxRes.rowCount === 0) {
+    throw new Error("Expected index 'idx_users_reporting_admin' on users.reporting_admin_id.");
+  }
+  console.log('✓ Users reporting_admin_id index verified');
+
   console.log('✓ Migration test passed successfully!');
   await pool.end();
 }

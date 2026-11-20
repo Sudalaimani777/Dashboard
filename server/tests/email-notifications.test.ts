@@ -136,7 +136,30 @@ async function runEmailTests() {
   assert(sentMails[5].html.includes('John Admin'), 'HTML includes admin name');
   assert(sentMails[5].html.includes('Sarah Connor'), 'HTML includes manager name');
 
-  // 7. Test XSS / special characters escaping
+  // 7. sendPasswordResetEmail
+  const res7 = await emailService.sendPasswordResetEmail(
+    'user@example.com',
+    'Alex Rivera',
+    'https://tripflow.com/reset-password?token=test-reset-token-123'
+  );
+  assert(!!res7.messageId, 'sendPasswordResetEmail returns messageId');
+  const resetMail = sentMails[6];
+  assert(resetMail.to === 'user@example.com', 'sendPasswordResetEmail sent to user');
+  assert(
+    resetMail.subject === 'Reset Your TripFlow Password',
+    'sendPasswordResetEmail has correct subject'
+  );
+  assert(resetMail.html.includes('Alex Rivera'), 'HTML includes recipient name');
+  assert(resetMail.html.includes('https://tripflow.com/reset-password?token=test-reset-token-123'), 'HTML includes resetUrl');
+  assert(resetMail.html.includes('#533AFD'), 'HTML contains TripFlow brand indigo (#533AFD)');
+  assert(resetMail.html.includes('#061B31'), 'HTML contains TripFlow ink color (#061B31)');
+  assert(resetMail.html.includes('#F8FAFC'), 'HTML contains TripFlow slate canvas (#F8FAFC)');
+  assert(!resetMail.html.includes('#8A582B'), 'HTML does not contain legacy brown (#8A582B)');
+  assert(!resetMail.html.includes('#F7F4EE'), 'HTML does not contain legacy warm beige (#F7F4EE)');
+  assert(!resetMail.html.includes('#2B231D'), 'HTML does not contain legacy espresso (#2B231D)');
+  assert(!resetMail.html.includes('#E8DFD3'), 'HTML does not contain legacy border (#E8DFD3)');
+
+  // 8. Test XSS / special characters escaping
   const xssTrip = {
     title: '<script>alert("hack")</script>',
     origin: 'Delhi <script>',
@@ -145,10 +168,21 @@ async function runEmailTests() {
     currency: 'INR'
   };
   await emailService.sendTravelSubmittedEmail('m@test.com', 'Mgr <tag>', 'Req "quote"', xssTrip);
-  const xssMail = sentMails[6];
-  assert(!xssMail.html.includes('<script>'), 'HTML escapes script tags');
-  assert(xssMail.html.includes('&lt;script&gt;alert'), 'HTML contains escaped script tags');
-  assert(xssMail.html.includes('&amp; &quot;Sun&quot;'), 'HTML contains escaped ampersand and quotes');
+  const xssMail = sentMails[7];
+  assert(!xssMail.html.includes('<script>'), 'HTML escapes script tags in travel email');
+  assert(xssMail.html.includes('&lt;script&gt;alert'), 'HTML contains escaped script tags in travel email');
+  assert(xssMail.html.includes('&amp; &quot;Sun&quot;'), 'HTML contains escaped ampersand and quotes in travel email');
+
+  // 9. Test XSS in sendPasswordResetEmail recipientName
+  await emailService.sendPasswordResetEmail(
+    'xss@example.com',
+    'User <script>alert(1)</script> & "Tester"',
+    'https://tripflow.com/reset-password?token=safe'
+  );
+  const xssResetMail = sentMails[8];
+  assert(!xssResetMail.html.includes('<script>'), 'Password reset HTML escapes script tags in recipient name');
+  assert(xssResetMail.html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), 'Password reset HTML contains escaped script tags');
+  assert(xssResetMail.html.includes('&amp; &quot;Tester&quot;'), 'Password reset HTML contains escaped ampersand and quotes');
 
   console.log(`\n🎉 All ${passed}/${total} EmailService template tests passed!`);
 }

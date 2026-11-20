@@ -22,18 +22,19 @@ async function run() {
   assert.equal(empItems[1].label, 'My Travel');
   assert.equal(empItems[2].label, 'Spend Analytics');
 
-  // 2. Manager Navigation Items: 1) Notifications, 2) Team Approvals, 3) My Travel, 4) Team Analytics
+  // 2. Manager Navigation Items: 1) Notifications, 2) Team Approvals, 3) My Travel, 4) Team Analytics, 5) Spend Analytics
   const mgrItems = getRoleNavItems('MANAGER');
-  assert.equal(mgrItems.length, 4, 'Manager should have 4 navigation items: notifications, team, personal, analytics');
+  assert.equal(mgrItems.length, 5, 'Manager should have 5 navigation items: notifications, team, personal, team-analytics, spend-analytics');
   assert.deepEqual(
     mgrItems.map((i: NavItemConfig) => i.id),
-    ['notifications', 'team', 'personal', 'analytics'],
-    'Manager navigation items must be strictly ordered: notifications -> team -> personal -> analytics'
+    ['notifications', 'team', 'personal', 'team-analytics', 'spend-analytics'],
+    'Manager navigation items must be strictly ordered: notifications -> team -> personal -> team-analytics -> spend-analytics'
   );
   assert.equal(mgrItems[0].label, 'Notifications');
   assert.equal(mgrItems[1].label, 'Team Approvals');
   assert.equal(mgrItems[2].label, 'My Travel');
   assert.equal(mgrItems[3].label, 'Team Analytics');
+  assert.equal(mgrItems[4].label, 'Spend Analytics');
 
   // 3. Admin Navigation Items: 1) Notifications, 2) Travel Governance, 3) Team & Access, 4) Department Budgets
   const admItems = getRoleNavItems('ADMIN');

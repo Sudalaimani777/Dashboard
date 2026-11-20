@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import {
-  AlertTriangle,
-  Loader2,
+  Building2,
   PencilLine,
   Plus,
   RotateCcw,
@@ -17,9 +16,12 @@ import { TravelMetricsGrid } from '../../travel/components/shared/TravelMetricsG
 import { useAuth } from '../../auth/hooks/useAuth';
 import { usersApi } from '../services/users.api';
 import { UserFormModal } from '../components/UserFormModal';
+import { ConfirmUserActionModal } from '../components/ConfirmUserActionModal';
 import {
   computeUserStats,
   filterDirectoryUsers,
+  isUserInReportingLine,
+  type DirectoryScope,
   type DirectoryUser,
   type ManagedUserRole,
   type UpdateUserPayload,
@@ -62,6 +64,7 @@ export const AdminUsersPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  const [directoryScope, setDirectoryScope] = useState<DirectoryScope>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | ManagedUserRole>('ALL');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
@@ -91,26 +94,37 @@ export const AdminUsersPage: React.FC = () => {
     loadUsers();
   }, [loadUsers]);
 
-  const stats = useMemo(() => computeUserStats(users), [users]);
-  const managers = useMemo(() => users.filter((u) => u.role === 'MANAGER'), [users]);
+  const lineUsers = useMemo(
+    () => users.filter((u) => isUserInReportingLine(u, currentUser?.id, users)),
+    [users, currentUser?.id]
+  );
+
+  const scopedUsers = useMemo(
+    () => (directoryScope === 'LINE' ? lineUsers : users),
+    [directoryScope, lineUsers, users]
+  );
+
+  const stats = useMemo(() => computeUserStats(scopedUsers), [scopedUsers]);
+  const managers = useMemo(() => scopedUsers.filter((u) => u.role === 'MANAGER'), [scopedUsers]);
+  const admins = useMemo(() => users.filter((u) => u.role === 'ADMIN'), [users]);
 
   const departments = useMemo(() => {
     const set = new Set<string>(DEFAULT_DEPARTMENTS);
-    for (const u of users) {
+    for (const u of scopedUsers) {
       if (u.department) set.add(u.department);
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [users]);
+  }, [scopedUsers]);
 
   const filteredUsers = useMemo(
     () =>
-      filterDirectoryUsers(users, {
+      filterDirectoryUsers(scopedUsers, {
         query: searchQuery,
         roleFilter,
         departmentFilter,
         statusFilter,
       }),
-    [users, searchQuery, roleFilter, departmentFilter, statusFilter]
+    [scopedUsers, searchQuery, roleFilter, departmentFilter, statusFilter]
   );
 
   const hasActiveFilters = Boolean(
@@ -170,6 +184,16 @@ export const AdminUsersPage: React.FC = () => {
     }
   };
 
+  const handleSwitchToDeactivate = () => {
+    if (!confirmDialog) return;
+    setActionError(null);
+    setConfirmDeleteChecked(false);
+    setConfirmDialog({
+      type: 'deactivate',
+      user: confirmDialog.user,
+    });
+  };
+
   return (
     <motion.div
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
@@ -182,14 +206,62 @@ export const AdminUsersPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-ink tracking-tight">Team &amp; Access</h1>
         </div>
 
-        <button
-          type="button"
-          onClick={() => navigate('/admin/users/new')}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary-hover active:scale-[0.98] text-white text-xs font-semibold transition-all cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-        >
-          <Plus className="size-3.5" />
-          <span>Add Member</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Reporting Line Scope Switcher */}
+          <div
+            role="group"
+            aria-label="Directory scope"
+            className="inline-flex rounded-xl border border-border-warm bg-surface-subtle p-1 shadow-2xs"
+          >
+            <button
+              type="button"
+              aria-pressed={directoryScope === 'ALL'}
+              onClick={() => setDirectoryScope('ALL')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
+                directoryScope === 'ALL'
+                  ? 'bg-surface text-ink shadow-xs border border-border-warm/80'
+                  : 'text-muted hover:text-ink hover:bg-surface/50'
+              }`}
+            >
+              <Building2 className="size-3.5 text-muted" />
+              <span>All Team Members</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-surface border border-border-warm text-muted">
+                {users.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={directoryScope === 'LINE'}
+              onClick={() => setDirectoryScope('LINE')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
+                directoryScope === 'LINE'
+                  ? 'bg-surface text-ink shadow-xs border border-border-warm/80'
+                  : 'text-muted hover:text-ink hover:bg-surface/50'
+              }`}
+            >
+              <Users className="size-3.5 text-primary" />
+              <span>My Reporting Line</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  lineUsers.length > 0
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-surface border border-border-warm text-muted'
+                }`}
+              >
+                {lineUsers.length}
+              </span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/admin/users/new')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary hover:bg-primary-hover active:scale-[0.98] text-white text-xs font-semibold transition-all cursor-pointer shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Plus className="size-3.5" />
+            <span>Add Member</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI Overview Strip */}
@@ -336,7 +408,9 @@ export const AdminUsersPage: React.FC = () => {
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-border-warm">
           <div className="flex items-center gap-2">
             <Users className="size-4 text-primary" />
-            <h2 className="text-sm font-bold text-ink">Organization Directory</h2>
+            <h2 className="text-sm font-bold text-ink">
+              {directoryScope === 'LINE' ? 'My Reporting Line Directory' : 'Organization Directory'}
+            </h2>
             <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-surface-subtle text-muted border border-border-warm">
               {filteredUsers.length}
             </span>
@@ -346,9 +420,27 @@ export const AdminUsersPage: React.FC = () => {
         {isLoading ? (
           <div className="p-8 text-center text-xs text-muted">Loading team directory...</div>
         ) : filteredUsers.length === 0 ? (
-          <div className="p-10 text-center space-y-1">
-            <p className="text-sm font-semibold text-ink">No matching team members</p>
-            <p className="text-xs text-muted">Adjust your filters or add a new team member.</p>
+          <div className="p-10 text-center space-y-2">
+            <p className="text-sm font-semibold text-ink">
+              {directoryScope === 'LINE' && lineUsers.length === 0
+                ? 'No team members in your reporting line yet'
+                : 'No matching team members'}
+            </p>
+            <p className="text-xs text-muted max-w-sm mx-auto">
+              {directoryScope === 'LINE' && lineUsers.length === 0
+                ? 'Managers assigned to report to you and their direct reports will appear here automatically.'
+                : 'Adjust your search query, department, or status filters.'}
+            </p>
+            {directoryScope === 'LINE' && users.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setDirectoryScope('ALL')}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-warm bg-surface text-xs font-semibold text-primary hover:border-primary/40 hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <Building2 className="size-3.5" />
+                <span>View All Team Members ({users.length})</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -359,7 +451,7 @@ export const AdminUsersPage: React.FC = () => {
                   <th className="py-3 px-4">Role</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Department</th>
-                  <th className="py-3 px-4">Reporting Manager</th>
+                  <th className="py-3 px-4">Supervisor / Reporting</th>
                   <th className="py-3 px-4 whitespace-nowrap">Added</th>
                   <th className="py-3 px-5 text-right">Actions</th>
                 </tr>
@@ -417,10 +509,18 @@ export const AdminUsersPage: React.FC = () => {
                           member.manager_name ? (
                             <span className="text-ink font-medium">{member.manager_name}</span>
                           ) : (
-                            <span className="text-amber-700 font-medium">Unassigned</span>
+                            <span className="text-amber-700 font-medium">Unassigned Manager</span>
+                          )
+                        ) : member.role === 'MANAGER' ? (
+                          member.reporting_admin_name ? (
+                            <span className="text-ink font-medium">{member.reporting_admin_name}</span>
+                          ) : (
+                            <span className="text-amber-700 font-medium">Unassigned Admin</span>
                           )
                         ) : (
-                          <span className="text-slate-400 font-semibold">—</span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary">
+                            Executive Lead
+                          </span>
                         )}
                       </td>
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-700 font-medium whitespace-nowrap">
@@ -506,146 +606,28 @@ export const AdminUsersPage: React.FC = () => {
       </div>
 
       {/* Confirmation Modal */}
-      {confirmDialog && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="confirm-dialog-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs"
-        >
-          <div className="bg-surface rounded-2xl border border-border-warm max-w-md w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-5 space-y-4">
-              <div className="flex items-start gap-3.5">
-                <div
-                  className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${
-                    confirmDialog.type === 'delete'
-                      ? 'bg-red-100 text-destructive'
-                      : confirmDialog.type === 'deactivate'
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-emerald-100 text-emerald-800'
-                  }`}
-                >
-                  <AlertTriangle className="size-5" />
-                </div>
-                <div className="space-y-1">
-                  <h3 id="confirm-dialog-title" className="text-base font-bold text-ink">
-                    {confirmDialog.type === 'delete'
-                      ? `Delete ${confirmDialog.user.name} (${
-                          confirmDialog.user.role === 'MANAGER'
-                            ? 'Manager'
-                            : confirmDialog.user.role === 'ADMIN'
-                            ? 'Administrator'
-                            : 'Employee'
-                        })?`
-                      : confirmDialog.type === 'deactivate'
-                      ? `Deactivate ${confirmDialog.user.name}?`
-                      : `Reactivate ${confirmDialog.user.name}?`}
-                  </h3>
-                  <div className="text-xs text-muted leading-relaxed">
-                    {confirmDialog.type === 'delete' ? (
-                      <div className="space-y-2.5">
-                        <p>
-                          Are you sure you want to delete{' '}
-                          <strong className="text-ink">{confirmDialog.user.name}</strong>?
-                        </p>
-                        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-destructive font-medium space-y-1">
-                          <p className="font-semibold text-[13px]">Permanent Erasure Warning</p>
-                          <p className="text-xs text-red-700 leading-normal">
-                            If you delete this {confirmDialog.user.role === 'MANAGER' ? 'manager' : 'employee'}, their travel records will erase permanently and we can't bring back. All associated travel requests, expense receipts, and audit history will be permanently erased.
-                          </p>
-                        </div>
-                      </div>
-                    ) : confirmDialog.type === 'deactivate' ? (
-                      <p>
-                        Deactivating <strong>{confirmDialog.user.name}</strong> will immediately revoke
-                        their login and authorization rights. All past expense receipts and trip records
-                        remain securely saved.
-                      </p>
-                    ) : (
-                      <p>
-                        Reactivating <strong>{confirmDialog.user.name}</strong> will restore their access
-                        to sign in and participate in travel workflows.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {confirmDialog.type === 'delete' && (
-                <div className="pt-2">
-                  <label className="flex items-start gap-2.5 p-3 rounded-xl bg-surface-subtle/80 border border-border-warm cursor-pointer select-none hover:bg-surface-subtle transition-colors">
-                    <input
-                      type="checkbox"
-                      id="confirm-erasure-checkbox"
-                      name="confirmDeleteChecked"
-                      checked={confirmDeleteChecked}
-                      onChange={(e) => setConfirmDeleteChecked(e.target.checked)}
-                      className="mt-0.5 size-4 rounded text-destructive border-border-warm focus:ring-destructive/30 cursor-pointer"
-                    />
-                    <span className="text-xs text-ink leading-snug font-medium">
-                      I understand that if you delete this {confirmDialog.user.role === 'MANAGER' ? 'manager' : 'employee'}, their records will erase and we can't bring back this data.
-                    </span>
-                  </label>
-                </div>
-              )}
-
-              {actionError && (
-                <div
-                  role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-destructive font-medium"
-                >
-                  {actionError}
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-border-warm">
-                <button
-                  type="button"
-                  disabled={isProcessingAction}
-                  onClick={() => {
-                    setConfirmDialog(null);
-                    setActionError(null);
-                    setConfirmDeleteChecked(false);
-                  }}
-                  className="px-3.5 py-2 rounded-xl border border-border-warm bg-surface hover:bg-surface-subtle text-xs font-semibold text-ink cursor-pointer disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={
-                    isProcessingAction ||
-                    (confirmDialog.type === 'delete' && !confirmDeleteChecked)
-                  }
-                  onClick={handleConfirmAction}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white cursor-pointer active:scale-[0.98] transition-all disabled:opacity-50 ${
-                    confirmDialog.type === 'delete'
-                      ? 'bg-destructive hover:bg-destructive/90'
-                      : confirmDialog.type === 'deactivate'
-                      ? 'bg-amber-700 hover:bg-amber-800'
-                      : 'bg-emerald-700 hover:bg-emerald-800'
-                  }`}
-                >
-                  {isProcessingAction && <Loader2 className="size-3.5 animate-spin" />}
-                  <span>
-                    {confirmDialog.type === 'delete'
-                      ? 'Permanently Delete Member'
-                      : confirmDialog.type === 'deactivate'
-                      ? 'Deactivate User'
-                      : 'Reactivate User'}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmUserActionModal
+        isOpen={Boolean(confirmDialog)}
+        dialog={confirmDialog}
+        isProcessing={isProcessingAction}
+        error={actionError}
+        confirmDeleteChecked={confirmDeleteChecked}
+        onConfirmCheckedChange={setConfirmDeleteChecked}
+        onClose={() => {
+          setConfirmDialog(null);
+          setActionError(null);
+          setConfirmDeleteChecked(false);
+        }}
+        onConfirm={handleConfirmAction}
+        onSwitchToDeactivate={handleSwitchToDeactivate}
+      />
 
       {/* Edit Modal */}
       {editingUser && (
         <UserFormModal
           initialUser={editingUser}
           managers={managers}
+          admins={admins}
           departments={departments}
           onClose={() => {
             setEditingUser(null);

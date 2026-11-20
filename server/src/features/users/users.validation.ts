@@ -20,6 +20,7 @@ export function validateCreateUserInput(raw: any): CreateManagedUserDto {
   const role = raw?.role;
   const department = typeof raw?.department === 'string' ? raw.department.trim() : '';
   const managerId = raw?.managerId ? String(raw.managerId).trim() : null;
+  const reportingAdminId = raw?.reportingAdminId ? String(raw.reportingAdminId).trim() : null;
 
   if (name.length < 2 || name.length > 100 || !NAME_REGEX.test(name) || (name.match(/[A-Za-z]/g) || []).length < 2) {
     throw new UserValidationError(
@@ -32,8 +33,8 @@ export function validateCreateUserInput(raw: any): CreateManagedUserDto {
   if (password.trim().length < 8) {
     throw new UserValidationError('Initial password must be at least 8 characters long and cannot be only whitespace.');
   }
-  if (role !== 'EMPLOYEE' && role !== 'MANAGER') {
-    throw new UserValidationError('Role must be either EMPLOYEE or MANAGER.');
+  if (role !== 'EMPLOYEE' && role !== 'MANAGER' && role !== 'ADMIN') {
+    throw new UserValidationError('Role must be EMPLOYEE, MANAGER, or ADMIN.');
   }
   if (department.length < 2 || department.length > 80 || !/[A-Za-z0-9]/.test(department)) {
     throw new UserValidationError('Department must be between 2 and 80 characters.');
@@ -42,16 +43,28 @@ export function validateCreateUserInput(raw: any): CreateManagedUserDto {
   if (effectiveManagerId !== null && !UUID_REGEX.test(effectiveManagerId)) {
     throw new UserValidationError('Invalid reporting manager ID format.');
   }
+  const effectiveReportingAdminId = role === 'MANAGER' ? reportingAdminId : null;
+  if (effectiveReportingAdminId !== null && !UUID_REGEX.test(effectiveReportingAdminId)) {
+    throw new UserValidationError('Invalid reporting admin ID format.');
+  }
 
-  return { name, email, password, role, department, managerId: effectiveManagerId };
+  return {
+    name,
+    email,
+    password,
+    role,
+    department,
+    managerId: effectiveManagerId,
+    reportingAdminId: effectiveReportingAdminId,
+  };
 }
 
 export function validateUpdateUserInput(raw: any): UpdateManagedUserDto {
   const dto: UpdateManagedUserDto = {};
 
   if (raw?.role !== undefined) {
-    if (raw.role !== 'EMPLOYEE' && raw.role !== 'MANAGER') {
-      throw new UserValidationError('Role must be either EMPLOYEE or MANAGER.');
+    if (raw.role !== 'EMPLOYEE' && raw.role !== 'MANAGER' && raw.role !== 'ADMIN') {
+      throw new UserValidationError('Role must be EMPLOYEE, MANAGER, or ADMIN.');
     }
     dto.role = raw.role;
   }
@@ -76,8 +89,27 @@ export function validateUpdateUserInput(raw: any): UpdateManagedUserDto {
     }
   }
 
-  if (dto.role === undefined && dto.department === undefined && dto.managerId === undefined) {
-    throw new UserValidationError('Provide at least one field to update (role, department, or managerId).');
+  if (raw?.reportingAdminId !== undefined) {
+    if (raw.reportingAdminId === null || raw.reportingAdminId === '') {
+      dto.reportingAdminId = null;
+    } else {
+      const reportingAdminId = String(raw.reportingAdminId).trim();
+      if (!UUID_REGEX.test(reportingAdminId)) {
+        throw new UserValidationError('Invalid reporting admin ID format.');
+      }
+      dto.reportingAdminId = reportingAdminId;
+    }
+  }
+
+  if (
+    dto.role === undefined &&
+    dto.department === undefined &&
+    dto.managerId === undefined &&
+    dto.reportingAdminId === undefined
+  ) {
+    throw new UserValidationError(
+      'Provide at least one field to update (role, department, managerId, or reportingAdminId).'
+    );
   }
 
   return dto;
