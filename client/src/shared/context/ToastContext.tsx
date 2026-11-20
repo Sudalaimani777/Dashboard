@@ -72,17 +72,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Safe navigation fallback (works even if rendered without React Router)
-  let navigate: (url: string) => void;
-  try {
-    navigate = useNavigate();
-  } catch {
-    navigate = (url: string) => {
-      if (typeof window !== 'undefined') {
-        window.location.href = url;
-      }
-    };
-  }
+  const navigate = useNavigate();
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));

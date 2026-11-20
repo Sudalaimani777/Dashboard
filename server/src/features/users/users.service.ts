@@ -24,6 +24,20 @@ export class UsersService {
     }
   }
 
+  private async assertValidReportingAdmin(reportingAdminId: string | null | undefined, targetUserId?: string) {
+    if (!reportingAdminId) return;
+    if (targetUserId && reportingAdminId === targetUserId) {
+      throw new UserValidationError('A user cannot be assigned as their own reporting admin.', 400);
+    }
+    const admin = await this.repo.findById(reportingAdminId);
+    if (!admin) {
+      throw new UserValidationError('Selected reporting admin does not exist.', 400);
+    }
+    if (admin.role !== 'ADMIN') {
+      throw new UserValidationError('Assigned reporting admin must hold the ADMIN role.', 400);
+    }
+  }
+
   async listUsers(): Promise<UserDirectoryItem[]> {
     return this.repo.listAll();
   }
@@ -41,6 +55,11 @@ export class UsersService {
       await this.assertValidManager(effectiveManagerId);
     }
 
+    const effectiveReportingAdminId = dto.reportingAdminId ?? null;
+    if (effectiveReportingAdminId) {
+      await this.assertValidReportingAdmin(effectiveReportingAdminId);
+    }
+
     const passwordHash = await bcrypt.hash(dto.password, 12);
     return this.repo.createUser({
       name: dto.name,
@@ -49,6 +68,7 @@ export class UsersService {
       role: dto.role,
       department: dto.department,
       managerId: effectiveManagerId,
+      reportingAdminId: effectiveReportingAdminId,
     });
   }
 
@@ -74,6 +94,20 @@ export class UsersService {
 
     if (dto.managerId !== undefined) {
       await this.assertValidManager(dto.managerId, targetUserId);
+    }
+
+    if (dto.reportingAdminId !== undefined) {
+      await this.assertValidReportingAdmin(dto.reportingAdminId, targetUserId);
+    }
+
+    const effectiveRole = dto.role ?? existing.role;
+    if (effectiveRole === 'MANAGER') {
+      dto.managerId = null;
+    } else if (effectiveRole === 'EMPLOYEE') {
+      dto.reportingAdminId = null;
+    } else if (effectiveRole === 'ADMIN') {
+      dto.managerId = null;
+      dto.reportingAdminId = null;
     }
 
     const updated = await this.repo.updateUser(targetUserId, dto);
@@ -126,6 +160,14 @@ export class UsersService {
       if (activeAdmins <= 1) {
         throw new UserValidationError('Cannot delete the sole Administrator account.', 400);
       }
+    }
+
+    const travelRecordCount = await this.repo.countUserTravelRecords(targetUserId);
+    if (travelRecordCount > 0) {
+      throw new UserValidationError(
+        'Cannot delete user with associated corporate travel or financial records. Please deactivate the account instead to preserve financial audit compliance.',
+        400
+      );
     }
 
     const deleted = await this.repo.deleteUser(targetUserId);

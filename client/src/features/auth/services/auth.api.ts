@@ -8,7 +8,7 @@ import type {
   User,
 } from '../types/auth.types';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../../config/api';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

@@ -56,13 +56,16 @@ export const DashboardPage: React.FC = () => {
     }
     switch (user.role) {
       case 'EMPLOYEE':
-        if (activeTab === 'analytics') {
+        if (activeTab === 'analytics' || activeTab === 'spend-analytics') {
           return <EmployeeSpendAnalyticsPage />;
         }
         return <EmployeeTravelPortal activeTab={activeTab} />;
       case 'MANAGER':
-        if (activeTab === 'analytics') {
+        if (activeTab === 'team-analytics' || activeTab === 'analytics') {
           return <ManagerTeamAnalyticsPage />;
+        }
+        if (activeTab === 'spend-analytics') {
+          return <EmployeeSpendAnalyticsPage />;
         }
         return <ManagerQueuePortal activeTab={activeTab} />;
       case 'ADMIN':

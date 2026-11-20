@@ -2,13 +2,14 @@ import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../../config/env.js';
 import { JwtPayload } from '../../features/auth/auth.types.js';
+import { query } from '../db/pool.js';
 import { sendError } from '../utils/response.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: JwtPayload;
 }
 
-export function requireAuth(
+export async function requireAuth(
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
@@ -33,6 +34,19 @@ export function requireAuth(
       token,
       config.jwt.secret as jwt.Secret
     ) as unknown as JwtPayload;
+
+    if (!decoded || !decoded.userId) {
+      return sendError(res, 'Invalid authorization token payload.', 401);
+    }
+
+    // Verify user is active in database (session revocation check)
+    const userRes = await query('SELECT is_active, role, department FROM users WHERE id = $1', [decoded.userId]);
+    if (userRes.rows.length === 0 || !userRes.rows[0].is_active) {
+      return sendError(res, 'Access denied. Account is inactive or has been deactivated.', 401);
+    }
+
+    decoded.role = userRes.rows[0].role || decoded.role;
+    decoded.department = userRes.rows[0].department || decoded.department;
     req.user = decoded;
     next();
   } catch (err) {

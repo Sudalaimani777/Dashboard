@@ -122,9 +122,27 @@ export class TravelService {
       }
     }
 
+    // Fetch requester profile for role & reporting hierarchy
+    const userRes = await pool.query(
+      'SELECT id, name, email, role, manager_id, reporting_admin_id FROM users WHERE id = $1',
+      [userId]
+    );
+    const requester = userRes.rows[0];
+    const isManager = requester?.role === 'MANAGER';
+
+    // Option A: Manager personal trips start directly in PENDING_ADMIN_APPROVAL (bypasses redundant Tier 1 self-review)
+    const initialStatus: TravelStatus = isDraft
+      ? 'DRAFT'
+      : isManager
+      ? 'PENDING_ADMIN_APPROVAL'
+      : 'PENDING_MANAGER_REVIEW';
+
+    const assignedAdminId = isManager && requester?.reporting_admin_id ? requester.reporting_admin_id : null;
+
     // Format for repository
     const repoPayload: CreateTravelRequestData = {
       userId,
+      adminId: assignedAdminId,
       travelType: (normalizedValidation.travel_type as TravelType) || 'UPCOMING',
       title: normalizedValidation.title,
       purpose: normalizedValidation.purpose || 'Travel draft',
@@ -150,7 +168,7 @@ export class TravelService {
         notes: e.notes
       })),
       currency: rawInput.currency || 'INR',
-      status: isDraft ? 'DRAFT' : 'PENDING_MANAGER_REVIEW'
+      status: initialStatus
     };
 
     const created = await this.repo.createRequestWithExpenses(repoPayload);
@@ -158,31 +176,49 @@ export class TravelService {
     // Transactional Notification Dispatch
     if (created.status !== 'DRAFT') {
       try {
-        const userRes = await pool.query(
-          'SELECT id, name, email, role, manager_id FROM users WHERE id = $1',
-          [userId]
-        );
-        const requester = userRes.rows[0];
-
-        if (requester?.role === 'MANAGER') {
-          // Manager personal travel: executive oversight notification to all admins
-          const adminRes = await pool.query(
-            "SELECT id, name, email FROM users WHERE role = 'ADMIN' AND (is_active IS NULL OR is_active = TRUE)"
-          );
-          for (const admin of adminRes.rows) {
-            await notificationService.notify({
-              userId: admin.id,
-              actorId: userId,
-              requestId: created.id,
-              type: 'MANAGER_OVERSIGHT',
-              title: 'Executive Oversight: Manager Travel Request',
-              message: `${requester.name} submitted a personal travel request: "${created.title}"`,
-              linkUrl: '/dashboard?tab=notifications',
-              recipientEmail: admin.email,
-              recipientName: admin.name,
-              emailType: 'MANAGER_OVERSIGHT',
-              emailData: { managerName: requester.name, trip: created }
-            });
+        if (isManager) {
+          if (requester?.reporting_admin_id) {
+            // Targeted executive oversight notification to assigned Reporting Admin
+            const adminRes = await pool.query(
+              'SELECT id, name, email FROM users WHERE id = $1',
+              [requester.reporting_admin_id]
+            );
+            if (adminRes.rows.length > 0) {
+              const admin = adminRes.rows[0];
+              await notificationService.notify({
+                userId: admin.id,
+                actorId: userId,
+                requestId: created.id,
+                type: 'MANAGER_OVERSIGHT',
+                title: 'Executive Oversight: Manager Travel Request',
+                message: `${requester.name} submitted a personal travel request: "${created.title}"`,
+                linkUrl: '/dashboard?tab=notifications',
+                recipientEmail: admin.email,
+                recipientName: admin.name,
+                emailType: 'MANAGER_OVERSIGHT',
+                emailData: { managerName: requester.name, trip: created }
+              });
+            }
+          } else {
+            // Fallback: notify all active admins if manager has no assigned reporting admin
+            const adminRes = await pool.query(
+              "SELECT id, name, email FROM users WHERE role = 'ADMIN' AND (is_active IS NULL OR is_active = TRUE)"
+            );
+            for (const admin of adminRes.rows) {
+              await notificationService.notify({
+                userId: admin.id,
+                actorId: userId,
+                requestId: created.id,
+                type: 'MANAGER_OVERSIGHT',
+                title: 'Executive Oversight: Manager Travel Request',
+                message: `${requester.name} submitted a personal travel request: "${created.title}"`,
+                linkUrl: '/dashboard?tab=notifications',
+                recipientEmail: admin.email,
+                recipientName: admin.name,
+                emailType: 'MANAGER_OVERSIGHT',
+                emailData: { managerName: requester.name, trip: created }
+              });
+            }
           }
         } else if (requester?.manager_id) {
           // Employee travel request: notify line manager
@@ -235,6 +271,13 @@ export class TravelService {
       throw new Error('Access denied: You can only view your own travel requests');
     }
 
+    if (actorRole === 'MANAGER' && actorId && request.userId !== actorId) {
+      const assignedManagerId = request.managerId || (request as any).manager_id;
+      if (assignedManagerId && assignedManagerId !== actorId) {
+        throw new Error('Access denied: You can only view travel requests for your direct reports');
+      }
+    }
+
     return request;
   }
 
@@ -255,8 +298,8 @@ export class TravelService {
   /**
    * Tier 2 Executive Admin governance queue.
    */
-  async getAdminQueue(): Promise<TravelRequest[]> {
-    return this.repo.getAdminQueue();
+  async getAdminQueue(adminId?: string, scope: 'assigned' | 'all' = 'all'): Promise<TravelRequest[]> {
+    return this.repo.getAdminQueue(adminId, scope);
   }
 
   /**
@@ -268,13 +311,37 @@ export class TravelService {
   async managerReview(
     managerId: string,
     requestId: string,
-    options: ManagerReviewOptions
+    options: ManagerReviewOptions,
+    actorRole: TravelRole = 'MANAGER'
   ): Promise<TravelRequest> {
     const request = await this.getRequestById(requestId);
 
     const requestOwnerId = request.userId || request.user_id;
     if (requestOwnerId && requestOwnerId === managerId) {
       throw new Error('Self-review blocked: Managers cannot audit or approve their own personal travel requests');
+    }
+
+    const assignedManagerId = request.managerId || (request as any).manager_id;
+    if (assignedManagerId && assignedManagerId !== managerId && actorRole !== 'ADMIN') {
+      throw new Error('Forbidden: You are not authorized to audit travel requests outside your reporting line');
+    }
+
+    if ((request.requesterRole === 'MANAGER' || (request as any).requester_role === 'MANAGER') && actorRole !== 'ADMIN') {
+      throw new Error('Forbidden: Manager personal trips require executive approval from an Administrator');
+    }
+
+    // For valid UUIDs, verify against user directory in DB
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestOwnerId || '');
+    if (isUuid && actorRole !== 'ADMIN') {
+      const userRes = await pool.query('SELECT role, manager_id FROM users WHERE id = $1', [requestOwnerId]);
+      const requester = userRes.rows[0];
+      if (requester?.role === 'MANAGER') {
+        throw new Error('Forbidden: Manager personal trips require executive approval from an Administrator');
+      }
+      const directManagerId = assignedManagerId || requester?.manager_id;
+      if (!directManagerId || directManagerId !== managerId) {
+        throw new Error('Forbidden: You are not authorized to audit travel requests outside your reporting line');
+      }
     }
 
     const reviewableStatuses: TravelStatus[] = ['PENDING_MANAGER_REVIEW', 'REVISION_REQUESTED_BY_ADMIN_TO_MANAGER'];
@@ -312,23 +379,33 @@ export class TravelService {
       throw new Error(`Invalid status transition from ${request.status} to ${toStatus}`);
     }
 
+    const isManagerUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(managerId || '');
+    let manager: any = null;
+    if (isManagerUuid) {
+      const mgrRes = await pool.query(
+        'SELECT id, name, email, reporting_admin_id FROM users WHERE id = $1',
+        [managerId]
+      );
+      manager = mgrRes.rows[0];
+    }
+
+    const assignedAdminId =
+      normalizedAction === 'APPROVE_AND_FORWARD' && manager?.reporting_admin_id
+        ? manager.reporting_admin_id
+        : null;
+
     const updated = await this.repo.updateStatusWithTimeline({
       requestId,
       actorId: managerId,
       actorRole: 'MANAGER',
       fromStatus: request.status,
       toStatus,
-      remarks: options.remarks || null
+      remarks: options.remarks || null,
+      adminId: assignedAdminId,
     });
 
     // Transactional Notification Dispatch
     try {
-      const mgrRes = await pool.query(
-        'SELECT id, name, email FROM users WHERE id = $1',
-        [managerId]
-      );
-      const manager = mgrRes.rows[0];
-
       const reqUserRes = await pool.query(
         'SELECT id, name, email, manager_id FROM users WHERE id = $1',
         [request.userId || (request as any).user_id]
@@ -348,24 +425,48 @@ export class TravelService {
           isRead: true
         });
 
-        // Manager approved: notify all active Admins
-        const adminRes = await pool.query(
-          "SELECT id, name, email FROM users WHERE role = 'ADMIN' AND (is_active IS NULL OR is_active = TRUE)"
-        );
-        for (const admin of adminRes.rows) {
-          await notificationService.notify({
-            userId: admin.id,
-            actorId: managerId,
-            requestId,
-            type: 'TRAVEL_SUBMITTED',
-            title: 'Travel Request Awaiting Executive Approval',
-            message: `Manager ${manager?.name || 'Manager'} approved travel request "${request.title}" and forwarded it for executive review`,
-            linkUrl: '/dashboard?tab=notifications',
-            recipientEmail: admin.email,
-            recipientName: admin.name,
-            emailType: 'TRAVEL_SUBMITTED',
-            emailData: { requesterName: requester?.name || 'Employee', trip: updated }
-          });
+        if (manager?.reporting_admin_id) {
+          // Targeted notification to Manager's assigned Reporting Admin
+          const adminRes = await pool.query(
+            'SELECT id, name, email FROM users WHERE id = $1',
+            [manager.reporting_admin_id]
+          );
+          if (adminRes.rows.length > 0) {
+            const admin = adminRes.rows[0];
+            await notificationService.notify({
+              userId: admin.id,
+              actorId: managerId,
+              requestId,
+              type: 'TRAVEL_SUBMITTED',
+              title: 'Travel Request Awaiting Executive Approval',
+              message: `Manager ${manager?.name || 'Manager'} approved travel request "${request.title}" and forwarded it for executive review`,
+              linkUrl: '/dashboard?tab=notifications',
+              recipientEmail: admin.email,
+              recipientName: admin.name,
+              emailType: 'TRAVEL_SUBMITTED',
+              emailData: { requesterName: requester?.name || 'Employee', trip: updated }
+            });
+          }
+        } else {
+          // Manager approved: notify all active Admins (fallback)
+          const adminRes = await pool.query(
+            "SELECT id, name, email FROM users WHERE role = 'ADMIN' AND (is_active IS NULL OR is_active = TRUE)"
+          );
+          for (const admin of adminRes.rows) {
+            await notificationService.notify({
+              userId: admin.id,
+              actorId: managerId,
+              requestId,
+              type: 'TRAVEL_SUBMITTED',
+              title: 'Travel Request Awaiting Executive Approval',
+              message: `Manager ${manager?.name || 'Manager'} approved travel request "${request.title}" and forwarded it for executive review`,
+              linkUrl: '/dashboard?tab=notifications',
+              recipientEmail: admin.email,
+              recipientName: admin.name,
+              emailType: 'TRAVEL_SUBMITTED',
+              emailData: { requesterName: requester?.name || 'Employee', trip: updated }
+            });
+          }
         }
       } else if (normalizedAction === 'REQUEST_REVISION') {
         // Manager's own card transitions to REVISION_REQUESTED (marked read)

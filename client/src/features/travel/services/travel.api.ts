@@ -14,7 +14,7 @@ import type {
   SupportingDoc,
 } from '../types/travel.types';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../../config/api';
 
 export const travelApiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -107,9 +107,10 @@ class TravelApiService {
   /**
    * Tier 2 Admin executive governance queue.
    */
-  async getAdminQueue(): Promise<TravelRequest[]> {
+  async getAdminQueue(scope?: 'assigned' | 'all'): Promise<TravelRequest[]> {
     try {
-      const res = await travelApiClient.get<ApiResponse<TravelRequest[]>>('/travel/admin-queue');
+      const url = scope ? `/travel/admin-queue?scope=${scope}` : '/travel/admin-queue';
+      const res = await travelApiClient.get<ApiResponse<TravelRequest[]>>(url);
       return res.data.data;
     } catch (err) {
       this.handleError(err, 'Failed to fetch admin governance queue');

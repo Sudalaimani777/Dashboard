@@ -4,8 +4,7 @@ import type { Notification } from '../types/notification.types';
 import { notificationsApi } from '../services/notifications.api';
 import { playNotificationChime } from '../../../shared/utils/audioChime';
 import { useToast } from '../../../shared/context/ToastContext';
-
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../../config/api';
 
 export interface UseNotificationsResult {
   notifications: Notification[];
@@ -27,13 +26,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Safely retrieve toast context (works even if rendered without ToastProvider)
-  let showToast: ((toast: any) => string) | undefined;
-  try {
-    const toastContext = useToast();
-    showToast = toastContext.showToast;
-  } catch {
-    showToast = undefined;
-  }
+  const toastContext = useToast();
+  const showToast = toastContext.showToast;
 
   const refresh = useCallback(async () => {
     try {

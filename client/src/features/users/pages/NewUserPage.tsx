@@ -26,6 +26,7 @@ export const NewUserPage: React.FC = () => {
   const { showToast } = useToast();
 
   const [managers, setManagers] = useState<DirectoryUser[]>([]);
+  const [admins, setAdmins] = useState<DirectoryUser[]>([]);
   const [departments, setDepartments] = useState<string[]>(DEFAULT_DEPARTMENTS);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -43,6 +44,7 @@ export const NewUserPage: React.FC = () => {
       role: 'EMPLOYEE',
       department: 'Engineering',
       managerId: '',
+      reportingAdminId: '',
     },
     mode: 'onTouched',
   });
@@ -64,7 +66,8 @@ export const NewUserPage: React.FC = () => {
     usersApi
       .listUsers()
       .then((list) => {
-        setManagers(list.filter((u) => u.role === 'MANAGER'));
+        setManagers(list.filter((u) => u.role === 'MANAGER' && u.is_active !== false));
+        setAdmins(list.filter((u) => u.role === 'ADMIN' && u.is_active !== false));
         const deptSet = new Set<string>(DEFAULT_DEPARTMENTS);
         for (const u of list) {
           if (u.department) deptSet.add(u.department);
@@ -96,6 +99,7 @@ export const NewUserPage: React.FC = () => {
         role: values.role,
         department: values.department.trim(),
         managerId: values.role === 'EMPLOYEE' ? values.managerId || null : null,
+        reportingAdminId: values.role === 'MANAGER' ? values.reportingAdminId || null : null,
       });
       showToast({
         title: 'Team member added',
@@ -195,6 +199,7 @@ export const NewUserPage: React.FC = () => {
               >
                 <option value="EMPLOYEE">Employee</option>
                 <option value="MANAGER">Manager</option>
+                <option value="ADMIN">Administrator</option>
               </select>
               {errors.role?.message && (
                 <p role="alert" className="text-xs text-destructive font-medium">
@@ -240,16 +245,49 @@ export const NewUserPage: React.FC = () => {
               </label>
               <select
                 id="new-user-manager"
-                className="w-full h-11 px-3 rounded-xl border border-border-warm bg-surface text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary cursor-pointer"
+                className="w-full h-11 px-3.5 rounded-xl border border-border-warm bg-surface text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary cursor-pointer"
                 {...register('managerId')}
               >
                 <option value="">Unassigned (any manager)</option>
                 {managers.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.name} ({m.department})
+                    {m.name} ({m.department}) — {m.email}
                   </option>
                 ))}
               </select>
+              <p className="text-[11px] text-muted">
+                Assigned line manager conducts Tier 1 audits for this employee's travel requests.
+              </p>
+            </div>
+          )}
+
+          {role === 'MANAGER' && (
+            <div className="space-y-1.5">
+              <label htmlFor="new-user-reporting-admin" className="block text-xs font-semibold text-ink">
+                Reporting Admin
+              </label>
+              <select
+                id="new-user-reporting-admin"
+                className="w-full h-11 px-3.5 rounded-xl border border-border-warm bg-surface text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary cursor-pointer"
+                {...register('reportingAdminId')}
+              >
+                <option value="">Unassigned (general executive pool)</option>
+                {admins.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} ({a.department}) — {a.email}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-muted">
+                Designated administrator who reviews this manager's travel requests and receives escalated team approvals.
+              </p>
+            </div>
+          )}
+
+          {role === 'ADMIN' && (
+            <div className="p-3.5 rounded-xl bg-surface-subtle border border-border-warm text-xs text-muted leading-relaxed">
+              <strong className="text-ink font-semibold block mb-0.5">Executive Governance Role</strong>
+              Administrators hold organization-wide executive clearance and department budget authority. No reporting supervisor is required.
             </div>
           )}
 

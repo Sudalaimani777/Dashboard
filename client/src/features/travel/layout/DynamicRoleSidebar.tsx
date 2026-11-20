@@ -5,6 +5,7 @@ import {
   Users,
   ShieldCheck,
   PieChart,
+  BarChart3,
   Pin,
   PinOff,
   PlusCircle,
@@ -31,7 +32,8 @@ export function getRoleNavItems(role: string): NavItemConfig[] {
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'team', label: 'Team Approvals', icon: Users },
         { id: 'personal', label: 'My Travel', icon: Plane },
-        { id: 'analytics', label: 'Team Analytics', icon: PieChart },
+        { id: 'team-analytics', label: 'Team Analytics', icon: BarChart3 },
+        { id: 'spend-analytics', label: 'Spend Analytics', icon: PieChart },
       ];
     case 'ADMIN':
       return [

@@ -19,7 +19,13 @@ export const config = {
     password: process.env.PGPASSWORD,
   },
   jwt: {
-    secret: process.env.JWT_SECRET || 'super-secret-jwt-key-change-in-production',
+    secret:
+      process.env.JWT_SECRET ||
+      (process.env.NODE_ENV === 'production'
+        ? (() => {
+            throw new Error('FATAL: JWT_SECRET environment variable is required in production!');
+          })()
+        : 'super-secret-jwt-key-change-in-production'),
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
   smtp: {

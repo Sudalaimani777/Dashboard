@@ -9,12 +9,15 @@ const USER_DIRECTORY_SELECT = `
     u.role,
     u.department,
     u.manager_id,
+    u.reporting_admin_id,
     u.is_active,
     m.name AS manager_name,
+    adm.name AS reporting_admin_name,
     u.created_at,
     u.updated_at
   FROM users u
   LEFT JOIN users m ON u.manager_id = m.id
+  LEFT JOIN users adm ON u.reporting_admin_id = adm.id
 `;
 
 export class UsersRepository {
@@ -44,10 +47,11 @@ export class UsersRepository {
     role: ManagedUserRole;
     department: string;
     managerId: string | null;
+    reportingAdminId?: string | null;
   }): Promise<UserDirectoryItem> {
     const inserted = await query(
-      `INSERT INTO users (name, email, password_hash, role, department, manager_id)
-       VALUES ($1, LOWER($2), $3, $4, $5, $6)
+      `INSERT INTO users (name, email, password_hash, role, department, manager_id, reporting_admin_id)
+       VALUES ($1, LOWER($2), $3, $4, $5, $6, $7)
        RETURNING id`,
       [
         params.name,
@@ -56,6 +60,7 @@ export class UsersRepository {
         params.role,
         params.department,
         params.managerId,
+        params.reportingAdminId ?? null,
       ]
     );
     const created = await this.findById(inserted.rows[0].id);
@@ -67,7 +72,12 @@ export class UsersRepository {
 
   async updateUser(
     id: string,
-    fields: { role?: ManagedUserRole; department?: string; managerId?: string | null }
+    fields: {
+      role?: ManagedUserRole;
+      department?: string;
+      managerId?: string | null;
+      reportingAdminId?: string | null;
+    }
   ): Promise<UserDirectoryItem | null> {
     const setClauses: string[] = [];
     const values: any[] = [];
@@ -84,6 +94,10 @@ export class UsersRepository {
     if (fields.managerId !== undefined) {
       setClauses.push(`manager_id = $${idx++}`);
       values.push(fields.managerId);
+    }
+    if (fields.reportingAdminId !== undefined) {
+      setClauses.push(`reporting_admin_id = $${idx++}`);
+      values.push(fields.reportingAdminId);
     }
 
     setClauses.push('updated_at = CURRENT_TIMESTAMP');
@@ -125,6 +139,7 @@ export class UsersRepository {
 
   async deleteUser(id: string): Promise<boolean> {
     await query(`UPDATE users SET manager_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE manager_id = $1`, [id]);
+    await query(`UPDATE users SET reporting_admin_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE reporting_admin_id = $1`, [id]);
     const res = await query(`DELETE FROM users WHERE id = $1`, [id]);
     return (res.rowCount ?? 0) > 0;
   }
