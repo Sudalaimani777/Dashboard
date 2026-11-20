@@ -171,7 +171,7 @@ export const PhoneInputWithCountry: React.FC<PhoneInputWithCountryProps> = ({
         <div
           role="listbox"
           aria-label="Country list"
-          className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 bg-surface rounded-xl border border-border-warm shadow-xl z-50 flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
+          className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 max-w-[calc(100vw-2rem)] right-0 sm:right-auto bg-surface rounded-xl border border-border-warm shadow-xl z-50 flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150"
         >
           {/* Search Header */}
           <div className="p-2 border-b border-border-warm bg-surface-subtle/40">

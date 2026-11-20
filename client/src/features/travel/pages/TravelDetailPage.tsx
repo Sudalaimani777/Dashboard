@@ -257,26 +257,26 @@ export const TravelDetailPage: React.FC = () => {
       {/* Owner Action Banners */}
       {isOwner && request.status === 'DRAFT' && (
         <div className="flex flex-col gap-3">
-          <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-xs">
+          <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-3">
               <FileEdit className="size-5 text-amber-700 shrink-0" />
               <div className="text-xs text-ink">
                 <strong>Saved Travel Draft:</strong> This request is currently saved as an unsubmitted draft.
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 disabled={confirmCancel}
                 onClick={() => setConfirmCancel(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-red-200 bg-red-50/60 hover:bg-red-50 text-destructive text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 active:scale-[0.98] disabled:opacity-50"
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg border border-red-200 bg-red-50/60 hover:bg-red-50 text-destructive text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 active:scale-[0.98] disabled:opacity-50 flex-1 sm:flex-initial"
               >
                 <Trash2 className="size-4" /> Discard Draft
               </button>
               <button
                 type="button"
                 onClick={() => navigate(`/travel/requests/${request.id}/edit?tab=drafts`)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover active:scale-[0.98] text-white text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover active:scale-[0.98] text-white text-xs font-semibold transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 flex-1 sm:flex-initial"
               >
                 Resume & Submit <ChevronRight className="size-4" />
               </button>
@@ -297,7 +297,7 @@ export const TravelDetailPage: React.FC = () => {
 
       {/* Employee Revision Banner */}
       {isOwner && request.status.includes('REVISION') && (
-        <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-xs">
+        <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <AlertTriangle className="size-5 text-amber-700 shrink-0" />
             <div className="text-xs text-ink">
@@ -307,7 +307,7 @@ export const TravelDetailPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate(`/travel/requests/${request.id}/edit`)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-[0.98] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-[0.98] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto"
           >
             Fix & Resubmit Request <ChevronRight className="size-4" />
           </button>

@@ -260,7 +260,7 @@ export const ManagerQueuePortal: React.FC<ManagerQueuePortalProps> = ({ activeTa
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-initial w-full sm:w-auto">
             <Search className="size-3.5 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="search"
@@ -272,7 +272,7 @@ export const ManagerQueuePortal: React.FC<ManagerQueuePortalProps> = ({ activeTa
                   : 'Search direct reports, titles, cities...'
               }
               aria-label="Search travel requests"
-              className="pl-8 pr-3 py-2 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint w-64 sm:w-72 md:w-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
+              className="pl-8 pr-3 py-2 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint w-full sm:w-72 md:w-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary"
             />
           </div>
 

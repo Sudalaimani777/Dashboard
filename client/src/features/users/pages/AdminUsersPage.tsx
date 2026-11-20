@@ -332,33 +332,35 @@ export const AdminUsersPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Primary Role Filter */}
-          <div
-            role="group"
-            aria-label="Filter by role"
-            className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5"
-          >
-            {(
-              [
-                { id: 'ALL', label: 'All Roles' },
-                { id: 'EMPLOYEE', label: 'Employees' },
-                { id: 'MANAGER', label: 'Managers' },
-                { id: 'ADMIN', label: 'Admins' },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                aria-pressed={roleFilter === opt.id}
-                onClick={() => setRoleFilter(opt.id)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
-                  roleFilter === opt.id
-                    ? 'bg-primary text-white shadow-2xs'
-                    : 'text-muted hover:text-ink'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+          <div className="overflow-x-auto pb-0.5 max-w-full scrollbar-none">
+            <div
+              role="group"
+              aria-label="Filter by role"
+              className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5 whitespace-nowrap"
+            >
+              {(
+                [
+                  { id: 'ALL', label: 'All Roles' },
+                  { id: 'EMPLOYEE', label: 'Employees' },
+                  { id: 'MANAGER', label: 'Managers' },
+                  { id: 'ADMIN', label: 'Admins' },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  aria-pressed={roleFilter === opt.id}
+                  onClick={() => setRoleFilter(opt.id)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
+                    roleFilter === opt.id
+                      ? 'bg-primary text-white shadow-2xs'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="h-4 w-px bg-border-warm hidden sm:block" />
@@ -443,8 +445,146 @@ export const AdminUsersPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <>
+            {/* Mobile Touch Card Stack (md:hidden) */}
+            <div className="md:hidden divide-y divide-border-warm">
+              {filteredUsers.map((member) => {
+                const isCurrentActor = member.id === currentUser?.id;
+                const isActive = member.is_active !== false;
+
+                return (
+                  <div
+                    key={member.id}
+                    className={`p-4 space-y-3 ${
+                      !isActive ? 'bg-surface-subtle/40 opacity-80' : 'bg-surface'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-sm text-ink">{member.name}</span>
+                          {isCurrentActor && (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-600 font-medium truncate mt-0.5">{member.email}</div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            member.role === 'ADMIN'
+                              ? 'bg-primary/10 text-primary border-primary/20'
+                              : member.role === 'MANAGER'
+                              ? 'bg-amber-50 text-amber-900 border-amber-200/80'
+                              : 'bg-surface-subtle text-ink/80 border-border-warm'
+                          }`}
+                        >
+                          {member.role}
+                        </span>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                            isActive
+                              ? 'bg-emerald-50/70 text-emerald-800 border-emerald-200'
+                              : 'bg-stone-100 text-stone-600 border-stone-200'
+                          }`}
+                        >
+                          {isActive ? 'Active' : 'Deactivated'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border-warm/60">
+                      <div>
+                        <span className="text-[11px] text-muted block">Department</span>
+                        <span className="font-medium text-ink">{member.department}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-muted block">Added</span>
+                        <span className="font-mono text-[11px] text-slate-700 font-medium">
+                          {formatAddedDate(member.created_at)}
+                        </span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[11px] text-muted block">Supervisor / Reporting</span>
+                        <div className="text-slate-800 text-xs">
+                          {member.role === 'EMPLOYEE' ? (
+                            member.manager_name ? (
+                              <span className="text-ink font-medium">{member.manager_name}</span>
+                            ) : (
+                              <span className="text-amber-700 font-medium">Unassigned Manager</span>
+                            )
+                          ) : member.role === 'MANAGER' ? (
+                            member.reporting_admin_name ? (
+                              <span className="text-ink font-medium">{member.reporting_admin_name}</span>
+                            ) : (
+                              <span className="text-amber-700 font-medium">Unassigned Admin</span>
+                            )
+                          ) : (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary">
+                              Executive Lead
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-warm/60">
+                      <button
+                        type="button"
+                        onClick={() => setEditingUser(member)}
+                        aria-label={`Edit ${member.name}`}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border-warm bg-surface hover:bg-surface-subtle text-xs font-semibold text-ink cursor-pointer active:scale-[0.98] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 flex-1 sm:flex-initial"
+                      >
+                        <PencilLine className="size-3.5 text-primary" />
+                        <span>Edit</span>
+                      </button>
+
+                      {!isCurrentActor && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActionError(null);
+                            setConfirmDeleteChecked(false);
+                            setConfirmDialog({
+                              type: isActive ? 'deactivate' : 'reactivate',
+                              user: member,
+                            });
+                          }}
+                          aria-label={
+                            isActive
+                              ? `Deactivate ${member.name}`
+                              : `Reactivate ${member.name}`
+                          }
+                          className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer active:scale-[0.98] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 flex-1 sm:flex-initial ${
+                            isActive
+                              ? 'border-amber-200 bg-surface hover:bg-amber-50/80 text-amber-800'
+                              : 'border-emerald-200 bg-surface hover:bg-emerald-50/80 text-emerald-800'
+                          }`}
+                        >
+                          {isActive ? (
+                            <>
+                              <UserX className="size-3.5 text-amber-700" />
+                              <span>Deactivate</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="size-3.5 text-emerald-700" />
+                              <span>Reactivate</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table (hidden md:block) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-border-warm bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-700">
                   <th className="py-3 px-5">Member</th>
@@ -602,6 +742,7 @@ export const AdminUsersPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </>
         )}
       </div>
 
