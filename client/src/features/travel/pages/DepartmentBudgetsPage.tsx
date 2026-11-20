@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { Plus, PencilLine, Check, X, Building2, Search, AlertTriangle } from 'lucide-react';
+import { Plus, PencilLine, Check, X, Building2, Search, AlertTriangle, RotateCcw } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { HeadroomRadialGauge } from '../components/charts/HeadroomRadialGauge';
@@ -16,10 +16,13 @@ import {
   computeDepartmentPoolHealth,
   computeMonthlyBurnSeries,
 } from '../utils/budgetAnalytics';
-import type { FiscalQuarter } from '../types/travel.types';
+import type { FiscalQuarter, DepartmentBudget } from '../types/travel.types';
 
 const QUARTERS: FiscalQuarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
 const FISCAL_YEARS = [2025, 2026, 2027];
+const DEFAULT_DEPARTMENT = 'ALL';
+const DEFAULT_YEAR = 2026;
+const DEFAULT_QUARTER: FiscalQuarter = 'Q4';
 
 export const DepartmentBudgetsPage: React.FC = () => {
   const reduceMotion = useReducedMotion();
@@ -34,25 +37,28 @@ export const DepartmentBudgetsPage: React.FC = () => {
   } = useTravel();
   const { user: currentUser } = useAuth();
 
-  const [selectedDepartment, setSelectedDepartment] = useState('Engineering');
-  const [selectedYear, setSelectedYear] = useState(2026);
-  const [selectedQuarter, setSelectedQuarter] = useState<FiscalQuarter>('Q4');
+  const [selectedDepartment, setSelectedDepartment] = useState(DEFAULT_DEPARTMENT);
+  const [selectedYear, setSelectedYear] = useState(DEFAULT_YEAR);
+  const [selectedQuarter, setSelectedQuarter] = useState<FiscalQuarter>(DEFAULT_QUARTER);
   const [poolSearch, setPoolSearch] = useState('');
   const [poolScope, setPoolScope] = useState<'ALL' | 'MY'>('ALL');
 
+  const currentUserId = currentUser?.id;
+  const currentUserDept = currentUser?.department;
+
   const myDepartments = useMemo(() => {
-    if (!currentUser?.id) return [];
+    if (!currentUserId) return [];
     const depts = new Set<string>();
-    if (currentUser.department) {
-      depts.add(currentUser.department);
+    if (currentUserDept) {
+      depts.add(currentUserDept);
     }
     for (const req of adminQueue) {
-      if (isAssignedToAdmin(req, currentUser.id) && req.requesterDepartment) {
+      if (isAssignedToAdmin(req, currentUserId) && req.requesterDepartment) {
         depts.add(req.requesterDepartment);
       }
     }
     return Array.from(depts).sort((a, b) => a.localeCompare(b));
-  }, [adminQueue, currentUser?.id, currentUser?.department]);
+  }, [adminQueue, currentUserId, currentUserDept]);
 
   // DOM Refs for Smooth Scroll Actions
   const editorRef = useRef<HTMLFormElement>(null);
@@ -67,6 +73,21 @@ export const DepartmentBudgetsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+
+  const isFiltered =
+    selectedDepartment !== DEFAULT_DEPARTMENT ||
+    selectedYear !== DEFAULT_YEAR ||
+    selectedQuarter !== DEFAULT_QUARTER ||
+    poolSearch.trim() !== '' ||
+    poolScope !== 'ALL';
+
+  const handleResetFilters = () => {
+    setSelectedDepartment(DEFAULT_DEPARTMENT);
+    setSelectedYear(DEFAULT_YEAR);
+    setSelectedQuarter(DEFAULT_QUARTER);
+    setPoolSearch('');
+    setPoolScope('ALL');
+  };
 
   const scrollToEditor = () => {
     editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -96,15 +117,19 @@ export const DepartmentBudgetsPage: React.FC = () => {
   }, [loadBudgetOverview, loadAdminQueue, adminQueue.length]);
 
   useEffect(() => {
-    loadBudget(selectedDepartment, selectedYear, selectedQuarter);
+    if (selectedDepartment !== 'ALL') {
+      loadBudget(selectedDepartment, selectedYear, selectedQuarter);
+    }
   }, [selectedDepartment, selectedYear, selectedQuarter, loadBudget]);
 
   const departmentOptions = useMemo(() => {
     const set = new Set<string>(['Engineering']);
     if (budgetOverview?.departments) {
-      for (const d of budgetOverview.departments) set.add(d);
+      for (const d of budgetOverview.departments) {
+        if (d && d.toUpperCase() !== 'ALL') set.add(d);
+      }
     }
-    if (selectedDepartment) set.add(selectedDepartment);
+    if (selectedDepartment && selectedDepartment !== 'ALL') set.add(selectedDepartment);
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [budgetOverview, selectedDepartment]);
 
@@ -115,13 +140,32 @@ export const DepartmentBudgetsPage: React.FC = () => {
     [allBudgets, adminQueue, selectedYear, selectedQuarter]
   );
 
+  const activeBudget: DepartmentBudget | null = useMemo(() => {
+    if (selectedDepartment === 'ALL') {
+      return {
+        id: 'corporate-aggregate',
+        department: 'All Departments',
+        fiscalYear: selectedYear,
+        fiscalQuarter: selectedQuarter,
+        totalAllocation: ledgerStats.totalPool,
+        utilizedAmount: ledgerStats.totalCommitted,
+        availableHeadroom: ledgerStats.totalHeadroom,
+        availableAmount: ledgerStats.totalHeadroom,
+        utilizationPercentage: ledgerStats.utilizationPct,
+        createdAt: '',
+        updatedAt: '',
+      };
+    }
+    return budget;
+  }, [selectedDepartment, selectedYear, selectedQuarter, ledgerStats, budget]);
+
   const monthlyBurn = useMemo(
-    () => computeMonthlyBurnSeries(adminQueue, selectedDepartment),
+    () => computeMonthlyBurnSeries(adminQueue, selectedDepartment === 'ALL' ? '' : selectedDepartment),
     [adminQueue, selectedDepartment]
   );
 
   const drilldown = useMemo(
-    () => computeDepartmentDrilldown(adminQueue, selectedDepartment),
+    () => computeDepartmentDrilldown(adminQueue, selectedDepartment === 'ALL' ? '' : selectedDepartment),
     [adminQueue, selectedDepartment]
   );
 
@@ -140,7 +184,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
   }, [allBudgets, poolScope, myDepartments, poolSearch]);
 
   const openEditor = (
-    dept = selectedDepartment,
+    dept = selectedDepartment === 'ALL' ? 'Engineering' : selectedDepartment,
     year = selectedYear,
     quarter: FiscalQuarter = selectedQuarter,
     currentAmount?: number
@@ -148,7 +192,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
     setFormDepartment(dept);
     setFormYear(year);
     setFormQuarter(quarter);
-    setFormAmount(String(currentAmount ?? budget?.totalAllocation ?? 3500000));
+    setFormAmount(String(currentAmount ?? activeBudget?.totalAllocation ?? 3500000));
     setSaveError(null);
     setSaveSuccess(null);
     setIsEditorOpen(true);
@@ -218,6 +262,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
             onChange={(e) => setSelectedDepartment(e.target.value)}
             className="px-3 py-2 rounded-lg border border-border-warm bg-surface text-xs font-semibold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 cursor-pointer"
           >
+            <option value="ALL">All Departments</option>
             {departmentOptions.map((dept) => (
               <option key={dept} value={dept}>
                 {dept}
@@ -238,32 +283,21 @@ export const DepartmentBudgetsPage: React.FC = () => {
             ))}
           </select>
 
-          <div className="flex items-center gap-1.5 pl-1.5 sm:border-l sm:border-border-warm">
-            <span className="text-[11px] font-semibold text-muted">My Managed:</span>
-            {myDepartments.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-1">
-                {myDepartments.map((dept) => {
-                  const isSelected = selectedDepartment === dept;
-                  return (
-                    <button
-                      key={dept}
-                      type="button"
-                      onClick={() => handleInspectDepartment(dept, selectedYear, selectedQuarter)}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
-                        isSelected
-                          ? 'bg-primary text-white shadow-2xs'
-                          : 'bg-surface border border-border-warm text-ink hover:border-primary/40 hover:bg-surface-subtle'
-                      }`}
-                    >
-                      {dept}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <span className="text-[11px] text-faint italic">None assigned</span>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={handleResetFilters}
+            disabled={!isFiltered}
+            aria-label="Reset all filters to defaults"
+            title="Reset all filters to defaults"
+            className={`inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+              isFiltered
+                ? 'border-border-warm bg-surface text-ink hover:bg-surface-subtle hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 shadow-2xs'
+                : 'border-transparent text-faint cursor-not-allowed opacity-40'
+            }`}
+          >
+            <RotateCcw className="size-3.5" />
+            <span>Reset</span>
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -281,8 +315,12 @@ export const DepartmentBudgetsPage: React.FC = () => {
             onClick={() => openEditor()}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer shadow-xs shrink-0"
           >
-            {budget ? <PencilLine className="size-3.5" /> : <Plus className="size-3.5" />}
-            {budget ? 'Edit Allocation' : 'Configure Pool'}
+            {selectedDepartment !== 'ALL' && budget ? (
+              <PencilLine className="size-3.5" />
+            ) : (
+              <Plus className="size-3.5" />
+            )}
+            {selectedDepartment !== 'ALL' && budget ? 'Edit Allocation' : 'Configure Pool'}
           </button>
         </div>
       </div>
@@ -505,7 +543,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
 
       {/* Dynamic Main Workspace: Full Width Stack without Dead Sidebar Columns */}
       <div className="flex flex-col gap-5">
-        {budget ? (
+        {activeBudget ? (
           <>
             {/* Row 2: Cohesive Hero Card: Headroom Gauge + 6-Month Burn Velocity */}
             <div
@@ -514,9 +552,12 @@ export const DepartmentBudgetsPage: React.FC = () => {
             >
               {/* Change 280px or 260px depending on preferred width for the gauge side */}
               <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 items-center">
-                <HeadroomRadialGauge budget={budget} embedded />
+                <HeadroomRadialGauge budget={activeBudget} embedded />
                 <div className="md:border-l md:border-border-warm md:pl-6">
-                  <MonthlyBurnChart data={monthlyBurn} department={selectedDepartment} />
+                  <MonthlyBurnChart
+                    data={monthlyBurn}
+                    department={selectedDepartment === 'ALL' ? 'All Departments' : selectedDepartment}
+                  />
                 </div>
               </div>
             </div>
@@ -524,14 +565,14 @@ export const DepartmentBudgetsPage: React.FC = () => {
             {/* Row 3: Balanced 50/50 Analytics Duo (Category Mix + Team Spenders/Vouchers) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
               <DepartmentCategoryBreakdownCard
-                budget={budget}
-                selectedDepartment={selectedDepartment}
+                budget={activeBudget}
+                selectedDepartment={selectedDepartment === 'ALL' ? 'All Departments' : selectedDepartment}
                 selectedQuarter={selectedQuarter}
                 selectedYear={selectedYear}
               />
               <DepartmentSpendersVelocityCard
                 drilldown={drilldown}
-                selectedDepartment={selectedDepartment}
+                selectedDepartment={selectedDepartment === 'ALL' ? 'All Departments' : selectedDepartment}
                 selectedQuarter={selectedQuarter}
                 selectedYear={selectedYear}
               />

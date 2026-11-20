@@ -42,7 +42,7 @@ export const DepartmentCategoryPieChart: React.FC<DepartmentCategoryPieChartProp
 
   if (!hasData) {
     return (
-      <div className="h-[180px] w-full rounded-xl border border-dashed border-border-warm bg-surface-subtle/60 flex items-center justify-center text-xs text-muted px-4 text-center">
+      <div className="h-[155px] w-full rounded-xl border border-dashed border-border-warm bg-surface-subtle/60 flex items-center justify-center text-xs text-muted px-4 text-center">
         No active disbursements logged for this period.
       </div>
     );
@@ -50,7 +50,7 @@ export const DepartmentCategoryPieChart: React.FC<DepartmentCategoryPieChartProp
 
   return (
     <div className="flex items-center justify-center">
-      <ChartContainer config={chartConfig} className="h-[180px] w-[180px]">
+      <ChartContainer config={chartConfig} className="h-[155px] w-[155px]">
         <PieChart>
           <ChartTooltip
             cursor={false}
