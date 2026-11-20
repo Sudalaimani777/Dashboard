@@ -90,9 +90,14 @@ export function classifyManagerQueue(
   queue: TravelRequest[],
   currentUserId?: string
 ): ClassifiedManagerQueue {
-  const teamQueue = currentUserId
-    ? queue.filter((r) => r.userId !== currentUserId)
-    : queue;
+  const teamQueue = queue.filter((r) => {
+    if (currentUserId && r.userId === currentUserId) return false;
+    // Managers never audit other managers
+    if (r.requesterRole === 'MANAGER' || (r as any).requester_role === 'MANAGER') return false;
+    // If request has assigned manager that does not match this manager, exclude
+    if (currentUserId && r.managerId && r.managerId !== currentUserId) return false;
+    return true;
+  });
 
   const initialAudit: TravelRequest[] = [];
   const revisions: TravelRequest[] = [];

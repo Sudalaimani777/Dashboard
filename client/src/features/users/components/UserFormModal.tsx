@@ -14,6 +14,7 @@ import type {
 export interface UserFormModalProps {
   initialUser: DirectoryUser;
   managers: DirectoryUser[];
+  admins?: DirectoryUser[];
   departments: string[];
   onClose: () => void;
   onUpdate: (id: string, payload: UpdateUserPayload) => Promise<void>;
@@ -23,10 +24,11 @@ export interface UserFormModalProps {
 export const EditUserForm: React.FC<{
   initialUser: DirectoryUser;
   availableManagers: DirectoryUser[];
+  availableAdmins: DirectoryUser[];
   departments: string[];
   onClose: () => void;
   onUpdate: (id: string, payload: UpdateUserPayload) => Promise<void>;
-}> = ({ initialUser, availableManagers, departments, onClose, onUpdate }) => {
+}> = ({ initialUser, availableManagers, availableAdmins, departments, onClose, onUpdate }) => {
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -40,6 +42,7 @@ export const EditUserForm: React.FC<{
       role: initialUser.role || 'EMPLOYEE',
       department: initialUser.department || departments[0] || 'Engineering',
       managerId: initialUser.manager_id || '',
+      reportingAdminId: initialUser.reporting_admin_id || '',
     },
     mode: 'onTouched',
   });
@@ -53,6 +56,7 @@ export const EditUserForm: React.FC<{
         role: values.role,
         department: values.department.trim(),
         managerId: values.role === 'EMPLOYEE' ? values.managerId || null : null,
+        reportingAdminId: values.role === 'MANAGER' ? values.reportingAdminId || null : null,
       });
       onClose();
     } catch (err) {
@@ -83,11 +87,12 @@ export const EditUserForm: React.FC<{
             {...register('role')}
           >
             {initialUser.role === 'ADMIN' ? (
-              <option value="ADMIN">Admin</option>
+              <option value="ADMIN">Administrator</option>
             ) : (
               <>
                 <option value="EMPLOYEE">Employee</option>
                 <option value="MANAGER">Manager</option>
+                <option value="ADMIN">Administrator</option>
               </>
             )}
           </select>
@@ -141,13 +146,42 @@ export const EditUserForm: React.FC<{
             <option value="">Unassigned (any manager)</option>
             {availableManagers.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name} ({m.department})
+                {m.name} ({m.department}) — {m.email}
               </option>
             ))}
           </select>
           <p className="text-[11px] text-muted">
             Assigned manager conducts Tier 1 audits for this employee's travel requests.
           </p>
+        </div>
+      )}
+
+      {role === 'MANAGER' && (
+        <div className="space-y-1.5">
+          <label htmlFor="user-admin" className="block text-xs font-semibold text-ink">
+            Reporting Admin
+          </label>
+          <select
+            id="user-admin"
+            className="w-full h-11 px-3 rounded-xl border border-border-warm bg-surface text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary cursor-pointer"
+            {...register('reportingAdminId')}
+          >
+            <option value="">Unassigned (any admin)</option>
+            {availableAdmins.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} ({a.department}) — {a.email}
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-muted">
+            Assigned admin reviews this manager's personal trips and receives forward approvals.
+          </p>
+        </div>
+      )}
+
+      {role === 'ADMIN' && (
+        <div className="p-3 rounded-xl bg-surface-subtle border border-border-warm text-xs text-muted">
+          Administrators serve as executive reviewers and do not report to a manager or admin.
         </div>
       )}
 
@@ -175,11 +209,13 @@ export const EditUserForm: React.FC<{
 export const UserEditModal: React.FC<UserFormModalProps> = ({
   initialUser,
   managers,
+  admins = [],
   departments,
   onClose,
   onUpdate,
 }) => {
   const availableManagers = managers.filter((m) => m.id !== initialUser.id);
+  const availableAdmins = (admins || []).filter((a) => a.id !== initialUser.id);
 
   return (
     <div
@@ -213,6 +249,7 @@ export const UserEditModal: React.FC<UserFormModalProps> = ({
         <EditUserForm
           initialUser={initialUser}
           availableManagers={availableManagers}
+          availableAdmins={availableAdmins}
           departments={departments}
           onClose={onClose}
           onUpdate={onUpdate}

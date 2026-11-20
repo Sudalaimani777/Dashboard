@@ -97,10 +97,14 @@ export class TravelController {
   /**
    * GET /api/travel/admin-queue
    * Returns requests pending Tier 2 Admin executive clearance / settlement.
+   * Supports ?scope=assigned or ?scope=all (default).
    */
-  getAdminQueue = async (_req: AuthenticatedRequest, res: Response) => {
+  getAdminQueue = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const queue = await this.service.getAdminQueue();
+      const userId = req.user?.userId;
+      const rawScope = req.query.scope as string | undefined;
+      const scope = rawScope === 'assigned' ? 'assigned' : 'all';
+      const queue = await this.service.getAdminQueue(userId, scope);
       return sendSuccess(res, queue, 'Admin governance queue fetched');
     } catch (err: any) {
       return sendError(res, err.message, 500);

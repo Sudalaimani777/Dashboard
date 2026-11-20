@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { PieChart, Plus } from 'lucide-react';
 import { useTravel } from '../hooks/useTravel';
+import { useAuth } from '../../auth/hooks/useAuth';
 import { ManagerMonthlyBurnChart } from '../components/charts/ManagerMonthlyBurnChart';
 import { ManagerCategoryPieChart } from '../components/charts/ManagerCategoryPieChart';
 import { ManagerApprovalMeterCard } from '../components/manager/ManagerApprovalMeterCard';
@@ -21,6 +22,7 @@ export const ManagerTeamAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const { managerQueue, loadManagerQueue } = useTravel();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (managerQueue.length === 0) {
@@ -28,13 +30,22 @@ export const ManagerTeamAnalyticsPage: React.FC = () => {
     }
   }, [loadManagerQueue, managerQueue.length]);
 
-  const overview = useMemo(() => computeManagerTeamOverview(managerQueue), [managerQueue]);
-  const monthlyBurn = useMemo(() => computeManagerMonthlyBurnSeries(managerQueue), [managerQueue]);
-  const categoryShares = useMemo(() => computeManagerCategoryShares(managerQueue), [managerQueue]);
-  const approvalHealth = useMemo(() => computeManagerApprovalHealth(managerQueue), [managerQueue]);
+  const teamRequests = useMemo(() => {
+    return managerQueue.filter((r) => {
+      if (user?.id && r.userId === user.id) return false;
+      if (r.requesterRole === 'MANAGER' || (r as any).requester_role === 'MANAGER') return false;
+      if (user?.id && r.managerId && r.managerId !== user.id) return false;
+      return true;
+    });
+  }, [managerQueue, user?.id]);
+
+  const overview = useMemo(() => computeManagerTeamOverview(teamRequests), [teamRequests]);
+  const monthlyBurn = useMemo(() => computeManagerMonthlyBurnSeries(teamRequests), [teamRequests]);
+  const categoryShares = useMemo(() => computeManagerCategoryShares(teamRequests), [teamRequests]);
+  const approvalHealth = useMemo(() => computeManagerApprovalHealth(teamRequests), [teamRequests]);
   const velocity = useMemo(
-    () => computeManagerSpendersAndProjectVelocity(managerQueue),
-    [managerQueue]
+    () => computeManagerSpendersAndProjectVelocity(teamRequests),
+    [teamRequests]
   );
 
   return (
@@ -145,7 +156,7 @@ export const ManagerTeamAnalyticsPage: React.FC = () => {
       </div>
 
       {/* Row 4: Master Team Audit Ledger */}
-      <ManagerTeamAuditLedgerCard requests={managerQueue} />
+      <ManagerTeamAuditLedgerCard requests={teamRequests} />
     </motion.div>
   );
 };

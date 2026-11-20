@@ -115,6 +115,10 @@ export interface TravelRequest {
   managerName?: string;
   admin_name?: string;
   adminName?: string;
+  manager_reporting_admin_id?: string | null;
+  managerReportingAdminId?: string | null;
+  requester_reporting_admin_id?: string | null;
+  requesterReportingAdminId?: string | null;
   expenses?: TravelExpense[];
   timeline?: TimelineEvent[];
 }

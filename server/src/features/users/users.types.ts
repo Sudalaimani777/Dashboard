@@ -9,6 +9,8 @@ export interface UserDirectoryItem {
   department: string;
   manager_id: string | null;
   manager_name: string | null;
+  reporting_admin_id: string | null;
+  reporting_admin_name: string | null;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -21,11 +23,13 @@ export interface CreateManagedUserDto {
   role: ManagedUserRole;
   department: string;
   managerId?: string | null;
+  reportingAdminId?: string | null;
 }
 
 export interface UpdateManagedUserDto {
   role?: ManagedUserRole;
   department?: string;
   managerId?: string | null;
+  reportingAdminId?: string | null;
   isActive?: boolean;
 }

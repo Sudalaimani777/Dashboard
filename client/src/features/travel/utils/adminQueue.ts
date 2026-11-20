@@ -3,6 +3,25 @@ import type { TravelRequest, TravelStatus, TravelType } from '../types/travel.ty
 export type AdminTypeFilter = 'ALL' | TravelType;
 export type AdminDecisionAction = 'APPROVE' | 'SETTLE' | 'REQUEST_REVISION' | 'REJECT';
 export type AdminLedgerStatusFilter = 'ALL' | 'APPROVED' | 'SETTLED' | 'REJECTED' | 'CANCELLED';
+export type AdminScope = 'ASSIGNED' | 'ALL';
+
+/**
+ * Checks whether a travel request is assigned to a specific admin either directly
+ * (via adminId) or via reporting hierarchy (manager or requester reports to admin).
+ */
+export function isAssignedToAdmin(request: TravelRequest, adminId?: string | null): boolean {
+  if (!adminId) return false;
+  const targetAdminId = request.adminId || (request as any).admin_id;
+  if (targetAdminId && targetAdminId === adminId) return true;
+
+  const mgrReportingAdmin = request.managerReportingAdminId || (request as any).manager_reporting_admin_id;
+  if (mgrReportingAdmin && mgrReportingAdmin === adminId) return true;
+
+  const requesterReportingAdmin = request.requesterReportingAdminId || (request as any).requester_reporting_admin_id;
+  if (requesterReportingAdmin && requesterReportingAdmin === adminId) return true;
+
+  return false;
+}
 
 export interface ClassifiedAdminQueue {
   awaitingExecutive: TravelRequest[];

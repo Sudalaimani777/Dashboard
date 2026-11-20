@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Plus, PencilLine, Check, X, Building2, Search, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { HeadroomRadialGauge } from '../components/charts/HeadroomRadialGauge';
 import { MonthlyBurnChart } from '../components/charts/MonthlyBurnChart';
 import { DepartmentCategoryBreakdownCard } from '../components/DepartmentCategoryBreakdownCard';
 import { DepartmentSpendersVelocityCard } from '../components/DepartmentSpendersVelocityCard';
 import { formatINR, formatINRCompact } from '../utils/currency';
+import { isAssignedToAdmin } from '../utils/adminQueue';
 import {
   computeCorporateLedgerStats,
   computeDepartmentDrilldown,
@@ -29,11 +31,27 @@ export const DepartmentBudgetsPage: React.FC = () => {
     loadAdminQueue,
     saveBudgetAllocation,
   } = useTravel();
+  const { user: currentUser } = useAuth();
 
   const [selectedDepartment, setSelectedDepartment] = useState('Engineering');
   const [selectedYear, setSelectedYear] = useState(2026);
   const [selectedQuarter, setSelectedQuarter] = useState<FiscalQuarter>('Q4');
   const [poolSearch, setPoolSearch] = useState('');
+  const [poolScope, setPoolScope] = useState<'ALL' | 'MY'>('ALL');
+
+  const myDepartments = useMemo(() => {
+    if (!currentUser?.id) return [];
+    const depts = new Set<string>();
+    if (currentUser.department) {
+      depts.add(currentUser.department);
+    }
+    for (const req of adminQueue) {
+      if (isAssignedToAdmin(req, currentUser.id) && req.requesterDepartment) {
+        depts.add(req.requesterDepartment);
+      }
+    }
+    return Array.from(depts).sort((a, b) => a.localeCompare(b));
+  }, [adminQueue, currentUser?.id, currentUser?.department]);
 
   // DOM Refs for Smooth Scroll Actions
   const editorRef = useRef<HTMLFormElement>(null);
@@ -107,14 +125,18 @@ export const DepartmentBudgetsPage: React.FC = () => {
   );
 
   const filteredPoolRows = useMemo(() => {
+    let list = allBudgets;
+    if (poolScope === 'MY' && myDepartments.length > 0) {
+      list = list.filter((b) => myDepartments.includes(b.department));
+    }
     const q = poolSearch.trim().toLowerCase();
-    if (!q) return allBudgets;
-    return allBudgets.filter(
+    if (!q) return list;
+    return list.filter(
       (b) =>
         b.department.toLowerCase().includes(q) ||
         `${b.fiscalQuarter} ${b.fiscalYear}`.toLowerCase().includes(q)
     );
-  }, [allBudgets, poolSearch]);
+  }, [allBudgets, poolScope, myDepartments, poolSearch]);
 
   const openEditor = (
     dept = selectedDepartment,
@@ -184,7 +206,6 @@ export const DepartmentBudgetsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold text-ink tracking-tight">Department Budgets</h1>
-
       </div>
 
       {/* Period, Department & Action Strip */}
@@ -215,6 +236,33 @@ export const DepartmentBudgetsPage: React.FC = () => {
               </option>
             ))}
           </select>
+
+          <div className="flex items-center gap-1.5 pl-1.5 sm:border-l sm:border-border-warm">
+            <span className="text-[11px] font-semibold text-muted">My Managed:</span>
+            {myDepartments.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-1">
+                {myDepartments.map((dept) => {
+                  const isSelected = selectedDepartment === dept;
+                  return (
+                    <button
+                      key={dept}
+                      type="button"
+                      onClick={() => handleInspectDepartment(dept, selectedYear, selectedQuarter)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
+                        isSelected
+                          ? 'bg-primary text-white shadow-2xs'
+                          : 'bg-surface border border-border-warm text-ink hover:border-primary/40 hover:bg-surface-subtle'
+                      }`}
+                    >
+                      {dept}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <span className="text-[11px] text-faint italic">None assigned</span>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -474,9 +522,10 @@ export const DepartmentBudgetsPage: React.FC = () => {
               ref={heroRef}
               className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col gap-4 scroll-mt-6"
             >
-              <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-5 items-center">
+              {/* Change 280px or 260px depending on preferred width for the gauge side */}
+              <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 items-center">
                 <HeadroomRadialGauge budget={budget} embedded />
-                <div className="md:border-l md:border-border-warm md:pl-5">
+                <div className="md:border-l md:border-border-warm md:pl-6">
                   <MonthlyBurnChart data={monthlyBurn} department={selectedDepartment} />
                 </div>
               </div>
@@ -551,8 +600,40 @@ export const DepartmentBudgetsPage: React.FC = () => {
           )}
 
           <div className="p-4 border-b border-border-warm bg-surface-subtle flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h2 className="text-sm font-semibold text-ink">Department Pools &amp; Utilization</h2>
+              {myDepartments.length > 0 && (
+                <div
+                  role="group"
+                  aria-label="Pool scope"
+                  className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={poolScope === 'ALL'}
+                    onClick={() => setPoolScope('ALL')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
+                      poolScope === 'ALL'
+                        ? 'bg-primary text-white shadow-2xs'
+                        : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    All Pools
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={poolScope === 'MY'}
+                    onClick={() => setPoolScope('MY')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
+                      poolScope === 'MY'
+                        ? 'bg-primary text-white shadow-2xs'
+                        : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    My Departments ({myDepartments.length})
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="relative">

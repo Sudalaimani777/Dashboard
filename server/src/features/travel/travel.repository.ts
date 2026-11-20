@@ -64,6 +64,7 @@ export interface UpdateStatusWithTimelineData {
   remarks?: string | null;
   revisionTarget?: RevisionTarget | null;
   eventType?: string;
+  adminId?: string | null;
 }
 
 export class TravelRepository {
@@ -353,7 +354,7 @@ export class TravelRepository {
 
     if (managerId) {
       params.push(managerId);
-      sql += ` AND tr.user_id != $1 AND (tr.manager_id = $1 OR u.manager_id = $1 OR (tr.manager_id IS NULL AND u.manager_id IS NULL))`;
+      sql += ` AND tr.user_id != $1 AND u.role = 'EMPLOYEE' AND (tr.manager_id = $1 OR u.manager_id = $1)`;
     }
 
     sql += ' ORDER BY tr.created_at DESC';
@@ -404,21 +405,38 @@ export class TravelRepository {
   /**
    * Tier 2 Executive Admin governance queue
    */
-  async getAdminQueue(): Promise<TravelRequest[]> {
-    const res = await query(
-      `SELECT 
+  async getAdminQueue(adminId?: string, scope: 'assigned' | 'all' = 'all'): Promise<TravelRequest[]> {
+    let sql = `
+      SELECT 
         tr.*,
         u.name AS requester_name,
         u.email AS requester_email,
         u.department AS requester_department,
         u.role AS requester_role,
-        mgr.name AS manager_name
+        u.reporting_admin_id AS requester_reporting_admin_id,
+        mgr.name AS manager_name,
+        mgr.reporting_admin_id AS manager_reporting_admin_id,
+        adm.name AS admin_name
       FROM travel_requests tr
       JOIN users u ON tr.user_id = u.id
       LEFT JOIN users mgr ON tr.manager_id = mgr.id
+      LEFT JOIN users adm ON tr.admin_id = adm.id
       WHERE tr.status != 'DRAFT'
-      ORDER BY tr.created_at DESC`
-    );
+    `;
+    const params: any[] = [];
+
+    if (scope === 'assigned' && adminId) {
+      params.push(adminId);
+      sql += ` AND (
+        tr.admin_id = $1 
+        OR mgr.reporting_admin_id = $1 
+        OR (u.role = 'MANAGER' AND u.reporting_admin_id = $1)
+      )`;
+    }
+
+    sql += ' ORDER BY tr.created_at DESC';
+
+    const res = await query(sql, params);
     return res.rows.map(this.mapRowToRequest);
   }
 
@@ -443,12 +461,13 @@ export class TravelRepository {
           SET status = $1,
               manager_remarks = $2,
               manager_id = $3,
+              admin_id = COALESCE($5, admin_id),
               manager_reviewed_at = CURRENT_TIMESTAMP,
               updated_at = CURRENT_TIMESTAMP
           WHERE id = $4
           RETURNING *;
         `;
-        updateParams = [data.toStatus, data.remarks || null, data.actorId, data.requestId];
+        updateParams = [data.toStatus, data.remarks || null, data.actorId, data.requestId, data.adminId || null];
       } else if (isAdmin) {
         updateQuery = `
           UPDATE travel_requests
@@ -856,7 +875,11 @@ export class TravelRepository {
       manager_name: row.manager_name,
       managerName: row.manager_name,
       admin_name: row.admin_name,
-      adminName: row.admin_name
+      adminName: row.admin_name,
+      manager_reporting_admin_id: row.manager_reporting_admin_id,
+      managerReportingAdminId: row.manager_reporting_admin_id,
+      requester_reporting_admin_id: row.requester_reporting_admin_id,
+      requesterReportingAdminId: row.requester_reporting_admin_id
     };
   }
 

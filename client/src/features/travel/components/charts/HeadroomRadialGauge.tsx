@@ -61,7 +61,8 @@ export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({
     <Card
       className={
         embedded
-          ? 'flex flex-col border-0 bg-transparent shadow-none rounded-none'
+          /* p-0 overrides Card's default p-6 to eliminate the left-offset squeeze */
+          ? 'flex flex-col border-0 bg-transparent shadow-none rounded-none p-0'
           : 'flex flex-col bg-surface border border-border-warm rounded-xl shadow-xs'
       }
     >
@@ -74,13 +75,18 @@ export const HeadroomRadialGauge: React.FC<HeadroomRadialGaugeProps> = ({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-1 items-center justify-center pb-0">
+      <CardContent className="flex flex-1 items-center justify-center p-0">
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square w-full max-w-[240px]"
+          /* Adjust max-w-[220px] or max-w-[240px] if you want a narrower/wider gauge */
+          className="mx-auto w-full max-w-[240px] h-[145px]"
         >
           <RadialBarChart
             data={chartData}
+            /* cx: 50% centers horizontally
+               cy: 55% (or 60%) shifts the semicircle downward to balance top vs bottom space */
+            cx="50%"
+            cy="80%"
             endAngle={180}
             innerRadius={75}
             outerRadius={105}

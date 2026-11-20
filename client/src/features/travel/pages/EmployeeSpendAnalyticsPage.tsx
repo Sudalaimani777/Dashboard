@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { Plus } from 'lucide-react';
+import { Plus, PieChart } from 'lucide-react';
 import { useTravel } from '../hooks/useTravel';
 import { EmployeeMonthlyBurnChart } from '../components/charts/EmployeeMonthlyBurnChart';
 import { EmployeeCategoryPieChart } from '../components/charts/EmployeeCategoryPieChart';
@@ -22,8 +22,11 @@ export const EmployeeSpendAnalyticsPage: React.FC = () => {
   const reduceMotion = useReducedMotion();
   const { requests, loadRequests } = useTravel();
 
+  const hasFetchedRef = useRef(false);
+
   useEffect(() => {
-    if (requests.length === 0) {
+    if (!hasFetchedRef.current && requests.length === 0) {
+      hasFetchedRef.current = true;
       loadRequests();
     }
   }, [loadRequests, requests.length]);
@@ -44,10 +47,16 @@ export const EmployeeSpendAnalyticsPage: React.FC = () => {
       {/* Executive Header Strip */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border-warm/70 pb-4">
         <div className="flex items-center gap-3">
+          <span className="p-2.5 rounded-xl bg-surface-subtle border border-border-warm text-primary shadow-2xs">
+            <PieChart className="size-5" />
+          </span>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-ink">
-              My Spend Analytics
+            <h1 className="text-xl font-bold tracking-tight text-ink">
+              Personal Spend Analytics
             </h1>
+            <p className="text-xs text-muted mt-0.5">
+              Personal travel expenditure velocity, category distribution, and claim settlement ledger
+            </p>
           </div>
         </div>
 
