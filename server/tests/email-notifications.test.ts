@@ -184,6 +184,49 @@ async function runEmailTests() {
   assert(xssResetMail.html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), 'Password reset HTML contains escaped script tags');
   assert(xssResetMail.html.includes('&amp; &quot;Tester&quot;'), 'Password reset HTML contains escaped ampersand and quotes');
 
+  // 10. Test sendUserWelcomeEmail (Account Created Notification)
+  const welcomeRes = await emailService.sendUserWelcomeEmail(
+    'newuser@corp.com',
+    'Jordan Lee',
+    'EMPLOYEE',
+    'Engineering'
+  );
+  assert(!!welcomeRes.messageId, 'sendUserWelcomeEmail returns messageId');
+  const welcomeMail = sentMails[9];
+  assert(welcomeMail.to === 'newuser@corp.com', 'sendUserWelcomeEmail sent to newuser@corp.com');
+  assert(
+    welcomeMail.subject === 'Welcome to TripFlow - Your Account Has Been Created',
+    'sendUserWelcomeEmail has correct subject'
+  );
+  assert(welcomeMail.html.includes('Jordan Lee'), 'HTML includes recipient name');
+  assert(welcomeMail.html.includes('newuser@corp.com'), 'HTML includes user email');
+  assert(welcomeMail.html.includes('Employee'), 'HTML includes formatted role');
+  assert(welcomeMail.html.includes('Engineering'), 'HTML includes department');
+  assert(
+    welcomeMail.html.toLowerCase().includes('contact') && welcomeMail.html.toLowerCase().includes('credentials'),
+    'HTML includes instructions to contact administrator for credentials'
+  );
+  assert(!welcomeMail.html.includes('InitialPassword'), 'HTML strictly does not contain raw passwords');
+  assert(welcomeMail.html.includes('/signin'), 'HTML includes sign-in link CTA');
+  assert(welcomeMail.html.includes('#533AFD'), 'HTML contains TripFlow indigo accent token');
+  assert(welcomeMail.text.includes('newuser@corp.com'), 'Plaintext includes user email');
+  assert(
+    welcomeMail.text.toLowerCase().includes('contact') && welcomeMail.text.toLowerCase().includes('credentials'),
+    'Plaintext includes contact instructions for credentials'
+  );
+
+  // 11. Test XSS escaping in sendUserWelcomeEmail
+  await emailService.sendUserWelcomeEmail(
+    'xss_user@corp.com',
+    'Hacker <script>alert(2)</script>',
+    'MANAGER',
+    'Security & <Audit>'
+  );
+  const xssWelcomeMail = sentMails[10];
+  assert(!xssWelcomeMail.html.includes('<script>'), 'Welcome HTML escapes script tags in recipient name');
+  assert(xssWelcomeMail.html.includes('&lt;script&gt;alert(2)&lt;/script&gt;'), 'Welcome HTML contains escaped script tags in name');
+  assert(xssWelcomeMail.html.includes('&amp; &lt;Audit&gt;'), 'Welcome HTML contains escaped ampersand and tags in department');
+
   console.log(`\n🎉 All ${passed}/${total} EmailService template tests passed!`);
 }
 

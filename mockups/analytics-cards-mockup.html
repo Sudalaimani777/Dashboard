@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Readventure Analytics Cards - Height Stability Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom refined scrollbar matching Readventure */
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #D8CEBC;
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #B0A490;
+    }
+  </style>
+</head>
+<body class="bg-[#F6F3EE] text-[#1E1C1A] font-sans antialiased p-4 md:p-8 min-h-screen">
+
+  <div class="max-w-6xl mx-auto flex flex-col gap-6">
+
+    <!-- Top Navigation / Controls Bar -->
+    <header class="bg-white rounded-2xl border border-[#E8DFC9] p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block size-3 rounded-full bg-[#533AFD]"></span>
+          <h1 class="text-lg font-bold text-[#1E1C1A] tracking-tight">Analytics Cards Container Height Verification</h1>
+        </div>
+        <p class="text-xs text-[#756F68] mt-0.5">
+          Verify locked <span class="font-mono font-semibold text-[#533AFD]">350px</span> container height with smooth internal scrolling as dataset volume grows.
+        </p>
+      </div>
+
+      <!-- Controls: Role Tab & Data Density -->
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Role Selector -->
+        <div class="inline-flex rounded-xl bg-[#F0EAE1] p-1 border border-[#E5DDD0]">
+          <button id="btn-admin" onclick="switchRole('admin')" class="role-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-[#1E1C1A] shadow-xs cursor-pointer transition-all">
+            Admin
+          </button>
+          <button id="btn-manager" onclick="switchRole('manager')" class="role-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#756F68] hover:text-[#1E1C1A] cursor-pointer transition-all">
+            Manager
+          </button>
+          <button id="btn-employee" onclick="switchRole('employee')" class="role-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#756F68] hover:text-[#1E1C1A] cursor-pointer transition-all">
+            Employee
+          </button>
+        </div>
+
+        <!-- Data Size Simulator -->
+        <div class="inline-flex items-center gap-1.5 bg-white border border-[#E8DFC9] rounded-xl px-3 py-1.5">
+          <span class="text-[11px] font-semibold text-[#756F68]">Data Volume:</span>
+          <select id="density-select" onchange="switchDensity(this.value)" class="text-xs font-semibold text-[#533AFD] bg-transparent outline-none cursor-pointer">
+            <option value="large">Growing / Large (10+ Items) ⚠️</option>
+            <option value="normal" selected>Normal (3-4 Items)</option>
+            <option value="empty">Empty (0 Items)</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Dimension Indicator Ruler Banner -->
+    <div class="bg-[#F0EDE6] rounded-xl border border-dashed border-[#D5C9B3] px-4 py-2 flex items-center justify-between text-xs text-[#756F68]">
+      <span class="flex items-center gap-2">
+        <svg class="size-4 text-[#533AFD]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+        </svg>
+        <span>Fixed Card Height Contract: <strong class="font-mono text-[#1E1C1A]">height: 350px</strong> (Locked Viewport)</span>
+      </span>
+      <span id="density-indicator-badge" class="font-mono text-[11px] px-2 py-0.5 rounded bg-white border border-[#E0D7C4] text-[#533AFD] font-bold">
+        Simulating: Normal Dataset
+      </span>
+    </div>
+
+    <!-- MAIN CARDS VIEWPORT CONTAINER (50/50 Grid) -->
+    <main id="cards-container" class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+      <!-- Injected dynamically via JS based on selected Role & Density -->
+    </main>
+
+    <!-- Technical Spec Summary Note -->
+    <footer class="bg-white rounded-xl border border-[#E8DFC9] p-4 text-xs text-[#756F68] flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+      <div>
+        <strong class="text-[#1E1C1A]">Implementation Mechanics:</strong>
+        <span class="ml-1">Outer card has <code class="bg-[#F0EAE1] px-1.5 py-0.5 rounded font-mono text-[#533AFD]">h-[350px] flex flex-col justify-between</code>. Inner list has <code class="bg-[#F0EAE1] px-1.5 py-0.5 rounded font-mono text-[#533AFD]">flex-1 min-h-0 overflow-y-auto</code>.</span>
+      </div>
+      <div class="shrink-0 text-emerald-800 font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+        ✓ No vertical layout shifting or card elongation
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    let currentRole = 'admin';
+    let currentDensity = 'normal';
+
+    const DATA = {
+      admin: {
+        titleL: "Disbursement Mix by Category",
+        subtitleL: "Engineering • Q4 2026 itemized classes",
+        titleR: "Team Spenders",
+        subtitleR: "Engineering • Q4 2026 active spenders",
+        categories: {
+          empty: [],
+          normal: [
+            { label: "Flight Tickets", pct: 45, amt: "₹1,57,500", color: "#533AFD" },
+            { label: "Hotel & Lodging", pct: 30, amt: "₹1,05,000", color: "#00D66F" },
+            { label: "Meals Per Diem", pct: 15, amt: "₹52,500", color: "#FF6118" },
+            { label: "Transit & Taxis", pct: 10, amt: "₹35,000", color: "#1D6F72" }
+          ],
+          large: [
+            { label: "Flight Tickets", pct: 32, amt: "₹1,57,500", color: "#533AFD" },
+            { label: "Hotel & Lodging", pct: 24, amt: "₹1,05,000", color: "#00D66F" },
+            { label: "Meals Per Diem", pct: 12, amt: "₹52,500", color: "#FF6118" },
+            { label: "Transit & Taxis", pct: 8, amt: "₹35,000", color: "#1D6F72" },
+            { label: "Client Dinners", pct: 7, amt: "₹28,000", color: "#7389FF" },
+            { label: "Conference Pass", pct: 6, amt: "₹24,000", color: "#D97706" },
+            { label: "Visa & Consular", pct: 4, amt: "₹18,000", color: "#4F46E5" },
+            { label: "Airport Parking", pct: 3, amt: "₹12,000", color: "#9333EA" },
+            { label: "Baggage Fees", pct: 2, amt: "₹8,500", color: "#059669" },
+            { label: "Telecom & Roaming", pct: 2, amt: "₹7,200", color: "#DC2626" }
+          ]
+        },
+        spenders: {
+          empty: [],
+          normal: [
+            { name: "Priya Sharma", trips: 4, approved: "₹85,000", pending: "₹12,000", total: "₹97,000", pct: 95 },
+            { name: "Rahul Verma", trips: 3, approved: "₹62,000", pending: "₹0", total: "₹62,000", pct: 68 },
+            { name: "Amit Patel", trips: 2, approved: "₹45,000", pending: "₹8,000", total: "₹53,000", pct: 54 },
+            { name: "Neha Sundaram", trips: 2, approved: "₹38,000", pending: "₹0", total: "₹38,000", pct: 42 }
+          ],
+          large: [
+            { name: "Priya Sharma", trips: 5, approved: "₹1,20,000", pending: "₹15,000", total: "₹1,35,000", pct: 100 },
+            { name: "Rahul Verma", trips: 4, approved: "₹88,000", pending: "₹0", total: "₹88,000", pct: 72 },
+            { name: "Amit Patel", trips: 3, approved: "₹65,000", pending: "₹8,000", total: "₹73,000", pct: 60 },
+            { name: "Neha Sundaram", trips: 3, approved: "₹54,000", pending: "₹0", total: "₹54,000", pct: 45 },
+            { name: "Vikram Malhotra", trips: 2, approved: "₹42,000", pending: "₹6,000", total: "₹48,000", pct: 40 },
+            { name: "Deepa Nair", trips: 2, approved: "₹36,000", pending: "₹0", total: "₹36,000", pct: 30 },
+            { name: "Kiran Rao", trips: 2, approved: "₹31,000", pending: "₹4,000", total: "₹35,000", pct: 28 },
+            { name: "Suresh Menon", trips: 1, approved: "₹28,000", pending: "₹0", total: "₹28,000", pct: 24 },
+            { name: "Ananya Iyer", trips: 1, approved: "₹22,000", pending: "₹3,000", total: "₹25,000", pct: 21 },
+            { name: "Gaurav Joshi", trips: 1, approved: "₹19,000", pending: "₹0", total: "₹19,000", pct: 16 }
+          ]
+        }
+      },
+      manager: {
+        titleL: "Approval Queue Health",
+        subtitleL: "Team review velocity and dispatch SLA",
+        titleR: "Spend Allocation",
+        subtitleR: "Ranked team member travel spend",
+        statRate: "92%",
+        avgDays: "~1.2d",
+        members: {
+          empty: [],
+          normal: [
+            { name: "Kavita Sen", trips: 3, total: "₹74,000", pct: 90 },
+            { name: "Devansh Nair", trips: 2, total: "₹51,000", pct: 62 },
+            { name: "Arjun Reddy", trips: 2, total: "₹39,000", pct: 48 },
+            { name: "Tanvi Saxena", trips: 1, total: "₹22,000", pct: 28 }
+          ],
+          large: [
+            { name: "Kavita Sen", trips: 4, total: "₹98,000", pct: 100 },
+            { name: "Devansh Nair", trips: 3, total: "₹72,000", pct: 75 },
+            { name: "Arjun Reddy", trips: 3, total: "₹58,000", pct: 60 },
+            { name: "Tanvi Saxena", trips: 2, total: "₹44,000", pct: 46 },
+            { name: "Manish Gupta", trips: 2, total: "₹37,000", pct: 38 },
+            { name: "Ritu Chawla", trips: 2, total: "₹31,000", pct: 32 },
+            { name: "Siddharth Roy", trips: 1, total: "₹26,000", pct: 27 },
+            { name: "Pooja Hegde", trips: 1, total: "₹20,000", pct: 21 },
+            { name: "Varun Bajaj", trips: 1, total: "₹17,500", pct: 18 }
+          ]
+        }
+      },
+      employee: {
+        titleL: "Reimbursement Progress",
+        subtitleL: "Payout across submitted expense claims",
+        titleR: "Spend Allocation",
+        subtitleR: "Aggregated by billing project",
+        statRate: "88%",
+        avgDays: "~2.4d",
+        projects: {
+          empty: [],
+          normal: [
+            { code: "PROJ-TITAN-AI", trips: 3, total: "₹82,000", pct: 92 },
+            { code: "PROJ-CORE-INFRA", trips: 2, total: "₹46,000", pct: 52 },
+            { code: "PROJ-CLIENT-RETREAT", trips: 1, total: "₹31,000", pct: 35 },
+            { code: "PROJ-GENERAL-OPS", trips: 1, total: "₹18,000", pct: 20 }
+          ],
+          large: [
+            { code: "PROJ-TITAN-AI", trips: 4, total: "₹1,12,000", pct: 100 },
+            { code: "PROJ-CORE-INFRA", trips: 3, total: "₹68,000", pct: 62 },
+            { code: "PROJ-CLIENT-RETREAT", trips: 2, total: "₹45,000", pct: 41 },
+            { code: "PROJ-GENERAL-OPS", trips: 2, total: "₹32,000", pct: 29 },
+            { code: "PROJ-MOBILE-SDK", trips: 1, total: "₹28,000", pct: 25 },
+            { code: "PROJ-DEVREL-SUMMIT", trips: 1, total: "₹22,000", pct: 20 },
+            { code: "PROJ-PARTNER-ONBOARD", trips: 1, total: "₹17,000", pct: 15 },
+            { code: "PROJ-INTERNAL-AUDIT", trips: 1, total: "₹12,500", pct: 11 }
+          ]
+        }
+      }
+    };
+
+    function renderAdminView() {
+      const cats = DATA.admin.categories[currentDensity];
+      const spenders = DATA.admin.spenders[currentDensity];
+
+      // Left Card: Disbursement Mix by Category
+      const leftCard = `
+        <div class="bg-white rounded-xl border border-[#E8DFC9] p-5 shadow-xs flex flex-col justify-between h-[350px]">
+          <!-- Card Header (Pinned Top) -->
+          <div class="flex items-center justify-between gap-3 border-b border-[#F0EAE1] pb-3 shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="p-1.5 rounded-lg bg-[#F7F4EF] border border-[#E8DFC9] text-[#533AFD]">
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+              </span>
+              <div>
+                <h3 class="text-sm font-semibold text-[#1E1C1A]">Disbursement Mix by Category</h3>
+                <p class="text-[11px] text-[#8C827A]">Engineering • Q4 2026 itemized</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] uppercase font-semibold text-[#8C827A]">Total Disbursed</div>
+              <div class="font-mono text-xs font-bold text-[#1E1C1A]">${cats.length ? "₹3,50,000" : "₹0"}</div>
+            </div>
+          </div>
+
+          <!-- Card Body: Chart + Scrollable List (flex-1 min-h-0) -->
+          ${cats.length === 0 ? `
+            <div class="flex-1 flex flex-col items-center justify-center text-center text-xs text-[#8C827A] py-4">
+              <span class="size-8 rounded-full bg-[#FAF7F2] border border-[#E8DFC9] flex items-center justify-center mb-2">∅</span>
+              No disbursements recorded for this period.
+            </div>
+          ` : `
+            <div class="flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-[130px_1fr] items-center gap-4 py-3">
+              <!-- Mini Donut SVG -->
+              <div class="relative size-[115px] mx-auto shrink-0 flex items-center justify-center">
+                <svg class="size-full transform -rotate-90" viewBox="0 0 36 36">
+                  <path class="text-[#EFE7D8]" stroke-width="4.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path class="text-[#533AFD]" stroke-dasharray="45, 100" stroke-width="4.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path class="text-[#00D66F]" stroke-dasharray="30, 100" stroke-dashoffset="-45" stroke-width="4.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path class="text-[#FF6118]" stroke-dasharray="15, 100" stroke-dashoffset="-75" stroke-width="4.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span class="text-xs font-bold font-mono text-[#1E1C1A]">₹3.5L</span>
+                  <span class="text-[9px] text-[#8C827A] font-semibold">Total</span>
+                </div>
+              </div>
+
+              <!-- Scrollable Itemized List -->
+              <div class="h-full overflow-y-auto pr-1.5 custom-scroll divide-y divide-[#F0EAE1]">
+                ${cats.map(c => `
+                  <div class="py-1.5 first:pt-0 last:pb-0 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="size-2 rounded-full shrink-0" style="background-color: ${c.color}"></span>
+                      <span class="font-medium text-[#1E1C1A] truncate text-[11px]">${c.label}</span>
+                    </div>
+                    <div class="font-mono text-[11px] shrink-0 text-right">
+                      <span class="font-bold text-[#1E1C1A]">${c.amt}</span>
+                      <span class="text-[10px] text-[#8C827A]">(${c.pct}%)</span>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `}
+
+          <!-- Card Footer (Pinned Bottom) -->
+          <div class="pt-2.5 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#8C827A] shrink-0">
+            <span>${cats.length} active expense class(es)</span>
+            <span class="font-mono text-[#533AFD] font-semibold">${currentDensity === 'large' ? 'Scroll enabled' : 'Clean fit'}</span>
+          </div>
+        </div>
+      `;
+
+      // Right Card: Team Spenders
+      const rightCard = `
+        <div class="bg-white rounded-xl border border-[#E8DFC9] p-5 shadow-xs flex flex-col justify-between h-[350px]">
+          <!-- Card Header (Pinned Top) -->
+          <div class="flex items-center justify-between gap-3 border-b border-[#F0EAE1] pb-3 shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="p-1.5 rounded-lg bg-[#F7F4EF] border border-[#E8DFC9] text-[#533AFD]">
+                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              </span>
+              <div>
+                <h3 class="text-sm font-semibold text-[#1E1C1A]">Team Spenders</h3>
+                <p class="text-[11px] text-[#8C827A]">Ranked expenditure velocity</p>
+              </div>
+            </div>
+            <div class="inline-flex rounded-lg border border-[#E8DFC9] bg-[#F7F4EF] p-0.5 text-[10px] font-semibold">
+              <span class="px-2 py-0.5 rounded bg-white text-[#1E1C1A] shadow-2xs">Top Spenders</span>
+            </div>
+          </div>
+
+          <!-- Card Body: Scrollable Spenders List (flex-1 min-h-0) -->
+          ${spenders.length === 0 ? `
+            <div class="flex-1 flex flex-col items-center justify-center text-center text-xs text-[#8C827A] py-4">
+              <span class="size-8 rounded-full bg-[#FAF7F2] border border-[#E8DFC9] flex items-center justify-center mb-2">∅</span>
+              No individual spenders recorded in pool.
+            </div>
+          ` : `
+            <div class="flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scroll divide-y divide-[#F0EAE1] my-2">
+              ${spenders.map(s => `
+                <div class="py-2 first:pt-0 last:pb-0 flex flex-col gap-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-semibold text-[#1E1C1A] truncate">${s.name}</span>
+                    <span class="font-mono font-bold text-[#533AFD]">${s.total}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-[11px] text-[#8C827A]">
+                    <span>${s.trips} trip(s) • ${s.approved} apprv</span>
+                    ${s.pending !== "₹0" ? `<span class="text-amber-700 font-mono text-[10px]">+${s.pending} pend</span>` : ''}
+                  </div>
+                  <div class="h-1.5 w-full rounded-full bg-[#EFE7D8] overflow-hidden">
+                    <div class="h-full rounded-full bg-[#533AFD]" style="width: ${s.pct}%"></div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+
+          <!-- Card Footer (Pinned Bottom) -->
+          <div class="pt-2.5 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#8C827A] shrink-0">
+            <span>${spenders.length} active spender(s) tracked</span>
+            <span class="font-mono text-[#533AFD] font-semibold">${currentDensity === 'large' ? 'Scroll enabled' : 'Clean fit'}</span>
+          </div>
+        </div>
+      `;
+
+      return leftCard + rightCard;
+    }
+
+    function renderManagerView() {
+      const members = DATA.manager.members[currentDensity];
+      const hasData = currentDensity !== 'empty';
+
+      // Left Card: Approval Queue Health
+      const leftCard = `
+        <div class="bg-white rounded-xl border border-[#E8DFC9] p-5 shadow-xs flex flex-col justify-between h-[350px]">
+          <!-- Card Header (Pinned Top) -->
+          <div class="flex items-center justify-between gap-3 border-b border-[#F0EAE1] pb-3 shrink-0">
+            <div>
+              <h3 class="text-sm font-semibold text-[#1E1C1A]">Approval Queue Health</h3>
+              <p class="text-[11px] text-[#8C827A]">Team review velocity and dispatch SLA</p>
+            </div>
+            <div class="text-right">
+              <span class="font-mono text-xs font-bold text-[#1E1C1A]">${hasData ? DATA.manager.avgDays : '—'}</span>
+              <span class="block text-[10px] text-[#8C827A]">Avg response</span>
+            </div>
+          </div>
+
+          <!-- Half-Pie Gauge (Fixed middle block) -->
+          <div class="flex flex-col items-center justify-center my-auto py-2">
+            <div class="relative w-[180px] h-[95px] overflow-hidden">
+              <svg class="w-full h-[180px]" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#EFE7D8" stroke-width="12" stroke-dasharray="125.6 125.6" transform="rotate(-180 50 50)" />
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#00D66F" stroke-width="12" stroke-dasharray="${hasData ? '110 125.6' : '0 125.6'}" transform="rotate(-180 50 50)" stroke-linecap="round" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-end pb-1">
+                <span class="text-2xl font-bold font-mono text-[#1E1C1A]">${hasData ? DATA.manager.statRate : '0%'}</span>
+                <span class="text-[10px] font-semibold text-[#8C827A]">Actioned</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Readout Stats -->
+          <div class="pt-2 border-t border-[#F0EAE1] grid grid-cols-3 gap-2 text-xs shrink-0">
+            <div>
+              <span class="text-[10px] text-[#8C827A] block font-medium">Forwarded</span>
+              <span class="font-mono font-bold text-[#00D66F] text-xs">${hasData ? '14' : '0'}</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-[#8C827A] block font-medium">Pending</span>
+              <span class="font-mono font-bold text-[#533AFD] text-xs">${hasData ? '2' : '0'}</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-[#8C827A] block font-medium">Corrections</span>
+              <span class="font-mono font-bold text-[#FF6118] text-xs">${hasData ? '1' : '0'}</span>
+            </div>
+          </div>
+
+          <!-- Card Footer (Pinned Bottom) -->
+          <div class="pt-2 border-t border-[#F0EAE1] text-[11px] text-[#8C827A] shrink-0">
+            ${hasData ? '2 team request(s) awaiting review.' : 'All team requests actioned.'}
+          </div>
+        </div>
+      `;
+
+      // Right Card: Spend Allocation
+      const rightCard = `
+        <div class="bg-white rounded-xl border border-[#E8DFC9] p-5 shadow-xs flex flex-col justify-between h-[350px]">
+          <!-- Card Header (Pinned Top) -->
+          <div class="flex items-center justify-between gap-3 border-b border-[#F0EAE1] pb-3 shrink-0">
+            <div>
+              <h3 class="text-sm font-semibold text-[#1E1C1A]">Spend Allocation</h3>
+              <p class="text-[11px] text-[#8C827A]">Ranked team member travel spend</p>
+            </div>
+            <div class="inline-flex rounded-lg border border-[#E8DFC9] bg-[#F7F4EF] p-0.5 text-[10px] font-semibold">
+              <span class="px-2 py-0.5 rounded bg-white text-[#1E1C1A] shadow-2xs">Team Members</span>
+            </div>
+          </div>
+
+          <!-- Card Body: Scrollable Spenders List (flex-1 min-h-0) -->
+          ${members.length === 0 ? `
+            <div class="flex-1 flex flex-col items-center justify-center text-center text-xs text-[#8C827A] py-4">
+              <span class="size-8 rounded-full bg-[#FAF7F2] border border-[#E8DFC9] flex items-center justify-center mb-2">∅</span>
+              No team member spend recorded yet.
+            </div>
+          ` : `
+            <div class="flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scroll divide-y divide-[#F0EAE1] my-2">
+              ${members.map(m => `
+                <div class="py-2 first:pt-0 last:pb-0 flex flex-col gap-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-semibold text-[#1E1C1A] truncate">${m.name}</span>
+                    <span class="font-mono font-bold text-[#533AFD]">${m.total}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-[11px] text-[#8C827A]">
+                    <span>${m.trips} journey(s) logged</span>
+                  </div>
+                  <div class="h-1.5 w-full rounded-full bg-[#EFE7D8] overflow-hidden">
+                    <div class="h-full rounded-full bg-[#533AFD]" style="width: ${m.pct}%"></div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+
+          <!-- Card Footer (Pinned Bottom) -->
+          <div class="pt-2.5 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#8C827A] shrink-0">
+            <span>${members.length} team members with activity</span>
+            <span class="font-mono text-[#533AFD] font-semibold">${currentDensity === 'large' ? 'Scroll enabled' : 'Clean fit'}</span>
+          </div>
+        </div>
+      `;
+
+      return leftCard + rightCard;
+    }
+
+    function renderEmployeeView() {
+      const projects = DATA.employee.projects[currentDensity];
+      const hasData = currentDensity !== 'empty';
+
+      // Left Card: Reimbursement Progress
+      const leftCard = `
+        <div class="bg-white rounded-xl border border-[#E8DFC9] p-5 shadow-xs flex flex-col justify-between h-[350px]">
+          <!-- Card Header (Pinned Top) -->
+          <div class="flex items-center justify-between gap-3 border-b border-[#F0EAE1] pb-3 shrink-0">
+            <div>
+              <h3 class="text-sm font-semibold text-[#1E1C1A]">Reimbursement Progress</h3>
+              <p class="text-[11px] text-[#8C827A]">Payout across submitted expense claims</p>
+            </div>
+            <div class="text-right">
+              <span class="font-mono text-xs font-bold text-[#1E1C1A]">${hasData ? DATA.employee.avgDays : '—'}</span>
+              <span class="block text-[10px] text-[#8C827A]">Avg settlement</span>
+            </div>
+          </div>
+
+          <!-- Half-Pie Gauge (Fixed middle block) -->
+          <div class="flex flex-col items-center justify-center my-auto py-2">
+            <div class="relative w-[180px] h-[95px] overflow-hidden">
+              <svg class="w-full h-[180px]" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#EFE7D8" stroke-width="12" stroke-dasharray="125.6 125.6" transform="rotate(-180 50 50)" />
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#00D66F" stroke-width="12" stroke-dasharray="${hasData ? '105 125.6' : '0 125.6'}" transform="rotate(-180 50 50)" stroke-linecap="round" />
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-end pb-1">
+                <span class="text-2xl font-bold font-mono text-[#1E1C1A]">${hasData ? DATA.employee.statRate : '0%'}</span>
+                <span class="text-[10px] font-semibold text-[#8C827A]">Settled</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Readout Stats -->
+          <div class="pt-2 border-t border-[#F0EAE1] grid grid-cols-3 gap-2 text-xs shrink-0">
+            <div>
+              <span class="text-[10px] text-[#8C827A] block font-medium">Disbursed</span>
+              <span class="font-mono font-bold text-[#00D66F] text-xs">${hasData ? '₹1.4L' : '₹0'}</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-[#8C827A] block font-medium">Pending Payout</span>
+              <span class="font-mono font-bold text-[#533AFD] text-xs">${hasData ? '₹24k' : '₹0'}</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-[#8C827A] block font-medium">In Review</span>
+              <span class="font-mono font-bold text-[#8C827A] text-xs">${hasData ? '₹12k' : '₹0'}</span>
+            </div>
+          </div>
+
+          <!-- Card Footer (Pinned Bottom) -->
+          <div class="pt-2 border-t border-[#F0EAE1] text-[11px] text-[#8C827A] shrink-0">
+            ${hasData ? 'Finance is clearing 1 approved claim.' : 'All claims settled.'}
+          </div>
+        </div>
+      `;
+
+      // Right Card: Spend Allocation
+      const rightCard = `
+        <div class="bg-white rounded-xl border border-[#E8DFC9] p-5 shadow-xs flex flex-col justify-between h-[350px]">
+          <!-- Card Header (Pinned Top) -->
+          <div class="flex items-center justify-between gap-3 border-b border-[#F0EAE1] pb-3 shrink-0">
+            <div>
+              <h3 class="text-sm font-semibold text-[#1E1C1A]">Spend Allocation</h3>
+              <p class="text-[11px] text-[#8C827A]">Aggregated by billing project</p>
+            </div>
+            <div class="inline-flex rounded-lg border border-[#E8DFC9] bg-[#F7F4EF] p-0.5 text-[10px] font-semibold">
+              <span class="px-2 py-0.5 rounded bg-white text-[#1E1C1A] shadow-2xs">By Project</span>
+            </div>
+          </div>
+
+          <!-- Card Body: Scrollable Project List (flex-1 min-h-0) -->
+          ${projects.length === 0 ? `
+            <div class="flex-1 flex flex-col items-center justify-center text-center text-xs text-[#8C827A] py-4">
+              <span class="size-8 rounded-full bg-[#FAF7F2] border border-[#E8DFC9] flex items-center justify-center mb-2">∅</span>
+              No project-tagged trips recorded.
+            </div>
+          ` : `
+            <div class="flex-1 min-h-0 overflow-y-auto pr-1.5 custom-scroll divide-y divide-[#F0EAE1] my-2">
+              ${projects.map(p => `
+                <div class="py-2 first:pt-0 last:pb-0 flex flex-col gap-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-semibold text-[#1E1C1A] truncate">${p.code}</span>
+                    <span class="font-mono font-bold text-[#533AFD]">${p.total}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-[11px] text-[#8C827A]">
+                    <span>${p.trips} trip(s) logged</span>
+                  </div>
+                  <div class="h-1.5 w-full rounded-full bg-[#EFE7D8] overflow-hidden">
+                    <div class="h-full rounded-full bg-[#533AFD]" style="width: ${p.pct}%"></div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+
+          <!-- Card Footer (Pinned Bottom) -->
+          <div class="pt-2.5 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#8C827A] shrink-0">
+            <span>${projects.length} project codes tracked</span>
+            <span class="font-mono text-[#533AFD] font-semibold">${currentDensity === 'large' ? 'Scroll enabled' : 'Clean fit'}</span>
+          </div>
+        </div>
+      `;
+
+      return leftCard + rightCard;
+    }
+
+    function renderCards() {
+      const container = document.getElementById('cards-container');
+      if (currentRole === 'admin') container.innerHTML = renderAdminView();
+      else if (currentRole === 'manager') container.innerHTML = renderManagerView();
+      else if (currentRole === 'employee') container.innerHTML = renderEmployeeView();
+    }
+
+    function switchRole(role) {
+      currentRole = role;
+      document.querySelectorAll('.role-btn').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-[#1E1C1A]', 'shadow-xs');
+        btn.classList.add('text-[#756F68]');
+      });
+      const activeBtn = document.getElementById(`btn-${role}`);
+      activeBtn.classList.add('bg-white', 'text-[#1E1C1A]', 'shadow-xs');
+      activeBtn.classList.remove('text-[#756F68]');
+      renderCards();
+    }
+
+    function switchDensity(density) {
+      currentDensity = density;
+      const badge = document.getElementById('density-indicator-badge');
+      if (density === 'large') {
+        badge.textContent = 'Simulating: 10+ Items (Growing Data with Active Scroll)';
+        badge.className = 'font-mono text-[11px] px-2 py-0.5 rounded bg-amber-50 border border-amber-300 text-amber-800 font-bold';
+      } else if (density === 'empty') {
+        badge.textContent = 'Simulating: Empty Dataset (0 Items)';
+        badge.className = 'font-mono text-[11px] px-2 py-0.5 rounded bg-gray-100 border border-gray-300 text-gray-700 font-bold';
+      } else {
+        badge.textContent = 'Simulating: Normal Dataset (3-4 Items)';
+        badge.className = 'font-mono text-[11px] px-2 py-0.5 rounded bg-white border border-[#E0D7C4] text-[#533AFD] font-bold';
+      }
+      renderCards();
+    }
+
+    // Initial render
+    renderCards();
+  </script>
+</body>
+</html>

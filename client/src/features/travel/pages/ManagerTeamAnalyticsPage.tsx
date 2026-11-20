@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { PieChart, Plus } from 'lucide-react';
+import { PieChart } from 'lucide-react';
 import { useTravel } from '../hooks/useTravel';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { ManagerMonthlyBurnChart } from '../components/charts/ManagerMonthlyBurnChart';
@@ -19,7 +18,6 @@ import {
 } from '../utils/managerAnalytics';
 
 export const ManagerTeamAnalyticsPage: React.FC = () => {
-  const navigate = useNavigate();
   const reduceMotion = useReducedMotion();
   const { managerQueue, loadManagerQueue } = useTravel();
   const { user } = useAuth();
@@ -70,15 +68,6 @@ export const ManagerTeamAnalyticsPage: React.FC = () => {
             </p>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => navigate('/travel/new')}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer shadow-xs"
-        >
-          <Plus className="size-3.5" />
-          New Request
-        </button>
       </div>
 
       {/* Row 1: Executive Team KPI Strip */}

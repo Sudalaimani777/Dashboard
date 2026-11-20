@@ -22,8 +22,12 @@ export const NotificationContext = createContext<UseNotificationsResult | undefi
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Derive unreadCount directly from notifications to guarantee single source of truth
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => !n.isRead).length;
+  }, [notifications]);
 
   // Safely retrieve toast context (works even if rendered without ToastProvider)
   const toastContext = useToast();
@@ -34,7 +38,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setIsLoading(true);
       const res = await notificationsApi.fetchNotifications();
       setNotifications(res.notifications || []);
-      setUnreadCount(res.unreadCount || 0);
     } catch (err) {
       console.error('Failed to load notifications:', err);
     } finally {
@@ -47,7 +50,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
       await notificationsApi.markAsRead(id);
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
@@ -57,7 +59,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const markAllAsRead = useCallback(async () => {
     try {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      setUnreadCount(0);
       await notificationsApi.markAllAsRead();
     } catch (err) {
       console.error('Failed to mark all notifications as read:', err);
@@ -70,12 +71,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       removedItem = prev.find((n) => n.id === id);
       return prev.filter((n) => n.id !== id);
     });
-    setUnreadCount((prev) => {
-      if (removedItem && !removedItem.isRead) {
-        return Math.max(0, prev - 1);
-      }
-      return prev;
-    });
 
     try {
       await notificationsApi.deleteNotification(id);
@@ -84,26 +79,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // Rollback on failure
       if (removedItem) {
         setNotifications((prev) => [removedItem!, ...prev]);
-        if (!removedItem.isRead) {
-          setUnreadCount((prev) => prev + 1);
-        }
       }
     }
   }, []);
 
   const clearAllNotifications = useCallback(async () => {
     const backup = [...notifications];
-    const prevUnread = unreadCount;
     setNotifications([]);
-    setUnreadCount(0);
     try {
       await notificationsApi.deleteAllNotifications();
     } catch (err) {
       console.error('Failed to clear all notifications:', err);
       setNotifications(backup);
-      setUnreadCount(prevUnread);
     }
-  }, [notifications, unreadCount]);
+  }, [notifications]);
 
   useEffect(() => {
     refresh();
@@ -138,23 +127,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           });
         }
 
-        // 3. Increment or update notification in state & sync unread count accurately
+        // 3. Atomically update notifications list (unreadCount automatically derives cleanly)
         setNotifications((prev) => {
           const existingIndex = prev.findIndex((n) => n.id === notif.id);
           if (existingIndex >= 0) {
-            const existing = prev[existingIndex];
-            if (!existing.isRead && notif.isRead) {
-              setUnreadCount((c) => Math.max(0, c - 1));
-            } else if (existing.isRead && !notif.isRead) {
-              setUnreadCount((c) => c + 1);
-            }
             const updated = [...prev];
             updated[existingIndex] = notif;
             return updated;
-          }
-
-          if (!notif.isRead) {
-            setUnreadCount((c) => c + 1);
           }
           return [notif, ...prev];
         });

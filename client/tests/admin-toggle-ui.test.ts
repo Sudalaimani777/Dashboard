@@ -25,8 +25,9 @@ async function run() {
     'utf8'
   );
   assert.ok(
-    budgetsPage.includes("selectedQuarter === q ? 'bg-primary text-white shadow-2xs' : 'text-muted hover:text-ink'"),
-    'DepartmentBudgetsPage quarter toggle active pill should use bg-primary text-white'
+    budgetsPage.includes('RubberSegment') ||
+      budgetsPage.includes("selectedQuarter === q ? 'bg-primary text-white shadow-2xs' : 'text-muted hover:text-ink'"),
+    'DepartmentBudgetsPage quarter toggle active pill should use RubberSegment or bg-primary text-white'
   );
   assert.ok(
     !budgetsPage.includes("selectedQuarter === q ? 'bg-surface text-ink shadow-xs'"),

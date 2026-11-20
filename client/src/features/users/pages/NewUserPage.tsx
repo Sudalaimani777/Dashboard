@@ -103,7 +103,7 @@ export const NewUserPage: React.FC = () => {
       });
       showToast({
         title: 'Team member added',
-        description: `${values.name.trim()} (${values.role.toLowerCase()}) has been added to ${values.department.trim()}.`,
+        description: `${values.name.trim()} (${values.role.toLowerCase()}) has been added and a welcome email has been sent.`,
         type: 'USER_CREATED',
         linkUrl: '/dashboard?tab=users',
       });
@@ -185,6 +185,9 @@ export const NewUserPage: React.FC = () => {
               {...register('password')}
             />
             <PasswordStrengthMeter password={password || ''} />
+            <p className="mt-1.5 text-[11px] text-muted">
+              A welcome notification will be emailed to the user. For security, this password is not included in the email.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

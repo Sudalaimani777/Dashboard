@@ -5,9 +5,18 @@ import path from 'node:path';
 async function run() {
   console.log('🧪 Testing Responsive Navigation Shell (TDD RED)...');
 
-  const dashboardLayoutPath = path.resolve('client/src/features/travel/layout/DashboardLayout.tsx');
-  const sidebarPath = path.resolve('client/src/features/travel/layout/DynamicRoleSidebar.tsx');
-  const userProfilePath = path.resolve('client/src/features/travel/layout/SidebarUserProfile.tsx');
+  const dashboardLayoutPath = path.resolve(
+    import.meta.dirname,
+    '../src/features/travel/layout/DashboardLayout.tsx'
+  );
+  const sidebarPath = path.resolve(
+    import.meta.dirname,
+    '../src/features/travel/layout/DynamicRoleSidebar.tsx'
+  );
+  const userProfilePath = path.resolve(
+    import.meta.dirname,
+    '../src/features/travel/layout/SidebarUserProfile.tsx'
+  );
 
   const layoutCode = fs.readFileSync(dashboardLayoutPath, 'utf8');
   const sidebarCode = fs.readFileSync(sidebarPath, 'utf8');
