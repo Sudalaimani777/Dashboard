@@ -64,9 +64,9 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
   }, [totalVolume, health.forwardedCount, health.pendingManagerCount, health.returnedCount]);
 
   return (
-    <div className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col justify-between gap-4">
+    <div className="bg-surface rounded-xl border border-border-warm p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-2 h-[300px] overflow-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 shrink-0">
         <div>
           <h3 className="text-sm font-semibold text-ink">Approval Queue Health</h3>
           <p className="text-[11px] text-faint">Team review velocity and dispatch SLA</p>
@@ -86,8 +86,8 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
       </div>
 
       {/* 180-Degree Half-Pie Meter */}
-      <div className="relative flex flex-col items-center justify-center -my-3">
-        <ChartContainer config={chartConfig} className="h-[145px] w-full max-w-[280px]">
+      <div className="relative flex flex-col items-center justify-center -my-3 shrink-0">
+        <ChartContainer config={chartConfig} className="h-[125px] w-full max-w-[260px]">
           <PieChart>
             <ChartTooltip
               cursor={false}
@@ -107,8 +107,8 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
               nameKey="name"
               startAngle={180}
               endAngle={0}
-              innerRadius={68}
-              outerRadius={92}
+              innerRadius={58}
+              outerRadius={80}
               cy="95%"
               paddingAngle={pieData.length > 1 ? 3 : 0}
             >
@@ -122,15 +122,15 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
                       <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
                         <tspan
                           x={viewBox.cx}
-                          y={(viewBox.cy || 0) - 20}
-                          className="fill-ink text-2xl font-bold font-mono tabular-nums"
+                          y={(viewBox.cy || 0) - 18}
+                          className="fill-ink text-xl font-bold font-mono tabular-nums"
                         >
                           {health.approvalRatePct}%
                         </tspan>
                         <tspan
                           x={viewBox.cx}
-                          y={(viewBox.cy || 0) - 4}
-                          className="fill-muted text-[11px] font-semibold"
+                          y={(viewBox.cy || 0) - 3}
+                          className="fill-muted text-[10px] font-semibold"
                         >
                           Actioned
                         </tspan>
@@ -145,7 +145,7 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
       </div>
 
       {/* Clean Asymmetric Readout */}
-      <div className="pt-2 border-t border-border-warm/70 grid grid-cols-3 gap-2 text-xs">
+      <div className="pt-2 border-t border-border-warm/70 grid grid-cols-3 gap-2 text-xs shrink-0">
         <div>
           <span className="inline-flex items-center gap-1.5 text-[11px] text-muted">
             <span className="size-2 rounded-full bg-[#00D66F]" /> Forwarded
@@ -178,7 +178,7 @@ export const ManagerApprovalMeterCard: React.FC<ManagerApprovalMeterCardProps> =
       </div>
 
       {/* Footer Takeaway */}
-      <div className="pt-2 border-t border-border-warm/50 text-[11px] text-muted">
+      <div className="pt-1.5 border-t border-border-warm/50 text-[11px] text-muted shrink-0">
         {health.pendingManagerCount > 0
           ? `${health.pendingManagerCount} team request(s) waiting for line manager review.`
           : 'All team travel requests have been reviewed and forwarded.'}

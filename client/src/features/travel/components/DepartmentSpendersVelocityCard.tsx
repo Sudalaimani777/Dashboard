@@ -24,9 +24,9 @@ export const DepartmentSpendersVelocityCard: React.FC<DepartmentSpendersVelocity
   const maxMemberSpend = drilldown.topMembers[0]?.totalSpend || 1;
 
   return (
-    <div className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col gap-4">
+    <div className="bg-surface rounded-xl border border-border-warm p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-2.5 h-[300px] overflow-hidden">
       {/* Header with Mode Toggle */}
-      <div>
+      <div className="shrink-0 border-b border-border-warm/60 pb-2.5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-lg bg-surface-subtle border border-border-warm text-ink">
@@ -71,8 +71,8 @@ export const DepartmentSpendersVelocityCard: React.FC<DepartmentSpendersVelocity
         </div>
 
         {/* Dual Request Type Split Bar */}
-        <div className="mt-4 flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[11px]">
+        <div className="mt-2.5 flex flex-col gap-1">
+          <div className="flex items-center justify-between text-[10px]">
             <span className="inline-flex items-center gap-1.5 text-muted font-medium">
               Upcoming: <strong className="font-mono text-ink">{formatINRCompact(drilldown.upcomingTotal)}</strong> ({drilldown.upcomingPct}%)
             </span>
@@ -80,7 +80,7 @@ export const DepartmentSpendersVelocityCard: React.FC<DepartmentSpendersVelocity
               Claims: <strong className="font-mono text-ink">{formatINRCompact(drilldown.claimsTotal)}</strong> ({drilldown.claimsPct}%)
             </span>
           </div>
-          <div className="h-2 w-full rounded-full bg-[#EFE7D8] overflow-hidden flex shadow-2xs">
+          <div className="h-1.5 w-full rounded-full bg-[#EFE7D8] overflow-hidden flex shadow-2xs">
             {drilldown.upcomingPct > 0 && (
               <div
                 className="h-full bg-primary transition-all duration-300"
@@ -100,17 +100,17 @@ export const DepartmentSpendersVelocityCard: React.FC<DepartmentSpendersVelocity
       </div>
 
       {/* Body List */}
-      <div className="divide-y divide-border-warm/60">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 divide-y divide-border-warm/60">
         {activeTab === 'members' ? (
           drilldown.topMembers.length === 0 ? (
-            <div className="py-6 text-center text-xs text-muted">
+            <div className="h-full flex items-center justify-center text-center text-xs text-muted py-4">
               No individual spenders recorded in {selectedDepartment}.
             </div>
           ) : (
-            drilldown.topMembers.slice(0, 4).map((m) => {
+            drilldown.topMembers.map((m) => {
               const sharePct = Math.max(8, Math.round((m.totalSpend / maxMemberSpend) * 100));
               return (
-                <div key={m.name} className="py-2.5 first:pt-1 last:pb-1 flex flex-col gap-1">
+                <div key={m.name} className="py-2 first:pt-0 last:pb-0 flex flex-col gap-1">
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="font-semibold text-ink truncate">{m.name}</span>
                     <span className="font-mono font-bold text-primary tabular-nums shrink-0">
@@ -139,16 +139,16 @@ export const DepartmentSpendersVelocityCard: React.FC<DepartmentSpendersVelocity
             })
           )
         ) : drilldown.topTrips.length === 0 ? (
-          <div className="py-6 text-center text-xs text-muted">
+          <div className="h-full flex items-center justify-center text-center text-xs text-muted py-4">
             No active travel vouchers in {selectedDepartment}.
           </div>
         ) : (
-          drilldown.topTrips.slice(0, 3).map((trip) => (
+          drilldown.topTrips.map((trip) => (
             <button
               key={trip.id}
               type="button"
               onClick={() => navigate(`/travel/requests/${trip.id}?tab=governance`)}
-              className="w-full text-left py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-md"
+              className="w-full text-left py-2 first:pt-0 last:pb-0 flex items-center justify-between gap-3 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-md"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="p-1 rounded bg-surface-subtle border border-border-warm text-muted group-hover:text-primary transition-colors">
@@ -181,7 +181,7 @@ export const DepartmentSpendersVelocityCard: React.FC<DepartmentSpendersVelocity
       </div>
 
       {/* Footer Takeaway */}
-      <div className="mt-auto pt-3 border-t border-border-warm/70 flex items-center justify-between text-[11px] text-muted">
+      <div className="pt-2 border-t border-border-warm/70 flex items-center justify-between text-[11px] text-muted shrink-0">
         <span>
           {drilldown.topMembers.length} active spender(s) in {selectedDepartment} pool.
         </span>

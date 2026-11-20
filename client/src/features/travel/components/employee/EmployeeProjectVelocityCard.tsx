@@ -16,9 +16,9 @@ export const EmployeeProjectVelocityCard: React.FC<EmployeeProjectVelocityCardPr
   const maxRouteSpend = velocity.byRoute[0]?.totalSpend || 1;
 
   return (
-    <div className="bg-surface rounded-xl border border-border-warm p-5 shadow-xs flex flex-col gap-4">
+    <div className="bg-surface rounded-xl border border-border-warm p-4 sm:p-5 shadow-xs flex flex-col justify-between gap-2.5 h-[300px] overflow-hidden">
       {/* Header with Mode Toggle */}
-      <div>
+      <div className="shrink-0 border-b border-border-warm/60 pb-2.5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-lg bg-surface-subtle border border-border-warm text-ink">
@@ -68,17 +68,17 @@ export const EmployeeProjectVelocityCard: React.FC<EmployeeProjectVelocityCardPr
       </div>
 
       {/* Body List */}
-      <div className="divide-y divide-border-warm/60">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 divide-y divide-border-warm/60">
         {activeTab === 'project' ? (
           velocity.byProject.length === 0 ? (
-            <div className="py-6 text-center text-xs text-muted">
+            <div className="h-full flex items-center justify-center text-center text-xs text-muted py-4">
               No project-tagged trips recorded.
             </div>
           ) : (
-            velocity.byProject.slice(0, 4).map((p) => {
+            velocity.byProject.map((p) => {
               const sharePct = Math.max(8, Math.round((p.totalSpend / maxProjectSpend) * 100));
               return (
-                <div key={p.code} className="py-2.5 first:pt-1 last:pb-1 flex flex-col gap-1">
+                <div key={p.code} className="py-2 first:pt-0 last:pb-0 flex flex-col gap-1">
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="font-semibold text-ink truncate">{p.code}</span>
                     <span className="font-mono font-bold text-primary tabular-nums shrink-0">
@@ -102,14 +102,14 @@ export const EmployeeProjectVelocityCard: React.FC<EmployeeProjectVelocityCardPr
             })
           )
         ) : velocity.byRoute.length === 0 ? (
-          <div className="py-6 text-center text-xs text-muted">
+          <div className="h-full flex items-center justify-center text-center text-xs text-muted py-4">
             No route destinations recorded.
           </div>
         ) : (
-          velocity.byRoute.slice(0, 4).map((r) => {
+          velocity.byRoute.map((r) => {
             const sharePct = Math.max(8, Math.round((r.totalSpend / maxRouteSpend) * 100));
             return (
-              <div key={`${r.departure}-${r.destination}`} className="py-2.5 first:pt-1 last:pb-1 flex flex-col gap-1">
+              <div key={`${r.departure}-${r.destination}`} className="py-2 first:pt-0 last:pb-0 flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-2 text-xs">
                   <span className="font-semibold text-ink truncate">
                     {r.departure} → {r.destination}
@@ -137,7 +137,7 @@ export const EmployeeProjectVelocityCard: React.FC<EmployeeProjectVelocityCardPr
       </div>
 
       {/* Footer Takeaway */}
-      <div className="mt-auto pt-3 border-t border-border-warm/70 flex items-center justify-between text-[11px] text-muted">
+      <div className="pt-2 border-t border-border-warm/70 flex items-center justify-between text-[11px] text-muted shrink-0">
         <span>
           {activeTab === 'project'
             ? `${velocity.byProject.length} project codes tracked`
