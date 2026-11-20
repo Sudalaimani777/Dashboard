@@ -17,6 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
+import { RubberSegment } from '../../../shared/components/ui/RubberSegment';
 import type { Notification } from '../types/notification.types';
 
 export type NotificationFilter = 'ALL' | 'UNREAD' | 'ACTION_REQUIRED';
@@ -137,7 +138,7 @@ export const NotificationsHubPage: React.FC = () => {
 
   const filterTabs = useMemo(
     () => [
-      { id: 'ALL' as const, label: 'All', count: notifications.length, countType: 'default' as const },
+      { id: 'ALL' as const, label: 'All', count: undefined, countType: 'default' as const },
       { id: 'UNREAD' as const, label: 'Unread', count: unreadItemsCount, countType: 'primary' as const },
       {
         id: 'ACTION_REQUIRED' as const,
@@ -146,7 +147,7 @@ export const NotificationsHubPage: React.FC = () => {
         countType: 'amber' as const,
       },
     ],
-    [notifications.length, unreadItemsCount, actionRequiredCount]
+    [unreadItemsCount, actionRequiredCount]
   );
 
   const filteredNotifications = useMemo(() => {
@@ -212,44 +213,19 @@ export const NotificationsHubPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Filter Pills with Animated Sliding Indicator */}
-      <div className="relative flex items-center p-1 bg-surface-subtle border border-border-warm/80 rounded-xl w-fit">
-        {filterTabs.map((tab) => {
-          const isActive = activeFilter === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveFilter(tab.id)}
-              className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer select-none transition-colors duration-200 ${
-                isActive ? 'text-ink font-bold' : 'text-muted hover:text-ink'
-              }`}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="activeFilterPill"
-                  className="absolute inset-0 bg-surface rounded-lg shadow-xs border border-border-warm/70"
-                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                />
-              )}
-              <span className="relative z-10">{tab.label}</span>
-              {tab.count > 0 && (
-                <span
-                  className={`relative z-10 text-[11px] font-mono px-1.5 py-0.2 rounded-full transition-colors ${
-                    tab.countType === 'primary'
-                      ? 'bg-primary/10 text-primary font-bold'
-                      : tab.countType === 'amber'
-                      ? 'bg-amber-100 text-amber-800 font-bold'
-                      : 'bg-surface-subtle border border-border-warm/60 text-muted'
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* 2. Filter Pills with RubberSegment */}
+      <RubberSegment
+        aria-label="Filter notifications"
+        variant="surface"
+        size="sm"
+        value={activeFilter}
+        onChange={(val) => setActiveFilter(val as NotificationFilter)}
+        items={filterTabs.map((tab) => ({
+          value: tab.id,
+          label: tab.label,
+          badge: tab.id !== 'ALL' && tab.count && tab.count > 0 ? tab.count : undefined,
+        }))}
+      />
 
       {/* 3. Notification List with Smooth Crossfades & Motion Layout */}
       <div className="space-y-3">

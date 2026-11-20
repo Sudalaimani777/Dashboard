@@ -13,6 +13,7 @@ import {
   Users,
 } from 'lucide-react';
 import { TravelMetricsGrid } from '../../travel/components/shared/TravelMetricsGrid';
+import { RubberSegment } from '../../../shared/components/ui/RubberSegment';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { usersApi } from '../services/users.api';
 import { UserFormModal } from '../components/UserFormModal';
@@ -208,50 +209,27 @@ export const AdminUsersPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Reporting Line Scope Switcher */}
-          <div
-            role="group"
+          <RubberSegment
             aria-label="Directory scope"
-            className="inline-flex rounded-xl border border-border-warm bg-surface-subtle p-1 shadow-2xs"
-          >
-            <button
-              type="button"
-              aria-pressed={directoryScope === 'ALL'}
-              onClick={() => setDirectoryScope('ALL')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
-                directoryScope === 'ALL'
-                  ? 'bg-surface text-ink shadow-xs border border-border-warm/80'
-                  : 'text-muted hover:text-ink hover:bg-surface/50'
-              }`}
-            >
-              <Building2 className="size-3.5 text-muted" />
-              <span>All Team Members</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-surface border border-border-warm text-muted">
-                {users.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              aria-pressed={directoryScope === 'LINE'}
-              onClick={() => setDirectoryScope('LINE')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
-                directoryScope === 'LINE'
-                  ? 'bg-surface text-ink shadow-xs border border-border-warm/80'
-                  : 'text-muted hover:text-ink hover:bg-surface/50'
-              }`}
-            >
-              <Users className="size-3.5 text-primary" />
-              <span>My Reporting Line</span>
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  lineUsers.length > 0
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-surface border border-border-warm text-muted'
-                }`}
-              >
-                {lineUsers.length}
-              </span>
-            </button>
-          </div>
+            variant="surface"
+            size="sm"
+            value={directoryScope}
+            onChange={(val) => setDirectoryScope(val as DirectoryScope)}
+            items={[
+              {
+                value: 'ALL',
+                label: 'All Team Members',
+                icon: <Building2 className="size-3.5" />,
+                badge: users.length,
+              },
+              {
+                value: 'LINE',
+                label: 'My Reporting Line',
+                icon: <Users className="size-3.5" />,
+                badge: lineUsers.length,
+              },
+            ]}
+          />
 
           <button
             type="button"
@@ -333,34 +311,19 @@ export const AdminUsersPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Primary Role Filter */}
           <div className="overflow-x-auto pb-0.5 max-w-full scrollbar-none">
-            <div
-              role="group"
+            <RubberSegment
               aria-label="Filter by role"
-              className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5 whitespace-nowrap"
-            >
-              {(
-                [
-                  { id: 'ALL', label: 'All Roles' },
-                  { id: 'EMPLOYEE', label: 'Employees' },
-                  { id: 'MANAGER', label: 'Managers' },
-                  { id: 'ADMIN', label: 'Admins' },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  aria-pressed={roleFilter === opt.id}
-                  onClick={() => setRoleFilter(opt.id)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
-                    roleFilter === opt.id
-                      ? 'bg-primary text-white shadow-2xs'
-                      : 'text-muted hover:text-ink'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+              variant="primary"
+              size="sm"
+              value={roleFilter}
+              onChange={(val) => setRoleFilter(val as any)}
+              items={[
+                { value: 'ALL', label: 'All Roles' },
+                { value: 'EMPLOYEE', label: 'Employees' },
+                { value: 'MANAGER', label: 'Managers' },
+                { value: 'ADMIN', label: 'Admins' },
+              ]}
+            />
           </div>
 
           <div className="h-4 w-px bg-border-warm hidden sm:block" />

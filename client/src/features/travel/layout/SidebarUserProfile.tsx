@@ -4,14 +4,14 @@ import type { User } from '../../auth/types/auth.types';
 
 export interface SidebarUserProfileProps {
   user: User;
-  isCollapsed: boolean;
+  isCollapsed?: boolean;
   onSignOut: () => void;
   isDrawerMode?: boolean;
 }
 
 export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
   user,
-  isCollapsed,
+  isCollapsed = false,
   onSignOut,
   isDrawerMode = false,
 }) => {

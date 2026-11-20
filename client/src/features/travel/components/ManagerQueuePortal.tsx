@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
 import { TravelMetricsGrid } from './shared/TravelMetricsGrid';
+import { RubberSegment } from '../../../shared/components/ui/RubberSegment';
 import { formatINR } from '../utils/currency';
 import { aggregateRequestsCategorySpend, exportRequestsToCsv } from '../utils/travelAnalytics';
 import {
@@ -435,39 +436,19 @@ export const ManagerQueuePortal: React.FC<ManagerQueuePortalProps> = ({ activeTa
           className="flex flex-col gap-5"
         >
           {/* Personal Lifecycle Segment Pills */}
-          <div
-            role="tablist"
-            aria-label="Filter personal travel by stage"
-            className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl border border-border-warm bg-surface shadow-2xs"
-          >
-            {personalSegmentConfig.map((seg) => {
-              const isSelected = personalSegment === seg.id;
-              return (
-                <button
-                  key={seg.id}
-                  role="tab"
-                  type="button"
-                  aria-selected={isSelected}
-                  onClick={() => setPersonalSegment(seg.id)}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-primary text-white shadow-2xs'
-                      : 'text-muted hover:text-ink hover:bg-surface-subtle'
-                  }`}
-                >
-                  <span>{seg.label}</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                      isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-surface-subtle border border-border-warm text-muted'
-                    }`}
-                  >
-                    {seg.count}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="overflow-x-auto pb-0.5 max-w-full scrollbar-none">
+            <RubberSegment
+              aria-label="Filter personal travel by stage"
+              variant="primary"
+              size="sm"
+              value={personalSegment}
+              onChange={(val) => setPersonalSegment(val as ManagerPersonalStatusSegment)}
+              items={personalSegmentConfig.map((seg) => ({
+                value: seg.id,
+                label: seg.label,
+                badge: seg.count,
+              }))}
+            />
           </div>
 
           <div ref={personalTableRef} className="w-full">

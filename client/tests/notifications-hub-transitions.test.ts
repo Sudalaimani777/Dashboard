@@ -18,15 +18,17 @@ async function run() {
     'NotificationsHubPage must import motion and AnimatePresence from motion/react'
   );
 
-  // 2. Verify shared layoutId for sliding tab indicator
+  // 2. Verify shared layoutId or RubberSegment for sliding tab indicator
   assert.ok(
-    hubSource.includes('layoutId="activeFilterPill"'),
-    'NotificationsHubPage must use layoutId="activeFilterPill" for sliding indicator'
+    hubSource.includes('layoutId="activeFilterPill"') || hubSource.includes('RubberSegment'),
+    'NotificationsHubPage must use RubberSegment or layoutId="activeFilterPill" for sliding indicator'
   );
 
   // 3. Verify spring transition physics on the sliding indicator
   assert.ok(
-    hubSource.includes("type: 'spring'") || hubSource.includes('type: "spring"'),
+    hubSource.includes('RubberSegment') ||
+      hubSource.includes("type: 'spring'") ||
+      hubSource.includes('type: "spring"'),
     'Filter tab indicator must use spring physics'
   );
 

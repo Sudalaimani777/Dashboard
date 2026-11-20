@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Bell } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { DynamicRoleSidebar } from './DynamicRoleSidebar';
@@ -18,9 +18,6 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({ children }) =>
   const { user, signout } = useAuth();
   const { requests, managerQueue, adminQueue } = useTravel();
   const { unreadCount, hasActionRequired } = useNotifications();
-  const [isPinned, setIsPinned] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
-  );
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -91,9 +88,12 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({ children }) =>
             type="button"
             onClick={() => setIsMobileDrawerOpen(true)}
             aria-label="Open navigation menu"
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border-warm bg-surface text-ink hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 cursor-pointer"
+            className="relative flex size-9 shrink-0 items-center justify-center rounded-lg border border-border-warm bg-surface text-ink hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 cursor-pointer"
           >
             <Menu className="size-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 size-2 rounded-full bg-primary ring-2 ring-surface" />
+            )}
           </button>
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-7 h-7 rounded-md bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
@@ -104,28 +104,13 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({ children }) =>
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => handleTabChange('notifications')}
-            aria-label="View notifications"
-            className="relative p-2 rounded-lg border border-border-warm bg-surface text-muted hover:text-ink cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          >
-            <Bell className="size-4" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary ring-2 ring-surface" />
-            )}
-          </button>
-        </div>
       </header>
 
-      {/* Floating Dynamic Role Sidebar */}
+      {/* Fixed Desktop Dynamic Role Sidebar & Mobile Drawer */}
       <DynamicRoleSidebar
         user={user}
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        isPinned={isPinned}
-        onTogglePin={() => setIsPinned((prev) => !prev)}
         isMobileDrawerOpen={isMobileDrawerOpen}
         onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
         onSignOut={signout}
@@ -135,9 +120,7 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({ children }) =>
       {/* Main View Area */}
       <main
         ref={mainScrollRef}
-        className={`flex-1 overflow-y-auto min-w-0 pt-14 lg:pt-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          isPinned ? 'lg:pl-[256px]' : 'lg:pl-[76px]'
-        }`}
+        className="flex-1 overflow-y-auto min-w-0 pt-14 lg:pt-0 lg:pl-64"
       >
         <div className="px-3.5 py-4 sm:px-6 sm:py-5">
           <ErrorBoundary

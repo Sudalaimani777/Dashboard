@@ -141,6 +141,26 @@ async function run() {
   );
   assert.ok(fs.existsSync(pageFile), 'ManagerTeamAnalyticsPage.tsx must exist');
 
+  const pageContent = fs.readFileSync(pageFile, 'utf-8');
+  assert.ok(
+    !pageContent.includes('New Request'),
+    'ManagerTeamAnalyticsPage must not render redundant New Request button'
+  );
+  assert.ok(
+    !pageContent.includes('/travel/new'),
+    'ManagerTeamAnalyticsPage must not navigate to /travel/new'
+  );
+
+  const employeeSpendPageFile = path.resolve(
+    import.meta.dirname,
+    '../src/features/travel/pages/EmployeeSpendAnalyticsPage.tsx'
+  );
+  const employeeSpendContent = fs.readFileSync(employeeSpendPageFile, 'utf-8');
+  assert.ok(
+    employeeSpendContent.includes('New Request'),
+    'EmployeeSpendAnalyticsPage should retain the New Request button for personal spend'
+  );
+
   console.log('✅ ALL MANAGER TEAM ANALYTICS TESTS PASSED!');
 }
 

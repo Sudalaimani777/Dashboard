@@ -5,3 +5,4 @@ export * from './chart';
 export * from './input';
 export * from './label';
 export * from './password-input';
+export * from './RubberSegment';

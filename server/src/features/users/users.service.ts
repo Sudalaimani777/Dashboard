@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { emailService, IEmailService } from '../../shared/services/email.service.js';
 import { usersRepository, UsersRepository } from './users.repository.js';
 import { UserDirectoryItem } from './users.types.js';
 import {
@@ -8,7 +9,10 @@ import {
 } from './users.validation.js';
 
 export class UsersService {
-  constructor(private repo: UsersRepository = usersRepository) {}
+  constructor(
+    private repo: UsersRepository = usersRepository,
+    private mailer: IEmailService = emailService
+  ) {}
 
   private async assertValidManager(managerId: string | null | undefined, targetUserId?: string) {
     if (!managerId) return;
@@ -61,7 +65,7 @@ export class UsersService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
-    return this.repo.createUser({
+    const user = await this.repo.createUser({
       name: dto.name,
       email: dto.email,
       passwordHash,
@@ -70,6 +74,22 @@ export class UsersService {
       managerId: effectiveManagerId,
       reportingAdminId: effectiveReportingAdminId,
     });
+
+    try {
+      await this.mailer.sendUserWelcomeEmail(
+        user.email,
+        user.name,
+        user.role,
+        user.department
+      );
+    } catch (mailErr) {
+      console.warn(
+        `[UsersService] Failed to send welcome email to ${user.email}:`,
+        (mailErr as Error).message
+      );
+    }
+
+    return user;
   }
 
   async updateUser(

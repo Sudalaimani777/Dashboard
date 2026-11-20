@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { TravelRequestsTable } from './tables/TravelRequestsTable';
 import { TravelMetricsGrid } from './shared/TravelMetricsGrid';
+import { RubberSegment } from '../../../shared/components/ui/RubberSegment';
 import { DepartmentBudgetsPage } from '../pages/DepartmentBudgetsPage';
 import { AdminUsersPage } from '../../users/pages/AdminUsersPage';
 import { formatINR } from '../utils/currency';
@@ -277,50 +278,27 @@ export const AdminGovernancePortal: React.FC<AdminGovernancePortalProps> = ({ ac
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Executive Scope Switcher */}
-          <div
-            role="group"
+          <RubberSegment
             aria-label="Queue scope"
-            className="inline-flex rounded-xl border border-border-warm bg-surface-subtle p-1 shadow-2xs"
-          >
-            <button
-              type="button"
-              aria-pressed={adminScope === 'ASSIGNED'}
-              onClick={() => setAdminScope('ASSIGNED')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
-                adminScope === 'ASSIGNED'
-                  ? 'bg-surface text-ink shadow-xs border border-border-warm/80'
-                  : 'text-muted hover:text-ink hover:bg-surface/50'
-              }`}
-            >
-              <User className="size-3.5 text-primary" />
-              <span>Assigned to Me</span>
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  assignedRequests.length > 0
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-surface border border-border-warm text-muted'
-                }`}
-              >
-                {assignedRequests.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              aria-pressed={adminScope === 'ALL'}
-              onClick={() => setAdminScope('ALL')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
-                adminScope === 'ALL'
-                  ? 'bg-surface text-ink shadow-xs border border-border-warm/80'
-                  : 'text-muted hover:text-ink hover:bg-surface/50'
-              }`}
-            >
-              <Building2 className="size-3.5 text-muted" />
-              <span>All Organization</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-surface border border-border-warm text-muted">
-                {adminQueue.length}
-              </span>
-            </button>
-          </div>
+            variant="surface"
+            size="sm"
+            value={adminScope}
+            onChange={(val) => setAdminScope(val as AdminScope)}
+            items={[
+              {
+                value: 'ASSIGNED',
+                label: 'Assigned to Me',
+                icon: <User className="size-3.5 text-primary" />,
+                badge: assignedRequests.length,
+              },
+              {
+                value: 'ALL',
+                label: 'All Organization',
+                icon: <Building2 className="size-3.5" />,
+                badge: adminQueue.length,
+              },
+            ]}
+          />
 
           {filteredRequests.length > 0 && (
             <button

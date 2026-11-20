@@ -134,6 +134,51 @@ async function run() {
   await usersRepository.deleteUser(createdManager.id);
   await usersRepository.deleteUser(createdAdmin.id);
 
+  // 8. Test that UsersService dispatches welcome email upon user creation
+  const welcomeCalls: any[] = [];
+  const mockMailer: any = {
+    sendUserWelcomeEmail: async (...args: any[]) => {
+      welcomeCalls.push(args);
+      return { messageId: 'mock-welcome-id' };
+    },
+  };
+  const serviceWithMailer = new UsersService(usersRepository, mockMailer);
+  const welcomeUserEmail = `welcome.${timestamp}@readventure.com`;
+  const provisionedUser = await serviceWithMailer.createUser({
+    name: 'Welcome Test User',
+    email: welcomeUserEmail,
+    password: 'Password123!',
+    role: 'EMPLOYEE',
+    department: 'Design',
+  });
+  assert.equal(welcomeCalls.length, 1, 'UsersService.createUser must trigger sendUserWelcomeEmail');
+  assert.equal(welcomeCalls[0][0], welcomeUserEmail, 'Recipient email matches');
+  assert.equal(welcomeCalls[0][1], 'Welcome Test User', 'Recipient name matches');
+  assert.equal(welcomeCalls[0][2], 'EMPLOYEE', 'Role matches');
+  assert.equal(welcomeCalls[0][3], 'Design', 'Department matches');
+  console.log('✓ UsersService dispatches sendUserWelcomeEmail on user creation');
+
+  // 9. Test resilience: UsersService still succeeds if mailer throws an error
+  const failingMailer: any = {
+    sendUserWelcomeEmail: async () => {
+      throw new Error('SMTP connection timed out');
+    },
+  };
+  const serviceWithFailingMailer = new UsersService(usersRepository, failingMailer);
+  const resilientUserEmail = `resilient.${timestamp}@readventure.com`;
+  const resilientUser = await serviceWithFailingMailer.createUser({
+    name: 'Resilient Test User',
+    email: resilientUserEmail,
+    password: 'Password123!',
+    role: 'EMPLOYEE',
+    department: 'Engineering',
+  });
+  assert.ok(resilientUser?.id, 'UsersService.createUser must succeed even when email dispatch fails');
+  console.log('✓ UsersService gracefully handles email failure without blocking user creation');
+
+  await usersRepository.deleteUser(provisionedUser.id);
+  await usersRepository.deleteUser(resilientUser.id);
+
   console.log('🎉 ALL USERS REPOSITORY & SERVICE TESTS PASSED!');
   await pool.end();
 }
