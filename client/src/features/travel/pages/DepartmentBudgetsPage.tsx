@@ -8,6 +8,7 @@ import { MonthlyBurnChart } from '../components/charts/MonthlyBurnChart';
 import { DepartmentCategoryBreakdownCard } from '../components/DepartmentCategoryBreakdownCard';
 import { DepartmentSpendersVelocityCard } from '../components/DepartmentSpendersVelocityCard';
 import { formatINR, formatINRCompact } from '../utils/currency';
+import { RubberSegment } from '../../../shared/components/ui/RubberSegment';
 import { isAssignedToAdmin } from '../utils/adminQueue';
 import {
   computeCorporateLedgerStats,
@@ -266,25 +267,14 @@ export const DepartmentBudgetsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <div
-            role="group"
+          <RubberSegment
             aria-label="Filter by fiscal quarter"
-            className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5"
-          >
-            {QUARTERS.map((q) => (
-              <button
-                key={q}
-                type="button"
-                aria-pressed={selectedQuarter === q}
-                onClick={() => setSelectedQuarter(q)}
-                className={`px-3 py-1.5 rounded-md text-xs font-mono font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
-                  selectedQuarter === q ? 'bg-primary text-white shadow-2xs' : 'text-muted hover:text-ink'
-                }`}
-              >
-                {q}
-              </button>
-            ))}
-          </div>
+            variant="primary"
+            size="sm"
+            value={selectedQuarter}
+            onChange={(val) => setSelectedQuarter(val as FiscalQuarter)}
+            items={QUARTERS.map((q) => ({ value: q, label: q }))}
+          />
 
           <button
             type="button"
@@ -603,36 +593,17 @@ export const DepartmentBudgetsPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2.5">
               <h2 className="text-sm font-semibold text-ink">Department Pools &amp; Utilization</h2>
               {myDepartments.length > 0 && (
-                <div
-                  role="group"
+                <RubberSegment
                   aria-label="Pool scope"
-                  className="inline-flex rounded-lg border border-border-warm bg-surface p-0.5"
-                >
-                  <button
-                    type="button"
-                    aria-pressed={poolScope === 'ALL'}
-                    onClick={() => setPoolScope('ALL')}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
-                      poolScope === 'ALL'
-                        ? 'bg-primary text-white shadow-2xs'
-                        : 'text-muted hover:text-ink'
-                    }`}
-                  >
-                    All Pools
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={poolScope === 'MY'}
-                    onClick={() => setPoolScope('MY')}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
-                      poolScope === 'MY'
-                        ? 'bg-primary text-white shadow-2xs'
-                        : 'text-muted hover:text-ink'
-                    }`}
-                  >
-                    My Departments ({myDepartments.length})
-                  </button>
-                </div>
+                  variant="surface"
+                  size="sm"
+                  value={poolScope}
+                  onChange={(val) => setPoolScope(val as 'ALL' | 'MY')}
+                  items={[
+                    { value: 'ALL', label: 'All Pools' },
+                    { value: 'MY', label: `My Departments (${myDepartments.length})` },
+                  ]}
+                />
               )}
             </div>
 

@@ -7,6 +7,12 @@ export interface EmailResult {
 }
 
 export interface IEmailService {
+  sendUserWelcomeEmail(
+    toEmail: string,
+    recipientName: string,
+    role: string,
+    department: string
+  ): Promise<EmailResult>;
   sendPasswordResetEmail(
     toEmail: string,
     recipientName: string,
@@ -117,6 +123,7 @@ export class EmailService implements IEmailService {
     calloutTitle?: string;
     calloutContent?: string;
     trip?: any;
+    customSectionHtml?: string;
     ctaLabel: string;
     ctaUrl: string;
     footerNote?: string;
@@ -131,6 +138,7 @@ export class EmailService implements IEmailService {
       calloutTitle,
       calloutContent,
       trip,
+      customSectionHtml,
       ctaLabel,
       ctaUrl,
       footerNote,
@@ -176,6 +184,8 @@ export class EmailService implements IEmailService {
               </p>
             </div>
           ` : ''}
+
+          ${customSectionHtml ? customSectionHtml : ''}
 
           <!-- Trip Overview Card -->
           ${trip ? `
@@ -224,6 +234,80 @@ export class EmailService implements IEmailService {
         </div>
       </div>
     `;
+  }
+
+  async sendUserWelcomeEmail(
+    toEmail: string,
+    recipientName: string,
+    role: string,
+    department: string
+  ): Promise<EmailResult> {
+    const transporter = await this.getTransporter();
+    const ctaUrl = `${config.clientUrl || 'http://localhost:5173'}/signin`;
+    const subject = 'Welcome to TripFlow - Your Account Has Been Created';
+
+    const normalizedRole = role.toUpperCase();
+    const roleLabel =
+      normalizedRole === 'ADMIN'
+        ? 'Administrator'
+        : normalizedRole === 'MANAGER'
+        ? 'Manager'
+        : 'Employee';
+
+    const customSectionHtml = `
+      <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 20px; margin: 0 0 24px 0;">
+        <div style="font-size: 13px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px;">
+          Account Details
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr>
+            <td style="color: #64748B; padding: 6px 0;">Registered Email:</td>
+            <td style="color: #061B31; font-weight: 600; text-align: right; padding: 6px 0;">${escapeHtml(toEmail)}</td>
+          </tr>
+          <tr>
+            <td style="color: #64748B; padding: 6px 0;">Assigned Role:</td>
+            <td style="color: #061B31; font-weight: 600; text-align: right; padding: 6px 0;">${escapeHtml(roleLabel)}</td>
+          </tr>
+          <tr>
+            <td style="color: #64748B; padding: 6px 0;">Department:</td>
+            <td style="color: #061B31; font-weight: 600; text-align: right; padding: 6px 0;">${escapeHtml(department)}</td>
+          </tr>
+        </table>
+      </div>
+    `;
+
+    const html = this.renderBaseEmail({
+      recipientName,
+      headline: 'Welcome to TripFlow',
+      badgeText: roleLabel,
+      badgeBg: '#EEF2FF',
+      badgeColor: '#4338CA',
+      leadMessage: 'An account has been created for you on the TripFlow Corporate Travel Governance platform.',
+      customSectionHtml,
+      calloutTitle: 'Security & Access Credentials',
+      calloutContent: 'For security reasons, your temporary password is not included in this email. Please contact your organization Administrator or IT Helpdesk to receive your login credentials.',
+      ctaLabel: 'Sign In to TripFlow',
+      ctaUrl,
+      footerNote: 'If you believe this account was created in error, please contact your organization Administrator.'
+    });
+
+    const info = await transporter.sendMail({
+      from: config.smtp.from,
+      to: toEmail,
+      subject,
+      text: `Hello ${recipientName},\n\nYour TripFlow account has been created.\n\nAccount Details:\n- Email: ${toEmail}\n- Role: ${roleLabel}\n- Department: ${department}\n\nSecurity Notice:\nFor security reasons, your temporary password is not included in this email. Please contact your organization's Administrator or IT Helpdesk to receive your login credentials.\n\nSign in here: ${ctaUrl}\n\nTripFlow Team`,
+      html,
+    });
+
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log(`🔗 [EmailService] Welcome email preview: ${previewUrl}`);
+    }
+
+    return {
+      messageId: info.messageId,
+      previewUrl,
+    };
   }
 
   async sendPasswordResetEmail(

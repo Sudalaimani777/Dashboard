@@ -8,7 +8,7 @@ export interface SidebarNavItemProps {
   count?: number | null;
   countType?: 'warning' | 'danger';
   isActive: boolean;
-  isCollapsed: boolean;
+  isCollapsed?: boolean;
   onClick: () => void;
 }
 
@@ -18,7 +18,7 @@ export const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
   count,
   countType = 'warning',
   isActive,
-  isCollapsed,
+  isCollapsed = false,
   onClick,
 }) => {
   const hasCount = typeof count === 'number' && count > 0;
