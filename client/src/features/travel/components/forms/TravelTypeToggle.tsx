@@ -13,7 +13,7 @@ export const TravelTypeToggle: React.FC<TravelTypeToggleProps> = ({ value, onCha
     <div
       role="radiogroup"
       aria-label="Travel request category"
-      className={`flex w-full bg-surface-subtle p-1 rounded-lg border border-border-warm gap-1.5 ${className}`}
+      className={`flex flex-col sm:flex-row w-full bg-surface-subtle p-1 rounded-lg border border-border-warm gap-1.5 ${className}`}
     >
       <button
         type="button"

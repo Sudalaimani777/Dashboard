@@ -636,7 +636,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
               )}
             </div>
 
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="size-3.5 text-faint absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
@@ -644,7 +644,7 @@ export const DepartmentBudgetsPage: React.FC = () => {
                 onChange={(e) => setPoolSearch(e.target.value)}
                 placeholder="Search department or period..."
                 aria-label="Filter configured department pools"
-                className="h-8 pl-8 pr-3 w-87.5 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+                className="h-8 pl-8 pr-3 w-full sm:w-72 md:w-80 rounded-lg border border-border-warm bg-surface text-xs text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
               />
             </div>
           </div>
@@ -654,118 +654,228 @@ export const DepartmentBudgetsPage: React.FC = () => {
               No matching quarterly allocations found.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-border-warm text-[11px] font-bold uppercase tracking-wider text-slate-700 bg-slate-50/80">
-                    <th className="p-3.5">Department</th>
-                    <th className="p-3.5">Period</th>
-                    <th className="p-3.5">Total Pool</th>
-                    <th className="p-3.5">Committed</th>
-                    <th className="p-3.5">Headroom</th>
-                    <th className="p-3.5">Utilization &amp; Health</th>
-                    <th className="p-3.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-warm text-xs">
-                  {filteredPoolRows.map((row) => {
-                    const isSelected =
-                      row.department.toLowerCase() === selectedDepartment.toLowerCase() &&
-                      row.fiscalYear === selectedYear &&
-                      row.fiscalQuarter === selectedQuarter;
-                    const health = computeDepartmentPoolHealth(row.utilizationPercentage);
+            <>
+              {/* Mobile Card Stack (md:hidden) */}
+              <div className="md:hidden divide-y divide-border-warm">
+                {filteredPoolRows.map((row) => {
+                  const isSelected =
+                    row.department.toLowerCase() === selectedDepartment.toLowerCase() &&
+                    row.fiscalYear === selectedYear &&
+                    row.fiscalQuarter === selectedQuarter;
+                  const health = computeDepartmentPoolHealth(row.utilizationPercentage);
 
-                    return (
-                      <tr
-                        key={row.id}
-                        className={`hover:bg-surface-subtle/70 transition-colors ${
-                          isSelected ? 'bg-[#FAF5EC]' : ''
-                        }`}
-                      >
-                        <td className="p-3.5">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-ink">{row.department}</span>
-                          </div>
-                        </td>
-                        <td className="p-3.5 font-mono text-slate-800 font-medium">
+                  return (
+                    <div
+                      key={row.id}
+                      className={`p-4 space-y-3 transition-colors ${
+                        isSelected ? 'bg-[#FAF5EC]' : 'bg-surface'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-sm text-ink">{row.department}</span>
+                        <span className="font-mono text-xs text-slate-800 font-medium px-2 py-0.5 rounded-full bg-surface-subtle border border-border-warm">
                           {row.fiscalQuarter} {row.fiscalYear}
-                        </td>
-                        <td className="p-3.5 font-mono tabular-nums font-semibold text-ink">
-                          {formatINR(row.totalAllocation)}{' '}
-                          <span className="text-[11px] text-slate-600 font-medium">
-                            ({formatINRCompact(row.totalAllocation)})
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border-warm/60">
+                        <div>
+                          <span className="text-[11px] text-muted block">Total Pool</span>
+                          <span className="font-mono tabular-nums font-semibold text-ink">
+                            {formatINR(row.totalAllocation)}
                           </span>
-                        </td>
-                        <td className="p-3.5 font-mono tabular-nums text-slate-800 font-medium">
-                          {formatINR(row.utilizedAmount)}
-                        </td>
-                        <td
-                          className={`p-3.5 font-mono tabular-nums font-semibold ${
-                            row.availableHeadroom < 0
-                              ? 'text-destructive'
-                              : row.utilizationPercentage > 85
-                              ? 'text-amber-700'
-                              : 'text-[#3F624D]'
+                        </div>
+                        <div>
+                          <span className="text-[11px] text-muted block">Committed</span>
+                          <span className="font-mono tabular-nums text-slate-800 font-medium">
+                            {formatINR(row.utilizedAmount)}
+                          </span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-[11px] text-muted block">Available Headroom</span>
+                          <span
+                            className={`font-mono tabular-nums font-semibold text-sm ${
+                              row.availableHeadroom < 0
+                                ? 'text-destructive'
+                                : row.utilizationPercentage > 85
+                                ? 'text-amber-700'
+                                : 'text-[#3F624D]'
+                            }`}
+                          >
+                            {formatINR(row.availableHeadroom)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 pt-1 border-t border-border-warm/60">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted">Utilization</span>
+                          <span className="font-mono font-bold text-ink tabular-nums">
+                            {row.utilizationPercentage.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-[#EFE7D8] overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${health.barColor}`}
+                            style={{ width: `${health.clampedPct}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-warm/60">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleInspectDepartment(
+                              row.department,
+                              row.fiscalYear,
+                              row.fiscalQuarter as FiscalQuarter
+                            )
+                          }
+                          aria-label={`Inspect ${row.department} budget`}
+                          className={`flex-1 px-3 py-2 rounded-lg border text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer text-center ${
+                            isSelected
+                              ? 'bg-primary text-white border-primary'
+                              : 'bg-surface border-border-warm text-ink hover:border-primary/40'
                           }`}
                         >
-                          {formatINR(row.availableHeadroom)}
-                        </td>
-                        <td className="p-3.5 min-w-[200px]">
-                          <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="font-mono font-bold text-ink tabular-nums">
-                                {row.utilizationPercentage.toFixed(1)}%
-                              </span>
+                          {isSelected ? 'Viewing' : 'Inspect'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openEditor(
+                              row.department,
+                              row.fiscalYear,
+                              row.fiscalQuarter as FiscalQuarter,
+                              row.totalAllocation
+                            )
+                          }
+                          aria-label={`Edit ${row.department} budget`}
+                          className="flex-1 px-3 py-2 rounded-lg border border-border-warm bg-surface text-xs font-semibold text-primary hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer text-center"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table (hidden md:block) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border-warm text-[11px] font-bold uppercase tracking-wider text-slate-700 bg-slate-50/80">
+                      <th className="p-3.5">Department</th>
+                      <th className="p-3.5">Period</th>
+                      <th className="p-3.5">Total Pool</th>
+                      <th className="p-3.5">Committed</th>
+                      <th className="p-3.5">Headroom</th>
+                      <th className="p-3.5">Utilization &amp; Health</th>
+                      <th className="p-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-warm text-xs">
+                    {filteredPoolRows.map((row) => {
+                      const isSelected =
+                        row.department.toLowerCase() === selectedDepartment.toLowerCase() &&
+                        row.fiscalYear === selectedYear &&
+                        row.fiscalQuarter === selectedQuarter;
+                      const health = computeDepartmentPoolHealth(row.utilizationPercentage);
+
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`hover:bg-surface-subtle/70 transition-colors ${
+                            isSelected ? 'bg-[#FAF5EC]' : ''
+                          }`}
+                        >
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-ink">{row.department}</span>
                             </div>
-                            <div className="h-2 w-full rounded-full bg-[#EFE7D8] overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-300 ${health.barColor}`}
-                                style={{ width: `${health.clampedPct}%` }}
-                              />
+                          </td>
+                          <td className="p-3.5 font-mono text-slate-800 font-medium">
+                            {row.fiscalQuarter} {row.fiscalYear}
+                          </td>
+                          <td className="p-3.5 font-mono tabular-nums font-semibold text-ink">
+                            {formatINR(row.totalAllocation)}{' '}
+                            <span className="text-[11px] text-slate-600 font-medium">
+                              ({formatINRCompact(row.totalAllocation)})
+                            </span>
+                          </td>
+                          <td className="p-3.5 font-mono tabular-nums text-slate-800 font-medium">
+                            {formatINR(row.utilizedAmount)}
+                          </td>
+                          <td
+                            className={`p-3.5 font-mono tabular-nums font-semibold ${
+                              row.availableHeadroom < 0
+                                ? 'text-destructive'
+                                : row.utilizationPercentage > 85
+                                ? 'text-amber-700'
+                                : 'text-[#3F624D]'
+                            }`}
+                          >
+                            {formatINR(row.availableHeadroom)}
+                          </td>
+                          <td className="p-3.5 min-w-[200px]">
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="font-mono font-bold text-ink tabular-nums">
+                                  {row.utilizationPercentage.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div className="h-2 w-full rounded-full bg-[#EFE7D8] overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${health.barColor}`}
+                                  style={{ width: `${health.clampedPct}%` }}
+                                />
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="p-3.5 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleInspectDepartment(
-                                  row.department,
-                                  row.fiscalYear,
-                                  row.fiscalQuarter as FiscalQuarter
-                                )
-                              }
-                              className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-primary text-white border-primary'
-                                  : 'bg-surface border-border-warm text-ink hover:border-primary/40'
-                              }`}
-                            >
-                              {isSelected ? 'Viewing' : 'Inspect'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openEditor(
-                                  row.department,
-                                  row.fiscalYear,
-                                  row.fiscalQuarter as FiscalQuarter,
-                                  row.totalAllocation
-                                )
-                              }
-                              className="px-2.5 py-1 rounded-lg border border-border-warm bg-surface text-[11px] font-semibold text-primary hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
-                            >
-                              Edit
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <div className="inline-flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleInspectDepartment(
+                                    row.department,
+                                    row.fiscalYear,
+                                    row.fiscalQuarter as FiscalQuarter
+                                  )
+                                }
+                                className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-primary text-white border-primary'
+                                    : 'bg-surface border-border-warm text-ink hover:border-primary/40'
+                                }`}
+                              >
+                                {isSelected ? 'Viewing' : 'Inspect'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openEditor(
+                                    row.department,
+                                    row.fiscalYear,
+                                    row.fiscalQuarter as FiscalQuarter,
+                                    row.totalAllocation
+                                  )
+                                }
+                                className="px-2.5 py-1 rounded-lg border border-border-warm bg-surface text-[11px] font-semibold text-primary hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98] transition-all cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>

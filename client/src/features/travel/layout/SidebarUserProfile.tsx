@@ -6,12 +6,14 @@ export interface SidebarUserProfileProps {
   user: User;
   isCollapsed: boolean;
   onSignOut: () => void;
+  isDrawerMode?: boolean;
 }
 
 export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
   user,
   isCollapsed,
   onSignOut,
+  isDrawerMode = false,
 }) => {
   const initials = user.name
     ? user.name
@@ -29,11 +31,13 @@ export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
       ? 'Line Manager'
       : 'Employee';
 
+  const showExpanded = !isCollapsed || isDrawerMode;
+
   return (
     <div className="mt-auto pt-3 border-t border-border-warm flex items-center justify-between shrink-0 select-none">
       <div
         className="flex items-center flex-1 min-w-0 mr-2"
-        title={isCollapsed ? `${user.name} (${roleLabel})` : undefined}
+        title={!showExpanded ? `${user.name} (${roleLabel})` : undefined}
       >
         {/* 36px Circular Initials Avatar */}
         <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
@@ -41,7 +45,7 @@ export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
         </div>
 
         {/* User Details (Smoothly masked when collapsed) */}
-        {!isCollapsed && (
+        {showExpanded && (
           <div className="flex flex-col min-w-0 ml-2.5 text-left leading-tight">
             <span className="text-[13px] font-semibold text-ink truncate">
               {user.name}
@@ -54,7 +58,7 @@ export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
       </div>
 
       {/* Logout Action Button */}
-      {!isCollapsed && (
+      {showExpanded && (
         <button
           type="button"
           onClick={onSignOut}
