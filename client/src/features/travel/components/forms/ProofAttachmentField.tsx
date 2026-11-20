@@ -302,7 +302,7 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
                 key={doc.id}
                 className="flex flex-col p-2.5 rounded-lg bg-surface-subtle/70 border border-border-warm text-xs hover:border-primary/40 transition-colors group"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="p-1.5 rounded-md bg-surface border border-border-warm text-primary shrink-0">
                       {isFile ? (
@@ -322,7 +322,7 @@ export const ProofAttachmentField: React.FC<ProofAttachmentFieldProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto flex-wrap">
                     <button
                       type="button"
                       onClick={() => togglePreview(doc.id)}

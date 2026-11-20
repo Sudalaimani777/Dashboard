@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, Bell } from 'lucide-react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { useTravel } from '../hooks/useTravel';
 import { DynamicRoleSidebar } from './DynamicRoleSidebar';
@@ -20,6 +21,7 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({ children }) =>
   const [isPinned, setIsPinned] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
   );
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const mainScrollRef = useRef<HTMLElement>(null);
@@ -57,14 +59,66 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({ children }) =>
     navigate(`/dashboard?tab=${tabId}`);
   };
 
+  const isNotificationsTab = activeTab === 'notifications';
+
+  const activeWorkspaceTitle = useMemo(() => {
+    if (isNotificationsTab) return 'Notifications';
+    if (user?.role === 'ADMIN') {
+      if (activeTab === 'users') return 'Team & Access';
+      if (activeTab === 'budgets') return 'Department Budgets';
+      return 'Travel Governance';
+    }
+    if (user?.role === 'MANAGER') {
+      if (activeTab === 'personal') return 'My Travel';
+      if (activeTab === 'team-analytics') return 'Team Analytics';
+      if (activeTab === 'spend-analytics') return 'Spend Analytics';
+      return 'Team Approvals';
+    }
+    if (activeTab === 'analytics') return 'Spend Analytics';
+    return 'My Travel';
+  }, [user, activeTab, isNotificationsTab]);
+
   if (!user) {
     return null;
   }
 
-  const isNotificationsTab = activeTab === 'notifications';
-
   return (
     <div className="flex min-h-[100dvh] h-[100dvh] w-full overflow-hidden bg-canvas text-ink relative">
+      {/* Sticky Mobile Header (<lg) */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-30 flex h-14 w-full items-center justify-between border-b border-border-warm bg-surface/90 px-3.5 backdrop-blur-md">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => setIsMobileDrawerOpen(true)}
+            aria-label="Open navigation menu"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border-warm bg-surface text-ink hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 cursor-pointer"
+          >
+            <Menu className="size-5" />
+          </button>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-md bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
+              TF
+            </div>
+            <span className="font-bold text-sm text-ink truncate max-w-[200px] sm:max-w-md">
+              {activeWorkspaceTitle}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => handleTabChange('notifications')}
+            aria-label="View notifications"
+            className="relative p-2 rounded-lg border border-border-warm bg-surface text-muted hover:text-ink cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          >
+            <Bell className="size-4" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary ring-2 ring-surface" />
+            )}
+          </button>
+        </div>
+      </header>
+
       {/* Floating Dynamic Role Sidebar */}
       <DynamicRoleSidebar
         user={user}
@@ -72,6 +126,8 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({ children }) =>
         onTabChange={handleTabChange}
         isPinned={isPinned}
         onTogglePin={() => setIsPinned((prev) => !prev)}
+        isMobileDrawerOpen={isMobileDrawerOpen}
+        onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
         onSignOut={signout}
         badgeCounts={badgeCounts}
       />
@@ -79,11 +135,11 @@ const DashboardLayoutContent: React.FC<DashboardLayoutProps> = ({ children }) =>
       {/* Main View Area */}
       <main
         ref={mainScrollRef}
-        className={`flex-1 overflow-y-auto min-w-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-          isPinned ? 'pl-[256px]' : 'pl-[76px]'
+        className={`flex-1 overflow-y-auto min-w-0 pt-14 lg:pt-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          isPinned ? 'lg:pl-[256px]' : 'lg:pl-[76px]'
         }`}
       >
-        <div className="px-6 py-5">
+        <div className="px-3.5 py-4 sm:px-6 sm:py-5">
           <ErrorBoundary
             fallbackTitle="Workstation Error"
             fallbackMessage="There was a problem loading this workstation view. Try reloading or return to the dashboard."

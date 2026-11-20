@@ -124,7 +124,7 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
-            className="relative bg-surface rounded-xl border border-border-warm max-w-xl w-full p-6 max-h-[90vh] overflow-y-auto flex flex-col gap-4 shadow-xl z-10"
+            className="relative bg-surface rounded-xl border border-border-warm w-[calc(100%-2rem)] max-w-xl mx-auto my-auto p-4 sm:p-6 max-h-[85dvh] overflow-y-auto flex flex-col gap-4 shadow-xl z-10"
           >
             <div className="flex justify-between items-center border-b border-border-warm pb-3">
               <div>
@@ -221,36 +221,71 @@ export const ResubmitRequestModal: React.FC<ResubmitRequestModalProps> = ({
                   </button>
                 </div>
                 {fields.map((f, i) => (
-                  <div key={f.id} className="grid grid-cols-12 gap-2 items-center bg-surface-subtle p-2 rounded-lg border border-border-warm text-xs">
-                    <select {...register(`expenses.${i}.category`)} className="col-span-3 p-1.5 bg-surface border border-border-warm rounded text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20">
-                      <option value="FLIGHT">Flight</option>
-                      <option value="HOTEL">Hotel</option>
-                      <option value="MEALS_PER_DIEM">Meals</option>
-                      <option value="TRANSIT">Transit</option>
-                      <option value="MISC">Misc</option>
-                    </select>
-                    <input {...register(`expenses.${i}.merchant`)} placeholder="Merchant" className="col-span-4 p-1.5 bg-surface border border-border-warm rounded text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" />
-                    <input
-                      {...register(`expenses.${i}.amount`, {
-                        setValueAs: parseExpenseAmount,
-                      })}
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="₹"
-                      className="col-span-4 p-1.5 bg-surface border border-border-warm rounded font-mono tabular-nums text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                    />
-                    <button type="button" onClick={() => remove(i)} disabled={fields.length === 1} aria-label="Remove item" className="col-span-1 text-destructive hover:opacity-80 disabled:opacity-30 cursor-pointer">
-                      <Trash2 className="size-4" />
-                    </button>
+                  <div
+                    key={f.id}
+                    className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-2 items-start sm:items-center bg-surface-subtle p-3 sm:p-2 rounded-lg border border-border-warm text-xs"
+                  >
+                    <div className="sm:col-span-3 w-full">
+                      <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Category</label>
+                      <select
+                        {...register(`expenses.${i}.category`)}
+                        className="w-full p-2 sm:p-1.5 bg-surface border border-border-warm rounded text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      >
+                        <option value="FLIGHT">Flight</option>
+                        <option value="HOTEL">Hotel</option>
+                        <option value="MEALS_PER_DIEM">Meals / Per Diem</option>
+                        <option value="TRANSIT">Transit</option>
+                        <option value="MISC">Misc</option>
+                      </select>
+                    </div>
+                    <div className="sm:col-span-4 w-full">
+                      <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Merchant</label>
+                      <input
+                        {...register(`expenses.${i}.merchant`)}
+                        placeholder="Merchant"
+                        className="w-full p-2 sm:p-1.5 bg-surface border border-border-warm rounded text-ink placeholder:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      />
+                    </div>
+                    <div className="sm:col-span-4 w-full">
+                      <label className="sm:hidden text-[10px] font-semibold text-muted mb-1 block">Amount (₹)</label>
+                      <input
+                        {...register(`expenses.${i}.amount`, {
+                          setValueAs: parseExpenseAmount,
+                        })}
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="₹ 0.00"
+                        className="w-full p-2 sm:p-1.5 bg-surface border border-border-warm rounded font-mono tabular-nums text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                      />
+                    </div>
+                    <div className="sm:col-span-1 w-full flex justify-end sm:justify-center pt-1 sm:pt-0">
+                      <button
+                        type="button"
+                        onClick={() => remove(i)}
+                        disabled={fields.length === 1}
+                        aria-label="Remove item"
+                        className="p-1.5 text-destructive hover:opacity-80 disabled:opacity-30 cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-border-warm">
-                <button type="button" onClick={onClose} className="px-4 py-2 border border-border-warm rounded-xl text-xs text-muted hover:bg-surface-subtle transition-all cursor-pointer">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 pt-3 border-t border-border-warm">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full sm:w-auto px-4 py-2 border border-border-warm rounded-xl text-xs text-muted hover:bg-surface-subtle transition-all cursor-pointer"
+                >
                   Cancel
                 </button>
-                <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-hover active:scale-[0.98] text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 transition-all cursor-pointer">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 bg-primary hover:bg-primary-hover active:scale-[0.98] text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+                >
                   {isSubmitting && <Loader2 className="size-3.5 animate-spin" />} Resubmit to Manager
                 </button>
               </div>
